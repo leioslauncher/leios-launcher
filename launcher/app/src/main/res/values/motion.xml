@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Animation durations (ms) and focus scales. Easing curves are in Tokens (Java only). -->
+<resources>
+    <integer name="motion_fast">120</integer>
+    <integer name="motion_focus">160</integer>
+    <integer name="motion_medium">220</integer>
+    <integer name="motion_slow">320</integer>
+    <integer name="motion_crossfade">1500</integer>
+    <integer name="toast_ms">2600</integer>
+    <!-- Wait before a slow action shows a spinner (anything faster never shows one). -->
+    <integer name="spinner_delay">300</integer>
+    <!-- Remote: how long OK is held for quick actions; slider auto-repeat start and rate. -->
+    <integer name="long_press">600</integer>
+    <integer name="repeat_delay">400</integer>
+    <integer name="repeat_every">110</integer>
+
+    <!-- Focus scale ×100: tiles, top-bar pills, a tile picked up for moving. -->
+    <integer name="scale_tile">108</integer>
+    <integer name="scale_pill">105</integer>
+    <integer name="scale_moving">114</integer>
+
+    <!-- Font weights (Outfit is a variable font). No thin weights: they wash out on a projector. -->
+    <integer name="weight_regular">400</integer>
+    <integer name="weight_medium">500</integer>
+    <integer name="weight_semibold">600</integer>
+</resources>

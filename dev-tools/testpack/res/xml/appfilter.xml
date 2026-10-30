@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item component="ComponentInfo{com.netflix.ninja/com.netflix.ninja.MainActivity}" drawable="test_red" />
+    <item component="ComponentInfo{com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.MainActivity}" drawable="test_wide" />
+    <item component="ComponentInfo{com.spotify.tv.android/com.spotify.tv.android.SpotifyTVActivity}" drawable="test_green" />
+</resources>

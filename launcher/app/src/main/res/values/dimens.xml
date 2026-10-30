@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Spacing, type, radii, sizes. Read in Java through Tokens; layouts reference them directly. -->
+<resources>
+    <!-- Spacing scale (4 dp grid). -->
+    <dimen name="space_1">4dp</dimen>
+    <dimen name="space_2">8dp</dimen>
+    <dimen name="space_3">12dp</dimen>
+    <dimen name="space_4">16dp</dimen>
+    <dimen name="space_5">24dp</dimen>
+    <dimen name="space_6">32dp</dimen>
+    <dimen name="space_7">48dp</dimen>
+
+    <!-- Overscan-safe area: nothing important closer to the screen edge than this. -->
+    <dimen name="safe_h">48dp</dimen>
+    <dimen name="safe_v">28dp</dimen>
+
+    <!-- Type scale. Smallest text is 15sp, readable from 3–4 m. -->
+    <dimen name="text_display">80sp</dimen>
+    <dimen name="text_title">40sp</dimen>
+    <dimen name="text_headline">24sp</dimen>
+    <dimen name="text_body">19sp</dimen>
+    <dimen name="text_label">17sp</dimen>
+    <dimen name="text_caption">15sp</dimen>
+
+    <!-- Corner radii. -->
+    <dimen name="radius_sm">10dp</dimen>
+    <dimen name="radius_md">14dp</dimen>
+    <dimen name="radius_lg">24dp</dimen>
+
+    <!-- Strokes, focus and elevation. -->
+    <dimen name="stroke">1dp</dimen>
+    <dimen name="focus_ring">3dp</dimen>
+    <dimen name="focus_glow">12dp</dimen>
+    <dimen name="elevation_sheet">8dp</dimen>
+
+    <!-- Components. -->
+    <dimen name="icon_sm">18dp</dimen>
+    <dimen name="icon_md">22dp</dimen>
+    <dimen name="pill_height">44dp</dimen>
+    <!-- Customize › Look › Top bar › Size › Compact. -->
+    <dimen name="pill_height_compact">36dp</dimen>
+    <dimen name="row_height">44dp</dimen>
+    <dimen name="sheet_width">392dp</dimen>
+    <dimen name="popover_width">300dp</dimen>
+    <dimen name="slider_width">150dp</dimen>
+    <dimen name="slider_height">6dp</dimen>
+    <!-- Space between tiles: Customize › Home layout › Layout › Tile spacing (tight, normal, roomy). -->
+    <dimen name="tile_gap_tight">12dp</dimen>
+    <dimen name="tile_gap">18dp</dimen>
+    <dimen name="tile_gap_roomy">28dp</dimen>
+    <dimen name="pill_label_max">200dp</dimen>
+
+    <!-- Home layout. -->
+    <dimen name="hero_height">360dp</dimen>
+    <!-- Corner fades behind the clock and the app name; their views are this size too. -->
+    <dimen name="edge_radius">500dp</dimen>
+    <dimen name="glow_size">560dp</dimen>
+    <dimen name="glow_offset_x">-120dp</dimen>
+    <dimen name="glow_offset_y">-240dp</dimen>
+    <dimen name="glow_radius">280dp</dimen>
+    <!-- Dock band inset plus its padding, so grid tiles line up under dock tiles. -->
+    <dimen name="grid_inset">64dp</dimen>
+</resources>

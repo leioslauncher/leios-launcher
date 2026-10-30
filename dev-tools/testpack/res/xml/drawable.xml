@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item drawable="test_red" />
+    <item drawable="test_green" />
+    <item drawable="test_wide" />
+    <item drawable="star_gold" />
+</resources>

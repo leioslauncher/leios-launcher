@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Test icon pack for tv.leios.launcher: resources only, in the common appfilter.xml format. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="tv.clean.testpack" android:versionCode="1" android:versionName="1.0">
+    <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
+    <application android:label="Test Icon Pack" android:hasCode="false">
+        <activity android:name="tv.clean.testpack.Main" android:exported="true">
+            <intent-filter>
+                <action android:name="org.adw.launcher.THEMES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

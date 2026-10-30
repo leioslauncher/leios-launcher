@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Palettes for the shape backgrounds (Customize › Background › Shapes), drawn by Backdrops.java.
+  Each: base top, base bottom, then the shape colours back to front.
+-->
+<resources>
+    <array name="bloom_dark">
+        <item>#FF0B1024</item>
+        <item>#FF05060D</item>
+        <item>#FF3A1C8C</item>
+        <item>#FF1E5BE0</item>
+        <item>#FFD6307F</item>
+        <item>#FF14B8D6</item>
+    </array>
+    <array name="bloom_light">
+        <item>#FFF6F4FB</item>
+        <item>#FFEDEFF7</item>
+        <item>#FFC9B8F5</item>
+        <item>#FFA9CCFF</item>
+        <item>#FFFFC2D9</item>
+        <item>#FFB5F0EC</item>
+    </array>
+
+    <array name="orbit_dark">
+        <item>#FF0A0E1C</item>
+        <item>#FF04050A</item>
+        <item>#FF6CD3FF</item>
+        <item>#FF2B59C3</item>
+        <item>#FFFFFFFF</item>
+    </array>
+    <array name="orbit_light">
+        <item>#FFF3F6FB</item>
+        <item>#FFE4EAF3</item>
+        <item>#FFFFD9A8</item>
+        <item>#FFF59E7A</item>
+        <item>#FF3A4560</item>
+    </array>
+
+    <array name="prism_dark">
+        <item>#FF0C0F1E</item>
+        <item>#FF151A36</item>
+        <item>#FF3B82F6</item>
+        <item>#FF8B5CF6</item>
+        <item>#FF22D3EE</item>
+        <item>#FFEC4899</item>
+    </array>
+    <array name="prism_light">
+        <item>#FFF7F8FC</item>
+        <item>#FFEAEDF6</item>
+        <item>#FF9CC3FF</item>
+        <item>#FFC6B4FF</item>
+        <item>#FF9FE8F3</item>
+        <item>#FFFFB8D8</item>
+    </array>
+
+    <!-- Sky top, sky at the horizon, the sun, then four ridges back to front. -->
+    <array name="dunes_dark">
+        <item>#FF120A30</item>
+        <item>#FF6A2C6E</item>
+        <item>#FFFF9A62</item>
+        <item>#FF5A2A78</item>
+        <item>#FF3E1D60</item>
+        <item>#FF2A1347</item>
+        <item>#FF170B2E</item>
+    </array>
+    <array name="dunes_light">
+        <item>#FFFFF3E8</item>
+        <item>#FFFFDCC6</item>
+        <item>#FFFFFFFF</item>
+        <item>#FFF6C9B0</item>
+        <item>#FFEFB49A</item>
+        <item>#FFE49E86</item>
+        <item>#FFD98B76</item>
+    </array>
+</resources>

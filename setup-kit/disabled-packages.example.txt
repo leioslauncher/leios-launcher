@@ -1,0 +1,19 @@
+# Example only: what was disabled on one JMGO N3 4K. Review every line for your own device.
+# Copy it to disabled-packages.txt to use it with restore.ps1.
+com.jmgo.spider
+com.google.android.feedback
+com.android.tv.feedbackconsent
+com.jmgo.helpcenter
+fusion.android.tv.demo
+com.google.android.katniss
+com.jmgo.a2dpsinkservice
+com.jmgo.update
+com.jmgo.remotecontrolota
+com.jmgo.overseas.atmosphere
+com.google.android.youtube.tvmusic
+com.peacocktv.peacockandroid
+com.tubitv
+com.instagram.airwave
+com.google.android.play.games
+com.google.android.apps.tv.launcherx
+com.google.android.tungsten.setupwraith

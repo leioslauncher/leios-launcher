@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Every colour Home and the ≡ panel use. Read in Java through Theme (dark_* or light_*); nothing
+  else in the app hardcodes a colour. Contrast is measured against the surface each colour sits on
+  and kept at WCAG AA (4.5:1) or better, since a projector washes colours out.
+-->
+<resources>
+    <!-- One accent for focus and primary actions. Ring/glow uses accent; filled rows use
+         accent_fill, which keeps white text at 4.7:1. -->
+    <color name="accent">#FF4A8CFF</color>
+    <color name="accent_fill">#FF2F6FE0</color>
+    <color name="on_accent">#FFFFFFFF</color>
+
+    <!-- Dark (default): near-black with a slight blue bias, layered surfaces. -->
+    <color name="dark_bg">#FF0E1014</color>
+    <color name="dark_surface">#F5171A21</color>
+    <color name="dark_surface_raised">#FF232731</color>
+    <color name="dark_surface_soft">#1FFFFFFF</color>
+    <color name="dark_stroke">#1AFFFFFF</color>
+    <color name="dark_text">#FFF2F4F8</color>
+    <color name="dark_text_secondary">#FFB8BECA</color>
+    <color name="dark_text_tertiary">#FF8B93A1</color>
+    <color name="dark_disabled">#FF5C6370</color>
+    <color name="dark_track">#33FFFFFF</color>
+    <color name="dark_scrim_photo">#96000000</color>
+    <color name="dark_scrim_edge">#B30E1014</color>
+    <color name="dark_scrim_grid">#B30E1014</color>
+    <color name="dark_shadow">#66000000</color>
+
+    <!-- Light: soft cool greys; photos stay unaltered, text sits on edge gradients. -->
+    <color name="light_bg">#FFEEF0F4</color>
+    <color name="light_surface">#F7FFFFFF</color>
+    <color name="light_surface_raised">#FFF1F3F7</color>
+    <color name="light_surface_soft">#B3FFFFFF</color>
+    <color name="light_stroke">#1A0B1220</color>
+    <color name="light_text">#FF11141A</color>
+    <color name="light_text_secondary">#FF4A5160</color>
+    <color name="light_text_tertiary">#FF687080</color>
+    <color name="light_disabled">#FFA3A9B4</color>
+    <color name="light_track">#260B1220</color>
+    <color name="light_scrim_photo">#00000000</color>
+    <color name="light_scrim_edge">#D9EEF0F4</color>
+    <color name="light_scrim_grid">#C7EEF0F4</color>
+    <color name="light_shadow">#260B1220</color>
+
+    <!-- Idle (Customize › Projector & tools › When Home is idle): dimmed Home, and the clock screen. -->
+    <color name="idle_dim">#B3000000</color>
+    <color name="idle_bg">#FF000000</color>
+
+    <!-- Tile without a banner: drawn from the app's own colour over this. -->
+    <color name="tile_fallback">#FF1B1F27</color>
+    <!-- Used until an app's own colour is known (and for apps whose banner is colourless). -->
+    <color name="neutral_glow">#FF8E8E93</color>
+
+    <!-- Background presets (Customize › Background). Dark ones fade into dark_bg. -->
+    <color name="preset_midnight">#FF0B1230</color>
+    <color name="preset_graphite">#FF2A2C33</color>
+    <color name="preset_aurora_a">#FF0F5F55</color>
+    <color name="preset_aurora_b">#FF1C2B70</color>
+    <color name="preset_ember_a">#FF7A2E0E</color>
+    <color name="preset_ember_b">#FF3D0F30</color>
+    <color name="preset_dusk_a">#FF2E1A4D</color>
+    <color name="preset_dusk_b">#FF120F2E</color>
+    <color name="preset_pearl_a">#FFF7F7F9</color>
+    <color name="preset_pearl_b">#FFE2E4EA</color>
+    <color name="preset_mist_a">#FFEEF3F9</color>
+    <color name="preset_mist_b">#FFD3DEEA</color>
+    <color name="preset_mist_c">#FFC4D2E1</color>
+    <color name="preset_sand_a">#FFF7F1E6</color>
+    <color name="preset_sand_b">#FFE9DEC9</color>
+    <color name="preset_sand_c">#FFDCCDB1</color>
+</resources>

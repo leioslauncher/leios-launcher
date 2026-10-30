@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Checks that don't fit a Home screen, each with its reason. -->
+<lint>
+    <!-- Home is the HOME activity; listing itself among the TV's apps would only add a useless tile. -->
+    <issue id="MissingLeanbackLauncher" severity="ignore" />
+    <!-- Theme.Home sets windowIsTranslucent to false (lint sees the attribute, not its value). -->
+    <issue id="TranslucentOrientation" severity="ignore" />
+</lint>

@@ -1,0 +1,40 @@
+# Secrets and signing: never commit
+*.keystore
+*.jks
+*.p12
+*.pem
+keystore.properties
+.env*
+
+# Build output
+launcher/.gradle/
+launcher/**/build/
+launcher/local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+*.hprof
+
+# Local tools (download your own)
+toolchain/
+tools-dl/
+platform-tools/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Working files: may hold personal details
+backup/
+logs/
+shots/
+slideshow-photos/
+*.zip
+*.log
+setup-kit/disabled-packages.txt
+HANDOFF.md
+
+# Reports
+gitleaks-report*.json

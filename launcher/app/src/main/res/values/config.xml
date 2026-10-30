@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Edit this file, then run build-and-install.ps1 again. -->
+<resources>
+    <!-- Dock slots, and columns of the app grid below it (4 to 7). -->
+    <integer name="columns">5</integer>
+
+    <!-- Dock apps, left to right, by package name. Apps not installed are skipped. -->
+    <string-array name="dock_apps">
+        <item>com.google.android.youtube.tv</item>
+        <item>com.netflix.ninja</item>
+        <item>com.crunchyroll.crunchyroid</item>
+        <item>com.disney.disneyplus</item>
+        <item>com.spotify.tv.android</item>
+    </string-array>
+
+    <!-- Remote buttons (by scancode, from getevent -lt) that open Settings while on Home.
+         256 = BTN_MISC, the gear button on the JMGO Bluetooth remote. On this firmware the system
+         swallows it before Home sees it, so this entry only matters for other remotes. -->
+    <integer-array name="settings_key_scancodes">
+        <item>256</item>
+    </integer-array>
+
+    <!-- Wallpaper: put a JPG/PNG at res/drawable-nodpi/wallpaper.jpg; none means pitch black. -->
+    <!-- How dark the scrim over a wallpaper is, 0 (none) to 255 (black). -->
+    <integer name="wallpaper_scrim">150</integer>
+</resources>
