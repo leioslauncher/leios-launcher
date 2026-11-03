@@ -79,7 +79,7 @@ These steps use ADB and were tested only on the device above.
    ```
 
 4. Accept the "Allow USB debugging?" prompt on the TV.
-5. For the ≡ panel, turn on **Home quick settings** in Settings > System > Accessibility.
+5. For the ≡ panel, turn on **Leios quick settings** in Settings > System > Accessibility.
 6. For the bell, allow notification access in Android's settings.
 7. Turn USB debugging off when you're done.
 
@@ -91,7 +91,7 @@ To use the clock as the screensaver, run this once:
 
 Avoid **Force stop** on the launcher. Android then turns the ≡ panel off until you re-enable it in Accessibility.
 
-The app is still labelled **Home** on screen, and some of its text and its backup folder still say "Clean Home". Both come from before the project was renamed.
+Backups are saved as pictures in `Pictures/Leios`. Leios can also restore backups and themes saved before the project was renamed, from `Pictures/Clean Home`; it only reads those, never changes them.
 
 ## Undo everything
 

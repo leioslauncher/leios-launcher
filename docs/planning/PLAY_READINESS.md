@@ -1,5 +1,7 @@
 # Play Store readiness
 
+> **Planning notes, not a promise.** There's no Play release and no date. This is research kept public so contributors can see what a Play version would need.
+
 A planning document, written 2026-10-30, for making Leios Launcher a free, full launcher on Google Play for Android TV and Google TV. **It isn't a promise of a release or a date.** Nothing here has been changed in the app yet, and no Play account or enrolment exists.
 
 Policies change often. Check each link again before acting on it. This is a practical reading of Google's pages, not legal advice.
@@ -84,8 +86,8 @@ Recommended first step: build a small test of the Home override and put it throu
 | 64-bit and 16 KB pages | Likely OK | [Required from August 1, 2026](https://developer.android.com/training/tv/publishing/distribute). The app is Java with no native code of its own | Confirm when the bundle is built | S |
 | Memory and code rules | Unknown | Google announced [new quality requirements for February 2027](https://support.google.com/googleplay/android-developer/answer/18100766?hl=en) | Read them when planning the release | S |
 | `LEANBACK_LAUNCHER` | **Blocker, easy** | [TV-ML and TV-LM](https://developer.android.com/docs/quality-guidelines/tv-app-quality) require it. `MainActivity` only has `HOME` | Add the launcher entry, and handle being opened as a normal app, including Back ([TV-DB](https://developer.android.com/docs/quality-guidelines/tv-app-quality)) | S |
-| Banner and icon | **Needs work** | `banner.xml` is 320x180, but it's used as the icon too. [TV-LB](https://developer.android.com/docs/quality-guidelines/tv-app-quality) needs a proper icon, and [TV-BN](https://developer.android.com/docs/quality-guidelines/tv-app-quality) needs the name on the banner. Play guidance [gives a different icon size](https://support.google.com/googleplay/android-developer/answer/18058043?hl=en), so check Play Console | Design a Leios banner and icon | M |
-| App name inside the app | **Needs work** | The label is `Home`, and text and backup folders say "Clean Home". The listing would say Leios | Rename, keeping old `.cleanhome.png` backups restorable | M |
+| Banner and icon | **Needs work** | `banner.xml` is 320x180 and shows the Leios name since 1.2, but it's used as the icon too. [TV-LB](https://developer.android.com/docs/quality-guidelines/tv-app-quality) needs a proper icon, and [TV-BN](https://developer.android.com/docs/quality-guidelines/tv-app-quality) needs the name on the banner. Play guidance [gives a different icon size](https://support.google.com/googleplay/android-developer/answer/18058043?hl=en), so check Play Console | Design a Leios banner and icon | M |
+| App name inside the app | OK (1.2) | Renamed to Leios in 1.2. Old `.cleanhome.png` backups stay restorable | None | S |
 | D-pad, Menu button | OK | D-pad throughout. The ≡ key is an extra, so [TV-DM](https://developer.android.com/docs/quality-guidelines/tv-app-quality) looks fine: everything is reachable from Customize. Confirm that | Check it | S |
 | Touchscreen and hardware features | OK | All marked `required=false` ([TV-MT](https://developer.android.com/docs/quality-guidelines/tv-app-quality)) | Remove the location features along with the permissions | S |
 | Leanback declaration | OK | `android.software.leanback` is `required=false`. That's fine for an app also usable elsewhere. TV-only behaviour should be decided | Decide on TV-only, then set it | S |
