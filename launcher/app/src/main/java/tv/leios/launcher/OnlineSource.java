@@ -82,7 +82,8 @@ interface OnlineSource {
             c.setConnectTimeout(8000);
             c.setReadTimeout(15000);
             // Wikimedia asks every client to say who it is.
-            c.setRequestProperty("User-Agent", "CleanHomeTV/1.0 (Android TV launcher)");
+            c.setRequestProperty("User-Agent", "LeiosLauncher/" + BuildConfig.VERSION_NAME
+                    + " (Android TV launcher; +https://github.com/leioslauncher/leios-launcher)");
             try (InputStream in = c.getInputStream()) {
                 if (c.getResponseCode() != 200) throw new IOException("HTTP " + c.getResponseCode());
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
