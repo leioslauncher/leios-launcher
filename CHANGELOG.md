@@ -9,6 +9,7 @@ The first public release.
 - New backups and themes are saved in `Pictures/Leios` as `.leios.png` pictures.
 - New TV banner with the Leios name.
 - Photo-of-the-day requests now identify themselves as `LeiosLauncher` with a link to this project, as Wikimedia asks.
+- A release build without signing details now stops with a clear message, instead of making an unsigned APK.
 
 ### Added
 - Restore and Import theme also find backups and themes saved before the rename, in `Pictures/Clean Home`. They're only read, never changed.

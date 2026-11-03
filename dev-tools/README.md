@@ -6,6 +6,7 @@ Most need `$env:TV_HOST`, network debugging on, and `platform-tools\adb.exe` in 
 
 | File | What it does |
 |---|---|
+| `build-release.ps1` | Builds the signed release APK and App Bundle. Asks for the keystore password |
 | `tour.ps1`, `sheet.ps1`, `nav.ps1` | Screenshot every screen, make contact sheets, and remote helpers |
 | `qa-measure.ps1`, `qa-soak.ps1`, `qa-monkey.ps1`, `qa-sound.ps1`, `qa-video.ps1` | Performance, stress, sound and video tests |
 | `prepare-photos.ps1` | Makes 1920×1080 slideshow backgrounds |

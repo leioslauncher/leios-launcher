@@ -63,7 +63,7 @@ cd launcher
 
 The debug APK lands in `launcher\app\build\outputs\apk\debug\`. It's signed with your own automatic debug key.
 
-**Release builds:** without a signing key, `assembleRelease` makes an unsigned APK. It never uses the debug key. To sign one, copy `launcher\keystore.properties.example` to `launcher\keystore.properties` and fill it in, or set the `LEIOS_*` environment variables listed there. Keep the key outside the repo, and never commit it.
+**Release builds** need your own signing key, and never use the debug key. Without one, `assembleRelease` stops with a message saying what's missing. To sign, copy `launcher\keystore.properties.example` to `launcher\keystore.properties` and fill it in, or set the `LEIOS_*` environment variables listed there. Or run `.\dev-tools\build-release.ps1 -Keystore <path>`, which asks for the password and keeps it out of files. Keep the key outside the repo, and never commit it.
 
 ## Set up on a TV
 

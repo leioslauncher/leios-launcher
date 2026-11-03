@@ -2,13 +2,30 @@ plugins {
     id 'com.android.application'
 }
 
-// Release signing comes only from keystore.properties or the environment. Without them a release
-// build stays unsigned: it must never fall back to the debug key.
+// Release signing comes only from keystore.properties or the environment. Without all four values a
+// release build stops with a clear message: it must never fall back to the debug key.
 def signing = new Properties()
 def signingFile = rootProject.file('keystore.properties')
 if (signingFile.exists()) signingFile.withInputStream { signing.load(it) }
 def signingValue = { String key, String env -> signing.getProperty(key) ?: System.getenv(env) }
+def signingKeys = [storeFile: 'LEIOS_STORE_FILE', storePassword: 'LEIOS_STORE_PASSWORD',
+                   keyAlias: 'LEIOS_KEY_ALIAS', keyPassword: 'LEIOS_KEY_PASSWORD']
+def signingMissing = signingKeys.findAll { key, env -> !signingValue(key, env) }.collect { key, env -> "$key ($env)" }
 def releaseStore = signingValue('storeFile', 'LEIOS_STORE_FILE')
+if (releaseStore && !file(releaseStore).exists()) signingMissing << 'storeFile: no keystore at that path'
+def canSignRelease = signingMissing.isEmpty()
+
+gradle.taskGraph.whenReady { graph ->
+    def releaseOutput = graph.allTasks.any { t ->
+        t.project == project && t.name ==~ /(assemble|bundle|package)Release/
+    }
+    if (releaseOutput && !canSignRelease) {
+        throw new GradleException("Release signing isn't set up, so no release was built.\n"
+                + "Missing: ${signingMissing.join(', ')}.\n"
+                + "Copy launcher/keystore.properties.example to launcher/keystore.properties and fill it in, "
+                + "or set the LEIOS_* environment variables. Debug builds don't need this.")
+    }
+}
 
 android {
     namespace 'tv.leios.launcher'
@@ -24,7 +41,7 @@ android {
     }
 
     signingConfigs {
-        if (releaseStore) {
+        if (canSignRelease) {
             release {
                 storeFile file(releaseStore)
                 storePassword signingValue('storePassword', 'LEIOS_STORE_PASSWORD')
@@ -44,7 +61,7 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            if (releaseStore) signingConfig signingConfigs.release
+            if (canSignRelease) signingConfig signingConfigs.release
         }
     }
 
