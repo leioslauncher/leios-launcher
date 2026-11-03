@@ -51,8 +51,10 @@ final class Backups {
     }
 
     static final int KEEP = 10;
-    static final String SUFFIX = ".cleanhome.png";
-    private static final String FOLDER = "Pictures/Clean Home/";
+    static final String SUFFIX = ".leios.png";
+    /** Saved by the app before it was renamed Leios (Pictures/Clean Home); still read, never written. */
+    static final String OLD_SUFFIX = ".cleanhome.png";
+    private static final String FOLDER = "Pictures/Leios/";
     private static final byte[] CHUNK = {'c', 'l', 'H', 'm'};
     /** Files that travel with a full backup (icons and photos you picked), and the size limit for each. */
     private static final String[] FILES = {"background.jpg", "background.anim"};
@@ -268,13 +270,17 @@ final class Backups {
         Uri col = Media.images();
         String[] cols = {MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME,
                 MediaStore.Images.Media.DATE_MODIFIED};
-        try (Cursor cur = c.getContentResolver().query(col, cols, MediaStore.Images.Media.DISPLAY_NAME + " LIKE ?",
-                new String[] {"%" + kind + "%" + SUFFIX}, MediaStore.Images.Media.DATE_MODIFIED + " DESC")) {
+        String byName = MediaStore.Images.Media.DISPLAY_NAME + " LIKE ?";
+        try (Cursor cur = c.getContentResolver().query(col, cols, byName + " OR " + byName,
+                new String[] {"%" + kind + "%" + SUFFIX, "%" + kind + "%" + OLD_SUFFIX},
+                MediaStore.Images.Media.DATE_MODIFIED + " DESC")) {
             while (cur != null && cur.moveToNext()) {
                 String name = cur.getString(1);
-                String label = name.substring(0, name.length() - SUFFIX.length());
+                boolean old = name.endsWith(OLD_SUFFIX);
+                String label = name.substring(0, name.length() - (old ? OLD_SUFFIX : SUFFIX).length());
                 // Saved backups are told apart by their date, shown beside them.
-                if (label.startsWith("Clean Home backup")) label = "Saved backup";
+                if (label.startsWith("Leios backup")) label = "Saved backup";
+                else if (label.startsWith("Clean Home backup")) label = "Older backup";
                 out.add(new Entry(label, cur.getLong(2) * 1000, null, ContentUris.withAppendedId(col, cur.getLong(0))));
             }
         } catch (RuntimeException ignored) {
@@ -298,7 +304,7 @@ final class Backups {
     }
 
     /**
-     * Writes {@code o} as a picture named "{@code name}.cleanhome.png" in Pictures/Clean Home on
+     * Writes {@code o} as a picture named "{@code name}.leios.png" in Pictures/Leios on
      * {@code volume} (this TV, or a USB drive's volume name). Returns where, or null.
      */
     static Uri export(Context c, JSONObject o, String name, String volume, Bitmap preview) {

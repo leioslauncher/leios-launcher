@@ -1143,7 +1143,7 @@ public class MainActivity extends Activity {
         card.setPadding(tk.space6, tk.space5, tk.space6, tk.space5);
         card.setBackground(Ui.rounded(tk.radiusLg, theme.surface, theme.stroke, tk.stroke));
         card.setElevation(tk.elevationSheet);
-        card.addView(Ui.text(this, "Welcome to your new Home", tk.textHeadline, theme.text, tk.semibold));
+        card.addView(Ui.text(this, "Welcome to Leios", tk.textHeadline, theme.text, tk.semibold));
         String[][] tips = {
                 {"OK", "Hold OK on an app to move, rename or hide it"},
                 {"≡", "The ≡ button opens quick settings, in any app"},
@@ -2909,9 +2909,9 @@ public class MainActivity extends Activity {
         if (requestCode == REQ_SLIDES && ok) openSlideshowMenu();
         if (requestCode == REQ_VIDEOS && ok) openVideoMenu();
         if (!ok && (requestCode == REQ_PHOTOS || requestCode == REQ_SLIDES)) {
-            toast("Home needs permission to see your photos for this", false);
+            toast("Leios needs permission to see your photos for this", false);
         }
-        if (!ok && requestCode == REQ_VIDEOS) toast("Home needs permission to see your videos for this", false);
+        if (!ok && requestCode == REQ_VIDEOS) toast("Leios needs permission to see your videos for this", false);
     }
 
     // Slideshow: random order through the USB drive's photos, one decoded bitmap at a time.
@@ -4675,11 +4675,11 @@ public class MainActivity extends Activity {
                 loader.execute(() -> {
                     Uri uri = null;
                     try {
-                        uri = Backups.export(this, Themes.load(f), name + " theme", vol, previewCard(name, "Clean Home theme"));
+                        uri = Backups.export(this, Themes.load(f), name + " theme", vol, previewCard(name, "Leios theme"));
                     } catch (IOException | JSONException ignored) {
                     }
                     Uri saved = uri;
-                    ui.post(() -> toast(saved == null ? "Couldn't save the picture" : "Saved in Pictures › Clean Home", saved != null));
+                    ui.post(() -> toast(saved == null ? "Couldn't save the picture" : "Saved in Pictures › Leios", saved != null));
                 });
             });
         }
@@ -4726,7 +4726,7 @@ public class MainActivity extends Activity {
                     }));
                 }
                 if (found.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, "No theme pictures found. Themes "
-                        + "shared from Clean Home are in Pictures › Clean Home, on this TV or a USB drive."), null);
+                        + "shared from Leios or Clean Home are in Pictures, on this TV or a USB drive."), null);
                 showSheet(0, () -> openThemesMenu(0), null);
             });
         });
@@ -5301,7 +5301,7 @@ public class MainActivity extends Activity {
                 }, null, this::openIdleMenu));
         if (mode == 0) after.disabled("Choose what to do first.");
         add(MenuView.Row.note(R.drawable.ic_info, "Only while Home is on screen. Android's screensaver keeps its own "
-                + "timer; Home's clock can be that screensaver too (see the readme)."), null);
+                + "timer; Leios's clock can be that screensaver too (see the readme)."), null);
         showSheet(0, () -> openProjectorMenu(projectorBase + 3), null);
     }
 
@@ -5454,20 +5454,20 @@ public class MainActivity extends Activity {
         String crumb = crumb("Backup & reset");
         startMenu(crumb, "Save a backup");
         add(MenuView.Row.note(R.drawable.ic_info, "Everything you've set on Home, with your photo and icons, as a "
-                + "picture in Pictures › Clean Home. Restore it here, or on another projector."), null);
+                + "picture in Pictures › Leios. Restore it here, or on another projector."), null);
         for (String vol : Backups.volumes(this)) {
             boolean tv = Media.primary().equals(vol);
             add(MenuView.Row.action(R.drawable.ic_open, tv ? "On this TV" : "On the USB drive"), () -> {
                 toast("Saving the backup…", false);
-                Bitmap card = previewCard("Clean Home backup", Backups.when(System.currentTimeMillis()));
+                Bitmap card = previewCard("Leios backup", Backups.when(System.currentTimeMillis()));
                 loader.execute(() -> {
                     Uri uri = null;
                     try {
-                        uri = Backups.export(this, Backups.snapshot(this, true), "Clean Home backup " + Backups.stamp(), vol, card);
+                        uri = Backups.export(this, Backups.snapshot(this, true), "Leios backup " + Backups.stamp(), vol, card);
                     } catch (JSONException ignored) {
                     }
                     Uri saved = uri;
-                    ui.post(() -> toast(saved == null ? "Couldn't save the backup" : "Backup saved in Pictures › Clean Home", saved != null));
+                    ui.post(() -> toast(saved == null ? "Couldn't save the backup" : "Backup saved in Pictures › Leios", saved != null));
                 });
                 openBackupMenu(0);
             });
