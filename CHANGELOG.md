@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- Interface sounds were silent on TVs that mute Android's System sound channel at start, such as the JMGO N3 4K. Sounds now play at the TV's media volume when system sounds are muted. They never take audio focus, so other apps are never paused or turned down.
+- Holding left or right at either end of the sounds Volume slider replayed the sound until the button was released.
+- The first sound after turning sounds on, or changing their output, could be lost while the sounds were still loading.
+
+### Changed
+- Customize › Look › Sounds has one **Volume** slider, from Off to 10, in place of Off / Subtle / Normal and a level of 1–5. Earlier settings carry over at the same loudness.
+- New **Sounds › Output**: Automatic (the default), System sounds or Media volume, with a note that says when sounds can't be heard and why. **Silent on Bluetooth or ARC** moved here.
+
 ## 1.2.1 (versionCode 4)
 
 ### Fixed

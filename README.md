@@ -46,6 +46,12 @@ The JMGO-only rows hide themselves on other devices, but that has never been tes
 
 Icon packs have only been tested with a test pack. Bluetooth and ARC auto-mute, full-motion film backgrounds, right-to-left languages and large text haven't been tested on hardware.
 
+## Known issues
+
+- **Interface sounds on TVs that mute system sounds.** Some TVs, the JMGO N3 4K among them, mute Android's System sound channel at every start, so sounds sent there are never heard (Android's own clicks are silent too). With **Sounds › Output › Automatic** (the default), Leios notices and plays its sounds at your TV's media volume instead, without pausing or lowering other apps. On other TVs Automatic keeps using system sounds. If you hear nothing, **Sounds › Output** says why.
+- **Bluetooth and ARC speakers:** sounds are off there by default (**Silent on Bluetooth or ARC**), because those outputs add a delay. This hasn't been tested with real Bluetooth or ARC audio.
+- **Disabling or uninstalling Leios while it's still a device admin** (for the sleep timer) can make the TV unresponsive until a reboot. Deactivate it first in Settings › Device admin apps.
+
 ## Build from source
 
 You need JDK 17 and the Android SDK with platform 34 and build-tools 34.0.0. Android Studio can install the SDK. The Gradle wrapper downloads Gradle itself.
