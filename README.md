@@ -102,12 +102,16 @@ Network debugging needs to be on. To hand Home back and undo the setup kit:
 .\setup-kit\tv.ps1 -Cmd reboot
 ```
 
-To remove the launcher too, drop its sleep-timer permission, then uninstall it:
+To remove the launcher too:
 
-```powershell
-.\setup-kit\tv.ps1 -Cmd 'dpm remove-active-admin --user 0 tv.leios.launcher/.SleepTimer\$Admin'
-.\setup-kit\tv.ps1 -Cmd 'pm uninstall tv.leios.launcher'
-```
+1. On the TV, turn off its sleep-timer permission: Settings › Privacy (or Security) › **Device admin apps** › **Leios** › Deactivate. ADB can't do this step: Android refuses to remove a normal device admin from the command line.
+2. Then uninstall it:
+
+   ```powershell
+   .\setup-kit\tv.ps1 -Cmd 'pm uninstall tv.leios.launcher'
+   ```
+
+Don't disable or uninstall Leios while it's still a device admin. On the tested projector, disabling an app that was still a device admin left the system unresponsive until a reboot.
 
 ## What's in this repo
 
