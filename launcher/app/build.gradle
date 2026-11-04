@@ -36,8 +36,8 @@ android {
         // Android 9: ImageDecoder and animated backgrounds need it; Android TV devices still in use have it.
         minSdk 28
         targetSdk 34
-        versionCode 3
-        versionName '1.2'
+        versionCode 4
+        versionName '1.2.1'
     }
 
     signingConfigs {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.1 (versionCode 4)
+
+### Fixed
+- Pressing the Settings (gear) or ≡ button while the screensaver showed could turn the TV off. The panel took the press before Android saw it, so Android still thought the TV had been idle and its screen-off timer ran out. Buttons the panel takes now count as using the TV, wake it from the screensaver and restart that timer.
+
+### Changed
+- New permission: keep the screen awake (`WAKE_LOCK`), used only for the fix above.
+
 ## 1.2 (versionCode 3)
 
 The first public release.
