@@ -28,8 +28,6 @@ final class Sounds {
 
     /** Customize › Look › Sounds › Volume: 0 is off (the default), up to {@link #VOLUME_MAX}. */
     static final int VOLUME_MAX = 10;
-    /** Where the slider starts the first time sounds are turned on: the old "Subtle" default. */
-    static final int VOLUME_FIRST = 4;
     /** Settings from before the single volume (1.2.1 and earlier): Off/Subtle/Normal and a level of 1–5. */
     static final int OLD_MODE_OFF = 0, OLD_MODE_NORMAL = 2, OLD_LEVEL_DEFAULT = 3, OLD_LEVEL_MAX = 5;
     /** The ≡ panel's open and close, well under Home's own sounds: it plays over apps. */

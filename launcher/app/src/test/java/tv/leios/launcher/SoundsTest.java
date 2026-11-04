@@ -51,7 +51,8 @@ public class SoundsTest {
     @Test
     public void gainRange() {
         assertEquals(0f, Sounds.gain(0), 0f);
-        assertTrue(Sounds.gain(Sounds.VOLUME_FIRST) < 0.5f);
+        assertTrue(Sounds.gain(1) > 0f);
+        assertTrue(Sounds.gain(4) < 0.5f);
         assertEquals(1f, Sounds.gain(Sounds.VOLUME_MAX), 0f);
         assertTrue(Sounds.gain(6) > Sounds.gain(5));
     }
@@ -71,8 +72,8 @@ public class SoundsTest {
 
     @Test
     public void oldSettingsKeepTheirLoudness() {
-        // Subtle at its default level 3 was 0.42 of full: about 4 of 10, the new first step.
-        assertEquals(Sounds.VOLUME_FIRST, Sounds.fromOld(1, 3));
+        // Subtle at its default level 3 was 0.42 of full: about 4 of 10.
+        assertEquals(4, Sounds.fromOld(1, 3));
         assertEquals(Sounds.VOLUME_MAX, Sounds.fromOld(2, 5));
         assertEquals(2, Sounds.fromOld(2, 1));
         // Never rounded down to off while sounds were on.

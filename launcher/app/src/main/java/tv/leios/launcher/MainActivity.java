@@ -4509,8 +4509,7 @@ public class MainActivity extends Activity {
         addAdjust(MenuView.Row.slider(0, "Volume", volume / (float) Sounds.VOLUME_MAX, soundVolumeText(volume))
                 .widest(soundVolumeText(Sounds.VOLUME_MAX)), dir -> {
             int old = Sounds.volume(prefs);
-            // Turning sounds on starts at a quiet level, not at the very bottom.
-            int nv = old == 0 && dir > 0 ? Sounds.VOLUME_FIRST : Math.max(0, Math.min(Sounds.VOLUME_MAX, old + dir));
+            int nv = Math.max(0, Math.min(Sounds.VOLUME_MAX, old + dir));
             // At either end nothing changes, so nothing is heard: no endless repeat while the button is held.
             stepHandled = true;
             if (nv == old) return;
