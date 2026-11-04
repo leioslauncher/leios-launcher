@@ -12,25 +12,45 @@ Policies change often. Check each link again before acting on it. This is a prac
 
 There are three real blockers, and the first decides whether a Play release is worth doing:
 
-1. **Becoming Home without ADB.** I found no official way to make a third-party app the Home app on Google TV. The working route used by others is an accessibility override, which is unofficial, can break with updates, and has its own policy risk.
+1. **Becoming Home without ADB.** Phase 2 testing found an official route that may work: Android's own "Default home app" screen and Home role exist on Google TV, though no menu shows them. It still needs a real selection test and a test on other devices. See section 1.
 2. **JMGO's private service.** It must come out of the Play build.
 3. **No TV launcher entry.** The app has no `LEANBACK_LAUNCHER` entry, which Google requires. This one is easy to fix.
 
-Recommended first step: build a small test of the Home override and put it through Play's closed testing before investing in the rest.
+Recommended first step: add a "Make Leios your Home" button that opens Android's own Home screen chooser, and test it on several Google TV devices before investing in the rest.
 
 ## 1. Becoming Home on Android TV and Google TV
 
-| Item | Status | Finding | Proposed change | Effort |
+### Test results, 2026-11-03 (JMGO N3 4K, Google TV, Android 14, build UKNV.260415.001)
+
+| Test | What happened |
+|---|---|
+| Is Android's Home role there? | **Yes.** `cmd role get-role-holders android.app.role.HOME` works; the role exists |
+| Is there a Home chooser screen? | **Yes, but hidden.** `android.settings.HOME_SETTINGS` opens Google's permission controller "Default home app" screen (`HomeSettingsActivity`). No Settings menu leads to it, but any app can open it with that intent. The "ask to become Home" dialog (`REQUEST_ROLE`) also exists |
+| A fresh install, simulated | With Google TV's home enabled and Leios not chosen, Android **gave the Home role straight to Google TV**, with no prompt. Pressing Home showed Google TV's home |
+| What the chooser offers | The "Default home app" screen then listed **both Google TV and Leios**, Google TV selected. It's operable with the D-pad. **Choosing Leios there wasn't tested** (not agreed for this round) |
+| Accessibility override | Not tested; it would need new code |
+
+Everything was put back afterwards: Leios is Home and Google TV's home is disabled again, as before the test.
+
+### Every route an app from Play could use
+
+| Route | Official? | Works on this device? | Policy risk | Recommendation |
 |---|---|---|---|---|
-| Home without ADB | **Blocker** | Today we use `cmd package set-home-activity` over ADB. I found no Google documentation of a user-facing Home picker on Google TV. Third-party guides say launchers such as Projectivy use an [accessibility override](https://www.flatpanelshd.com/guide.php?subaction=showfull&id=1754640308), and [one report](https://simturax.com/replace-stock-launcher-google-tv/), from a less established site, says a March 2026 update briefly disrupted them | Prototype an override: the service notices Home and brings Leios forward. Test on current Google TV. Offer it only as an explained opt-in. Also treat Leios as a normal app you open from the TV's home screen, as the fallback | L |
-| Policy risk of that override | **Blocker until tested** | Google bars using the accessibility API to [change settings without permission or work around Android protections](https://support.google.com/googleplay/android-developer/answer/10964491?hl=en). Others are on Play with this approach, but that doesn't prove Google approves of it. I found no official statement either way | Describe it honestly in the declaration. Expect that review could refuse it | M |
-| Behaviour on current firmware | Unknown | Only one device has been tested, and it was set up over ADB | Test on a real Chromecast/Google TV device and an Android TV device | M |
+| **A. Open Android's "Default home app" screen** (`Settings.ACTION_HOME_SETTINGS`) and let the user pick Leios | Yes: a [standard Android settings intent](https://developer.android.com/reference/android/provider/Settings#ACTION_HOME_SETTINGS) | The screen opens and lists Leios. **Picking it: untested** | None found: the user makes the choice in Android's own screen | **First choice.** Test picking, then test after a reboot and a Google TV update |
+| **B. Ask for the Home role** with [`RoleManager.createRequestRoleIntent(ROLE_HOME)`](https://developer.android.com/reference/android/app/role/RoleManager) | Yes, Android 10+ | The dialog exists. **Untested** | None found | Try alongside A; use whichever works |
+| **C. Home picker on Home press** | Standard Android | **No.** Google TV took the role silently | None | Don't rely on it |
+| **D. Accessibility override** (catch Home, bring Leios forward; what [Projectivy uses](https://www.androidauthority.com/google-tv-ads-projectivy-launcher-3573626/)) | No | Untested. [A 2026 Google TV update broke it for some users](https://www.androidauthority.com/google-tv-update-blocks-projectivy-override-3649445) | **High.** Google bars using accessibility to [work around Android protections](https://support.google.com/googleplay/android-developer/answer/10964491?hl=en). Others pass review, but that isn't approval | Only as a last resort, opt-in, fully disclosed |
+| **E. Button-remap apps** (Button Mapper, tvQuickActions) | No | Not tested | Same as D, for those apps | Mention in help only |
+| **F. Open Leios as a normal app** | Yes | Yes, once `LEANBACK_LAUNCHER` is added | None | Always offer, as the fallback |
+| **G. Device owner / kiosk** | Yes, managed devices only | Needs a factory reset and provisioning | n/a | Not for Play users |
+
+**Not known:** whether Google TV keeps a user's choice from route A after reboots and system updates, and whether other Google TV and Android TV devices have the same hidden screen. Google TV may also hide or change it in future firmware, because it isn't documented for TV.
 
 ## 2. Features that depend on ADB, settings or the device
 
 | Feature | Depends on | Status | Proposed change | Effort |
 |---|---|---|---|---|
-| Set as Home | ADB | Blocker | See section 1 | L |
+| Set as Home | ADB | Needs work | Section 1: route A or B, tested on more devices | M |
 | Wi-Fi name | ADB-granted location | Needs work | Show "Connected" instead (section 4) | S |
 | Screensaver | ADB `settings put secure screensaver_components`; Google TV has no menu for it, per our notes | Needs work | Keep it, but document that it may not be selectable. Don't advertise it on Play | S |
 | HDR fix, debloat, Private DNS | ADB, setup kit | OK | Already separate from the app. Never mention them in the Play listing | S |
@@ -136,7 +156,7 @@ If you'd rather let Google generate the Play key, that's simpler, but GitHub and
 
 ## 10. Not verified
 
-- An official Google statement on whether launchers may replace Home on Google TV, and how Projectivy passes review.
+- An official Google statement on whether launchers may replace Home on Google TV, and how Projectivy passes review. The hidden "Default home app" screen was found working on one device only.
 - Play rules specific to device admin and notification access on TV.
 - Whether the system photo picker works on TV devices.
 - Whether JMGO has terms covering its service.
@@ -147,7 +167,7 @@ If you'd rather let Google generate the Play key, that's simpler, but GitHub and
 | Phase | Goal | Done when |
 |---|---|---|
 | 2 | Go public on GitHub, with the first signed release | Repo public, release tagged, project page updated |
-| 3 | Decide if Play is viable | Home override prototype works on real Google TV devices, and you decide whether to accept the fallback |
+| 3 | Decide if Play is viable | A "Make Leios your Home" button using Android's own chooser (section 1, routes A and B) works on several Google TV devices and survives reboots; accessibility override only if that fails |
 | 4 | A Play-ready build | `play` flavor without JMGO code or location, `LEANBACK_LAUNCHER`, new banner, disclosure screen, renamed app, target API raised, optional accessibility |
 | 5 | Wider testing | Tested on at least two non-JMGO devices, Android 9 to current |
 | 6 | Accounts and closed test | Developer account, trademark search, signing set up, 12 testers for 14 days |
