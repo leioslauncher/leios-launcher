@@ -67,21 +67,39 @@ The debug APK lands in `launcher\app\build\outputs\apk\debug\`. It's signed with
 
 ## Set up on a TV
 
-These steps use ADB and were tested only on the device above.
+These steps use ADB from a Windows PC, and were tested only on the device above.
 
-1. On the TV, go to Settings > System > About and press Build 7 times. Then turn on **USB debugging** in Developer options.
-2. Install [Android platform-tools](https://developer.android.com/tools/releases/platform-tools) so `adb` is available, or unpack them into `platform-tools\` in this repo.
-3. Build the APK, then install it and make it Home:
+1. **Get the app.** Download `leios-launcher-<version>.apk` from [Releases](https://github.com/leioslauncher/leios-launcher/releases/latest), and check its SHA-256 matches the one on the release page:
+
+   ```powershell
+   Get-FileHash .\leios-launcher-1.2.apk
+   ```
+
+   Or build it yourself (above).
+2. **Get the scripts.** Download this repo (Code › Download ZIP) and unzip it.
+3. On the TV, go to Settings > System > About and press Build 7 times. Then turn on **USB debugging** in Developer options.
+4. Install [Android platform-tools](https://developer.android.com/tools/releases/platform-tools) so `adb` is available, or unpack them into `platform-tools\` in this repo.
+5. Open PowerShell in the repo folder. Windows blocks scripts by default, so first allow them for this window only:
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass
+   ```
+
+   Then install the APK and make it Home:
 
    ```powershell
    $env:TV_HOST = '192.0.2.10'   # your TV's IP address
-   .\setup-kit\install.ps1
+   .\setup-kit\install.ps1 -Apk C:\path\to\leios-launcher-1.2.apk
+   ```
+6. Accept the "Allow USB debugging?" prompt on the TV.
+7. For the ≡ panel, turn on **Leios quick settings** in Settings > System > Accessibility.
+8. For the notification bell, allow it over ADB (Google TV may not show this setting):
+
+   ```powershell
+   .\setup-kit\tv.ps1 -Cmd 'cmd notification allow_listener tv.leios.launcher/tv.leios.launcher.Notifs'
    ```
 
-4. Accept the "Allow USB debugging?" prompt on the TV.
-5. For the ≡ panel, turn on **Leios quick settings** in Settings > System > Accessibility.
-6. For the bell, allow notification access in Android's settings.
-7. Turn USB debugging off when you're done.
+9. Turn USB debugging off when you're done.
 
 To use the clock as the screensaver, run this once:
 

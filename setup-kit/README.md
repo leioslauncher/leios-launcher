@@ -4,7 +4,7 @@ These PowerShell scripts change a TV over ADB. **The launcher doesn't need them*
 
 Read the warnings in the [main README](../README.md#before-you-start) first. Everything here is provided as is, at your own risk.
 
-Set your TV's address first, and keep network debugging on only while you use these:
+Windows blocks scripts by default. Allow them for one PowerShell window with `powershell -ExecutionPolicy Bypass`, then set your TV's address. Keep network debugging on only while you use these:
 
 ```powershell
 $env:TV_HOST = '192.0.2.10'
