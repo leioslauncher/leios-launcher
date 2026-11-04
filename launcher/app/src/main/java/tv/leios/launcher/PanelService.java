@@ -17,6 +17,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -373,6 +374,35 @@ public class PanelService extends AccessibilityService {
 
     @Override
     protected boolean onKeyEvent(KeyEvent e) {
+        boolean taken = takeKey(e);
+        if (taken && e.getAction() == KeyEvent.ACTION_DOWN) countAsUse();
+        return taken;
+    }
+
+    private PowerManager.WakeLock awake;
+
+    /**
+     * A key this service takes never reaches Android's power manager, so on its own it doesn't
+     * count as using the TV: the screensaver stays up, and the screen can go off moments later
+     * because the timeout still runs from the last key Android saw. A brief wake lock that wakes
+     * the screen and restarts the timeout on release does what the press would have done.
+     */
+    @SuppressWarnings("deprecation")
+    private void countAsUse() {
+        try {
+            if (awake == null) {
+                PowerManager pm = getSystemService(PowerManager.class);
+                if (pm == null) return;
+                awake = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP
+                        | PowerManager.ON_AFTER_RELEASE, "leios:key");
+                awake.setReferenceCounted(false);
+            }
+            awake.acquire(1000);
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    private boolean takeKey(KeyEvent e) {
         int code = e.getKeyCode();
         boolean down = e.getAction() == KeyEvent.ACTION_DOWN;
         if (pinPad != null) {

@@ -26,6 +26,7 @@ Nothing else leaves the device through the app. If you never choose a city or th
 | Internet | The services above | |
 | Close other apps | The "Close app" action | |
 | Request to uninstall | The "Uninstall" action | Android asks you to confirm |
+| Keep the screen awake | Buttons the ≡ panel takes count as using the TV | Held for about a second per press |
 
 ## Special access you turn on yourself
 

@@ -24,6 +24,8 @@
     <!-- Quick actions: "Close app" and "Uninstall". -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- The ≡ panel's keys count as using the TV, so the screen doesn't time out under them. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Android 11+ package visibility: without these the grid comes up empty. -->
     <queries>
