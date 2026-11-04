@@ -133,6 +133,10 @@ public class PanelService extends AccessibilityService {
         f.addAction(Intent.ACTION_SCREEN_OFF);
         if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(wake, f, Context.RECEIVER_NOT_EXPORTED);
         else registerReceiver(wake, f);
+        android.content.IntentFilter d = new android.content.IntentFilter(Intent.ACTION_DREAMING_STARTED);
+        d.addAction(Intent.ACTION_DREAMING_STOPPED);
+        if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(dreams, d, Context.RECEIVER_NOT_EXPORTED);
+        else registerReceiver(dreams, d);
     }
 
     @Override
@@ -142,6 +146,7 @@ public class PanelService extends AccessibilityService {
         instance = null;
         try {
             unregisterReceiver(wake);
+            unregisterReceiver(dreams);
         } catch (RuntimeException ignored) {
         }
         return super.onUnbind(intent);
@@ -374,11 +379,22 @@ public class PanelService extends AccessibilityService {
 
     @Override
     protected boolean onKeyEvent(KeyEvent e) {
-        // Before the key acts: opening Settings ends the screensaver, and Android sleeps at once
-        // if it still thinks the TV has been idle.
+        // On the screensaver Android has already ended it before this service sees the key, and it
+        // only counts a key as use when an app receives it: taking the key here let the screen time
+        // out at once. Let it through, so it just wakes the TV like any other key.
+        if (dreaming && pinPad == null) return false;
         if (e.getAction() == KeyEvent.ACTION_DOWN && mayTake(e.getKeyCode())) countAsUse();
         return takeKey(e);
     }
+
+    /** A screensaver is showing, from Android's own broadcasts. */
+    private volatile boolean dreaming;
+    private final android.content.BroadcastReceiver dreams = new android.content.BroadcastReceiver() {
+        @Override
+        public void onReceive(Context c, Intent i) {
+            dreaming = Intent.ACTION_DREAMING_STARTED.equals(i.getAction());
+        }
+    };
 
     /** Keys this service might take: the PIN screen's, ≡ and the gear always, the rest while the panel is open. */
     private boolean mayTake(int code) {
@@ -389,9 +405,8 @@ public class PanelService extends AccessibilityService {
 
     /**
      * A key this service takes never reaches Android's power manager, so on its own it doesn't
-     * count as using the TV: the screensaver stays up, and the screen can go off moments later
-     * because the timeout still runs from the last key Android saw. A brief wake lock that wakes
-     * the screen and restarts the timeout on release does what the press would have done.
+     * count as using the TV, and the screen could time out while you use only the panel. A brief
+     * wake lock that restarts the screen timeout on release does what the press would have done.
      */
     @SuppressWarnings("deprecation")
     private void countAsUse() {
@@ -399,8 +414,8 @@ public class PanelService extends AccessibilityService {
             if (awake == null) {
                 PowerManager pm = getSystemService(PowerManager.class);
                 if (pm == null) return;
-                awake = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP
-                        | PowerManager.ON_AFTER_RELEASE, "leios:key");
+                awake = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE,
+                        "leios:key");
                 awake.setReferenceCounted(false);
             }
             awake.acquire(1000);
