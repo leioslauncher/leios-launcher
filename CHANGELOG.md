@@ -3,7 +3,7 @@
 ## 1.2.1 (versionCode 4)
 
 ### Fixed
-- Pressing the Settings (gear) or ≡ button while the screensaver showed could turn the TV off. Android doesn't count a button as use when the ≡ panel takes it, so its screen-off timer ran out at once. On the screensaver these buttons now just wake the TV, like any other button; press again to open Settings or the panel.
+- Pressing the Settings (gear) button while the screensaver showed could turn the TV off. The ≡ panel sees remote buttons first, which delayed Android counting the press as use, and the screen-off timer ran out. While the screensaver shows, buttons now skip the panel and go straight to Android: the first press just wakes the TV; press again to open Settings or the panel.
 - Using only the ≡ panel for a long time could let the screen time out. Buttons the panel takes now count as using the TV.
 
 ### Changed

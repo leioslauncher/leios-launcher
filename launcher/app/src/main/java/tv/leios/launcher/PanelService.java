@@ -122,11 +122,7 @@ public class PanelService extends AccessibilityService {
         wm = getSystemService(WindowManager.class);
         audio = getSystemService(AudioManager.class);
         tk = Tokens.of(this);
-        AccessibilityServiceInfo info = getServiceInfo();
-        if (info != null) {
-            info.flags |= AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
-            setServiceInfo(info);
-        }
+        filterKeys(true);
         JmgoDlp.connect(this);
         updateEvents();
         android.content.IntentFilter f = new android.content.IntentFilter(Intent.ACTION_SCREEN_ON);
@@ -164,6 +160,9 @@ public class PanelService extends AccessibilityService {
                 Lock.relock();
                 return;
             }
+            // In case the end of a screensaver was missed, the buttons always come back on wake.
+            dreaming = false;
+            filterKeys(true);
             String target = SafePrefs.focus(PanelService.this).getString("wake_app", "stay");
             if ("stay".equals(target)) return;
             repeat.postDelayed(() -> {
@@ -379,9 +378,7 @@ public class PanelService extends AccessibilityService {
 
     @Override
     protected boolean onKeyEvent(KeyEvent e) {
-        // On the screensaver Android has already ended it before this service sees the key, and it
-        // only counts a key as use when an app receives it: taking the key here let the screen time
-        // out at once. Let it through, so it just wakes the TV like any other key.
+        // Backstop for a key that arrives before the filter is switched off: let it through.
         if (dreaming && pinPad == null) return false;
         if (e.getAction() == KeyEvent.ACTION_DOWN && mayTake(e.getKeyCode())) countAsUse();
         return takeKey(e);
@@ -393,8 +390,27 @@ public class PanelService extends AccessibilityService {
         @Override
         public void onReceive(Context c, Intent i) {
             dreaming = Intent.ACTION_DREAMING_STARTED.equals(i.getAction());
+            // On this projector the gear ends the screensaver before any app sees it, and the TV
+            // then turns off unless Android has counted the press as use. Passing every key
+            // through this service delays that count just enough, so the TV turned off. While the
+            // screensaver shows, keys skip this service and go straight to Android.
+            filterKeys(!dreaming);
         }
     };
+
+    /** Whether remote buttons pass through this service first. */
+    private void filterKeys(boolean on) {
+        try {
+            AccessibilityServiceInfo info = getServiceInfo();
+            if (info == null) return;
+            int flags = on ? info.flags | AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
+                    : info.flags & ~AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS;
+            if (flags == info.flags) return;
+            info.flags = flags;
+            setServiceInfo(info);
+        } catch (RuntimeException ignored) {
+        }
+    }
 
     /** Keys this service might take: the PIN screen's, ≡ and the gear always, the rest while the panel is open. */
     private boolean mayTake(int code) {
