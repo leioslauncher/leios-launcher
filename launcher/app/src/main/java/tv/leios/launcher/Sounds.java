@@ -26,8 +26,12 @@ final class Sounds {
     private static final int[] RAW = {R.raw.snd_focus, R.raw.snd_step, R.raw.snd_select, R.raw.snd_back, R.raw.snd_open,
             R.raw.snd_close, R.raw.snd_toggle_on, R.raw.snd_toggle_off, R.raw.snd_error, R.raw.snd_startup, R.raw.snd_launch};
 
-    static final int MODE_OFF = 0, MODE_SUBTLE = 1, MODE_NORMAL = 2;
-    static final int LEVEL_DEFAULT = 3, LEVEL_MAX = 5;
+    /** Customize › Look › Sounds › Volume: 0 is off (the default), up to {@link #VOLUME_MAX}. */
+    static final int VOLUME_MAX = 10;
+    /** Where the slider starts the first time sounds are turned on: the old "Subtle" default. */
+    static final int VOLUME_FIRST = 4;
+    /** Settings from before the single volume (1.2.1 and earlier): Off/Subtle/Normal and a level of 1–5. */
+    static final int OLD_MODE_OFF = 0, OLD_MODE_NORMAL = 2, OLD_LEVEL_DEFAULT = 3, OLD_LEVEL_MAX = 5;
     /** The ≡ panel's open and close, well under Home's own sounds: it plays over apps. */
     private static final float PANEL_GAIN = 0.5f;
     /** Long enough for a sound that just started to finish before the samples go. */
@@ -83,10 +87,24 @@ final class Sounds {
     }
 
     /** The sample's own level times this. Too low and the projector's small speaker loses it entirely. */
-    static float gain(int mode, int level) {
-        if (mode == MODE_OFF) return 0f;
-        int l = Math.max(1, Math.min(LEVEL_MAX, level));
-        return (mode == MODE_NORMAL ? 1f : 0.7f) * l / LEVEL_MAX;
+    static float gain(int volume) {
+        return Math.max(0, Math.min(VOLUME_MAX, volume)) / (float) VOLUME_MAX;
+    }
+
+    /** The old mode and level as the new volume, at the same loudness, rounded. */
+    static int fromOld(int mode, int level) {
+        if (mode <= OLD_MODE_OFF || mode > OLD_MODE_NORMAL) return 0;
+        int l = Math.max(1, Math.min(OLD_LEVEL_MAX, level));
+        float g = (mode == OLD_MODE_NORMAL ? 1f : 0.7f) * l / OLD_LEVEL_MAX;
+        return Math.max(1, Math.min(VOLUME_MAX, Math.round(g * VOLUME_MAX)));
+    }
+
+    /** The sounds' volume, 0 for off; read from the older settings until the slider is first moved. */
+    static int volume(SharedPreferences p) {
+        int v;
+        if (p.contains("sound_volume")) v = p.getInt("sound_volume", 0);
+        else v = fromOld(p.getInt("sound_mode", OLD_MODE_OFF), p.getInt("sound_level", OLD_LEVEL_DEFAULT));
+        return Math.max(0, Math.min(VOLUME_MAX, v));
     }
 
     /** Inside the lock schedule. Unlike the lock, no schedule at all means it's never bedtime. */
@@ -131,13 +149,8 @@ final class Sounds {
         handler = new Handler(thread.getLooper());
     }
 
-    private int mode() {
-        int m = prefs.getInt("sound_mode", MODE_OFF);
-        return m < MODE_OFF || m > MODE_NORMAL ? MODE_OFF : m;
-    }
-
     private boolean enabled() {
-        return mode() != MODE_OFF && (!panel || prefs.getBoolean("sound_panel", false));
+        return volume(prefs) > 0 && (!panel || prefs.getBoolean("sound_panel", false));
     }
 
     private int output() {
@@ -312,7 +325,7 @@ final class Sounds {
             if (panel) pendingSound = id;
             return;
         }
-        float g = gain(mode(), prefs.getInt("sound_level", LEVEL_DEFAULT)) * scale * (panel ? PANEL_GAIN : 1f);
+        float g = gain(volume(prefs)) * scale * (panel ? PANEL_GAIN : 1f);
         pool.play(sample[id], g, g, 1, 0, 1f);
         if (BuildConfig.DEBUG) android.util.Log.d("Sounds", "play " + id + " gain " + g);
     }

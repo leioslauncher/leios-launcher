@@ -50,16 +50,34 @@ public class SoundsTest {
 
     @Test
     public void gainRange() {
-        assertEquals(0f, Sounds.gain(Sounds.MODE_OFF, 5), 0f);
-        assertTrue(Sounds.gain(Sounds.MODE_SUBTLE, Sounds.LEVEL_DEFAULT) < 0.5f);
-        assertTrue(Sounds.gain(Sounds.MODE_NORMAL, 5) <= 1f);
-        assertTrue(Sounds.gain(Sounds.MODE_NORMAL, 3) > Sounds.gain(Sounds.MODE_SUBTLE, 3));
+        assertEquals(0f, Sounds.gain(0), 0f);
+        assertTrue(Sounds.gain(Sounds.VOLUME_FIRST) < 0.5f);
+        assertEquals(1f, Sounds.gain(Sounds.VOLUME_MAX), 0f);
+        assertTrue(Sounds.gain(6) > Sounds.gain(5));
     }
 
     @Test
-    public void gainCopesWithBadLevels() {
-        assertEquals(Sounds.gain(Sounds.MODE_SUBTLE, 1), Sounds.gain(Sounds.MODE_SUBTLE, -3), 0f);
-        assertEquals(Sounds.gain(Sounds.MODE_SUBTLE, 5), Sounds.gain(Sounds.MODE_SUBTLE, 99), 0f);
+    public void gainCopesWithBadVolumes() {
+        assertEquals(0f, Sounds.gain(-3), 0f);
+        assertEquals(1f, Sounds.gain(99), 0f);
+    }
+
+    @Test
+    public void oldOffStaysOff() {
+        assertEquals(0, Sounds.fromOld(0, 5));
+        assertEquals(0, Sounds.fromOld(-1, 3));
+        assertEquals(0, Sounds.fromOld(7, 3));
+    }
+
+    @Test
+    public void oldSettingsKeepTheirLoudness() {
+        // Subtle at its default level 3 was 0.42 of full: about 4 of 10, the new first step.
+        assertEquals(Sounds.VOLUME_FIRST, Sounds.fromOld(1, 3));
+        assertEquals(Sounds.VOLUME_MAX, Sounds.fromOld(2, 5));
+        assertEquals(2, Sounds.fromOld(2, 1));
+        // Never rounded down to off while sounds were on.
+        assertEquals(1, Sounds.fromOld(1, 1));
+        assertEquals(Sounds.fromOld(1, 1), Sounds.fromOld(1, -4));
     }
 
     @Test

@@ -4459,7 +4459,7 @@ public class MainActivity extends Activity {
         add(MenuView.Row.nav(0, "Top bar", barSummary()), () -> openBarMenu(0));
         add(MenuView.Row.nav(0, "Tiles", TILE_STYLES[tileStyleIndex()]), () -> openTilesMenu(0));
         add(MenuView.Row.nav(0, "Themes", ""), () -> openThemesMenu(0));
-        add(MenuView.Row.nav(0, "Sounds", SOUND_MODES[pref("sound_mode", 0, 2)]), () -> openSoundsMenu(0));
+        add(MenuView.Row.nav(0, "Sounds", soundVolumeText(Sounds.volume(prefs))), () -> openSoundsMenu(0));
         showSheet(focus, backTo(SEC_LOOK), null);
     }
 
@@ -4498,51 +4498,54 @@ public class MainActivity extends Activity {
 
     // Sounds: all off until chosen here. Sounds.java decides when one may play.
 
-    private static final String[] SOUND_MODES = {"Off", "Subtle", "Normal"};
+    private static String soundVolumeText(int v) {
+        return v == 0 ? "Off" : v + " of " + Sounds.VOLUME_MAX;
+    }
 
     private void openSoundsMenu(int focus) {
         String crumb = crumb("Look");
         startMenu(crumb, "Sounds");
-        int mode = pref("sound_mode", 0, 2);
-        add(MenuView.Row.nav(0, "Sounds", SOUND_MODES[mode]), () -> openChoice(crumb + "  ›  Sounds", "Sounds", SOUND_MODES,
-                mode, i -> {
-                    prefs.edit().putInt("sound_mode", i).apply();
-                    sounds.refresh();
-                    // The samples take a moment to load; this is the first thing heard from them.
-                    if (i != 0) ui.postDelayed(() -> sounds.play(Sounds.SELECT), tk.medium);
-                    openSoundsMenu(0);
-                }, null, () -> openSoundsMenu(0)));
-        if (mode == 0) {
+        int volume = Sounds.volume(prefs);
+        addAdjust(MenuView.Row.slider(0, "Volume", volume / (float) Sounds.VOLUME_MAX, soundVolumeText(volume)), dir -> {
+            int old = Sounds.volume(prefs);
+            // Turning sounds on starts at a quiet level, not at the very bottom.
+            int nv = old == 0 && dir > 0 ? Sounds.VOLUME_FIRST : Math.max(0, Math.min(Sounds.VOLUME_MAX, old + dir));
+            // At either end nothing changes, so nothing is heard: no endless repeat while the button is held.
+            stepHandled = true;
+            if (nv == old) return;
+            prefs.edit().putInt("sound_volume", nv).apply();
+            if ((old == 0) != (nv == 0)) {
+                // Turned on or off: the other rows come or go.
+                sounds.refresh();
+                // The samples take a moment to load; this is the first thing heard from them.
+                if (nv > 0) ui.postDelayed(() -> sounds.play(Sounds.SELECT), tk.medium);
+                ui.post(() -> openSoundsMenu(0));
+                return;
+            }
+            MenuView.Row r = menu.focused();
+            r.fraction = nv / (float) Sounds.VOLUME_MAX;
+            r.value(soundVolumeText(nv));
+            // A real sound to judge the level by, not the quieter step tick; held, it thins out and fades.
+            sounds.tick(Sounds.SELECT, navRepeat);
+        });
+        if (volume == 0) {
             add(MenuView.Row.note(R.drawable.ic_info, "Soft, quiet sounds for moving and choosing, while Home is on "
-                    + "screen. Everything still shows on screen with sounds off."), null);
+                    + "screen. Press right to turn them on. Everything still shows on screen with sounds off."), null);
             showSheet(0, () -> openLookMenu(6), null);
             return;
         }
-        int level = Math.max(1, pref("sound_level", Sounds.LEVEL_DEFAULT, Sounds.LEVEL_MAX));
-        addAdjust(MenuView.Row.slider(0, "Volume", level / (float) Sounds.LEVEL_MAX, level + " of "
-                + Sounds.LEVEL_MAX), dir -> {
-            int nv = Math.max(1, Math.min(Sounds.LEVEL_MAX, Math.max(1, pref("sound_level", Sounds.LEVEL_DEFAULT,
-                    Sounds.LEVEL_MAX)) + dir));
-            prefs.edit().putInt("sound_level", nv).apply();
-            MenuView.Row r = menu.focused();
-            r.fraction = nv / (float) Sounds.LEVEL_MAX;
-            r.value(nv + " of " + Sounds.LEVEL_MAX);
-            // A real sound to judge the level by, not the quieter step tick.
-            stepHandled = true;
-            sounds.play(Sounds.SELECT);
-        });
         add(MenuView.Row.nav(0, "Output", SOUND_OUTPUTS[pref("sound_output", 0, 2)]), () -> openSoundsOutputMenu(0));
         add(MenuView.Row.nav(0, "Quiet times", ""), () -> openSoundsQuietMenu(0));
-        addToggle("Start-up sound", "sound_startup", false, () -> openSoundsMenu(4));
+        addToggle("Start-up sound", "sound_startup", false, () -> openSoundsMenu(3));
         boolean panelOn = prefs.getBoolean("sound_panel", false);
         add(MenuView.Row.action(0, "≡ panel open and close").value(panelOn ? "Faint" : "Off"), () -> {
             prefs.edit().putBoolean("sound_panel", !panelOn).apply();
             menuSound = panelOn ? Sounds.OFF : Sounds.ON;
-            openSoundsMenu(5);
+            openSoundsMenu(4);
         });
         add(MenuView.Row.action(R.drawable.ic_reset, "Reset sounds"), () -> {
-            prefs.edit().remove("sound_mode").remove("sound_level").remove("sound_startup").remove("sound_panel")
-                    .remove("sound_quiet_slow").remove("sound_mute_bed").remove("sound_mute_guest")
+            prefs.edit().remove("sound_volume").remove("sound_mode").remove("sound_level").remove("sound_startup")
+                    .remove("sound_panel").remove("sound_quiet_slow").remove("sound_mute_bed").remove("sound_mute_guest")
                     .remove("sound_output").apply();
             sounds.refresh();
             toast("Sounds back to the default: off", true);
@@ -4572,7 +4575,7 @@ public class MainActivity extends Activity {
                 }, null, () -> openSoundsOutputMenu(0)));
         addToggle("Silent on Bluetooth or ARC", "sound_quiet_slow", true, () -> openSoundsOutputMenu(1));
         add(MenuView.Row.note(R.drawable.ic_info, outputNote(output)), null);
-        showSheet(focus, () -> openSoundsMenu(2), null);
+        showSheet(focus, () -> openSoundsMenu(1), null);
     }
 
     private String outputNote(int output) {
@@ -4595,7 +4598,7 @@ public class MainActivity extends Activity {
             pendingRows.get(pendingRows.size() - 1).disabled("Choose a time in Lock & remote › When first.");
         }
         addToggle("Silent in guest mode", "sound_mute_guest", false, () -> openSoundsQuietMenu(1));
-        showSheet(focus, () -> openSoundsMenu(3), null);
+        showSheet(focus, () -> openSoundsMenu(2), null);
     }
 
     private static final String[] TEXT_SIZES = {"Smaller", "Normal", "Larger"};
