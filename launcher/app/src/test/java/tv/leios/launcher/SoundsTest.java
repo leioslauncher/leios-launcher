@@ -63,6 +63,43 @@ public class SoundsTest {
     }
 
     @Test
+    public void automaticUsesSystemSoundsWhileTheyCanBeHeard() {
+        assertEquals(Sounds.ROUTE_SYSTEM, Sounds.route(Sounds.OUTPUT_AUTO, false, 26));
+    }
+
+    @Test
+    public void automaticFallsBackToMediaWhenSystemIsMuted() {
+        // The JMGO N3 4K: Android mutes the System channel at start, its level still reads 26.
+        assertEquals(Sounds.ROUTE_MEDIA, Sounds.route(Sounds.OUTPUT_AUTO, true, 26));
+    }
+
+    @Test
+    public void automaticFallsBackToMediaWhenSystemIsAtZero() {
+        assertEquals(Sounds.ROUTE_MEDIA, Sounds.route(Sounds.OUTPUT_AUTO, false, 0));
+    }
+
+    @Test
+    public void aChosenOutputIsAlwaysKept() {
+        assertEquals(Sounds.ROUTE_SYSTEM, Sounds.route(Sounds.OUTPUT_SYSTEM, true, 0));
+        assertEquals(Sounds.ROUTE_MEDIA, Sounds.route(Sounds.OUTPUT_MEDIA, false, 26));
+    }
+
+    @Test
+    public void unknownOutputBehavesLikeAutomatic() {
+        assertEquals(Sounds.ROUTE_MEDIA, Sounds.route(7, true, 26));
+        assertEquals(Sounds.ROUTE_SYSTEM, Sounds.route(-1, false, 26));
+    }
+
+    @Test
+    public void audibleFollowsTheChannelInUse() {
+        assertFalse(Sounds.audible(Sounds.ROUTE_SYSTEM, true, 26, false, 26));
+        assertTrue(Sounds.audible(Sounds.ROUTE_MEDIA, true, 26, false, 26));
+        assertFalse(Sounds.audible(Sounds.ROUTE_MEDIA, false, 26, true, 26));
+        assertFalse(Sounds.audible(Sounds.ROUTE_MEDIA, false, 26, false, 0));
+        assertTrue(Sounds.audible(Sounds.ROUTE_SYSTEM, false, 5, true, 0));
+    }
+
+    @Test
     public void noScheduleIsNeverBedtime() {
         assertFalse(Sounds.bedtime("", 23 * 60));
         assertFalse(Sounds.bedtime(null, 23 * 60));

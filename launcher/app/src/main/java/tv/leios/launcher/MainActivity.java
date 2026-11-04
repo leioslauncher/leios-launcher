@@ -4531,25 +4531,61 @@ public class MainActivity extends Activity {
             stepHandled = true;
             sounds.play(Sounds.SELECT);
         });
+        add(MenuView.Row.nav(0, "Output", SOUND_OUTPUTS[pref("sound_output", 0, 2)]), () -> openSoundsOutputMenu(0));
         add(MenuView.Row.nav(0, "Quiet times", ""), () -> openSoundsQuietMenu(0));
-        addToggle("Start-up sound", "sound_startup", false, () -> openSoundsMenu(3));
+        addToggle("Start-up sound", "sound_startup", false, () -> openSoundsMenu(4));
         boolean panelOn = prefs.getBoolean("sound_panel", false);
         add(MenuView.Row.action(0, "≡ panel open and close").value(panelOn ? "Faint" : "Off"), () -> {
             prefs.edit().putBoolean("sound_panel", !panelOn).apply();
             menuSound = panelOn ? Sounds.OFF : Sounds.ON;
-            openSoundsMenu(4);
+            openSoundsMenu(5);
         });
-        addToggle("Silent on Bluetooth or ARC", "sound_quiet_slow", true, () -> openSoundsMenu(5));
         add(MenuView.Row.action(R.drawable.ic_reset, "Reset sounds"), () -> {
             prefs.edit().remove("sound_mode").remove("sound_level").remove("sound_startup").remove("sound_panel")
-                    .remove("sound_quiet_slow").remove("sound_mute_bed").remove("sound_mute_guest").apply();
+                    .remove("sound_quiet_slow").remove("sound_mute_bed").remove("sound_mute_guest")
+                    .remove("sound_output").apply();
             sounds.refresh();
             toast("Sounds back to the default: off", true);
             openSoundsMenu(0);
         });
         if (!sounds.systemEffectsOn()) add(MenuView.Row.note(R.drawable.ic_info, "Android's own sound effects are off, "
                 + "so Home stays silent too."), null);
+        else if (!sounds.audibleNow()) add(MenuView.Row.note(R.drawable.ic_info, "You won't hear these right now. "
+                + "Output explains why."), null);
         showSheet(focus, () -> openLookMenu(6), null);
+    }
+
+    private static final String[] SOUND_OUTPUTS = {"Automatic", "System sounds", "Media volume"};
+
+    /** Which of Android's channels the sounds use, and why you might not hear them. */
+    private void openSoundsOutputMenu(int focus) {
+        String crumb = crumb("Look") + "  ›  Sounds";
+        startMenu(crumb, "Output");
+        int output = pref("sound_output", 0, 2);
+        add(MenuView.Row.nav(0, "Sound output", SOUND_OUTPUTS[output]), () -> openChoice(crumb + "  ›  Output",
+                "Sound output", SOUND_OUTPUTS, output, i -> {
+                    prefs.edit().putInt("sound_output", i).apply();
+                    sounds.refresh();
+                    // The samples reload for the new channel; this is the first thing heard from it.
+                    ui.postDelayed(() -> sounds.play(Sounds.SELECT), tk.medium);
+                    openSoundsOutputMenu(0);
+                }, null, () -> openSoundsOutputMenu(0)));
+        addToggle("Silent on Bluetooth or ARC", "sound_quiet_slow", true, () -> openSoundsOutputMenu(1));
+        add(MenuView.Row.note(R.drawable.ic_info, outputNote(output)), null);
+        showSheet(focus, () -> openSoundsMenu(2), null);
+    }
+
+    private String outputNote(int output) {
+        boolean heard = sounds.audibleNow();
+        if (output == Sounds.OUTPUT_SYSTEM) {
+            return heard ? "Sounds use your TV's system sounds."
+                    : "Your TV's system sounds are muted, so you won't hear these. Choose Automatic or Media volume.";
+        }
+        if (!heard) return "Your TV's volume is muted or at 0, so you won't hear these.";
+        if (output == Sounds.OUTPUT_MEDIA) return "Sounds follow your TV's volume. They never pause or lower other apps.";
+        return sounds.currentRoute() == Sounds.ROUTE_MEDIA
+                ? "Your TV's system sounds are muted, so sounds use its media volume. They never pause or lower other apps."
+                : "Sounds use your TV's system sounds, and switch to its media volume if those are muted.";
     }
 
     private void openSoundsQuietMenu(int focus) {
@@ -4559,7 +4595,7 @@ public class MainActivity extends Activity {
             pendingRows.get(pendingRows.size() - 1).disabled("Choose a time in Lock & remote › When first.");
         }
         addToggle("Silent in guest mode", "sound_mute_guest", false, () -> openSoundsQuietMenu(1));
-        showSheet(focus, () -> openSoundsMenu(2), null);
+        showSheet(focus, () -> openSoundsMenu(3), null);
     }
 
     private static final String[] TEXT_SIZES = {"Smaller", "Normal", "Larger"};

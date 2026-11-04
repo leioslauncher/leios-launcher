@@ -55,6 +55,33 @@ final class Sounds {
         }
     }
 
+    /** Customize › Look › Sounds › Output: which of Android's channels the sounds use. */
+    static final int OUTPUT_AUTO = 0, OUTPUT_SYSTEM = 1, OUTPUT_MEDIA = 2;
+    /** The channel actually used: Android's system sounds, or the media channel (as a game sound). */
+    static final int ROUTE_SYSTEM = 0, ROUTE_MEDIA = 1;
+
+    /**
+     * Some TVs (the JMGO N3 4K among them) mute Android's System channel at every start, so sounds
+     * sent there are never heard. Automatic uses system sounds while they can be heard, and the media
+     * channel otherwise; it never takes audio focus, so other apps are never paused or turned down.
+     */
+    static int route(int output, boolean systemMuted, int systemVolume) {
+        if (output == OUTPUT_SYSTEM) return ROUTE_SYSTEM;
+        if (output == OUTPUT_MEDIA) return ROUTE_MEDIA;
+        return systemMuted || systemVolume <= 0 ? ROUTE_MEDIA : ROUTE_SYSTEM;
+    }
+
+    /** Whether sounds on this route can be heard at all, for the Output menu's explanation. */
+    static boolean audible(int route, boolean systemMuted, int systemVolume, boolean mediaMuted, int mediaVolume) {
+        return route == ROUTE_SYSTEM ? !systemMuted && systemVolume > 0 : !mediaMuted && mediaVolume > 0;
+    }
+
+    static AudioAttributes attributes(int route) {
+        return new AudioAttributes.Builder()
+                .setUsage(route == ROUTE_SYSTEM ? AudioAttributes.USAGE_ASSISTANCE_SONIFICATION : AudioAttributes.USAGE_GAME)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build();
+    }
+
     /** The sample's own level times this. Too low and the projector's small speaker loses it entirely. */
     static float gain(int mode, int level) {
         if (mode == MODE_OFF) return 0f;
@@ -86,6 +113,8 @@ final class Sounds {
     private final boolean[] loaded = new boolean[RAW.length];
 
     private SoundPool pool;
+    /** The route {@link #pool} was built for. */
+    private int poolRoute = ROUTE_SYSTEM;
     private AudioDeviceCallback outputs;
     private volatile boolean visible;
     private boolean slow, systemOn, startupPending;
@@ -111,13 +140,58 @@ final class Sounds {
         return mode() != MODE_OFF && (!panel || prefs.getBoolean("sound_panel", false));
     }
 
+    private int output() {
+        int o = prefs.getInt("sound_output", OUTPUT_AUTO);
+        return o < OUTPUT_AUTO || o > OUTPUT_MEDIA ? OUTPUT_AUTO : o;
+    }
+
+    private boolean systemMuted() {
+        return muted(AudioManager.STREAM_SYSTEM);
+    }
+
+    private boolean muted(int stream) {
+        try {
+            return audio.isStreamMute(stream);
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    private int volume(int stream) {
+        try {
+            return audio.getStreamVolume(stream);
+        } catch (RuntimeException e) {
+            return 1;
+        }
+    }
+
+    /** The route for the current setting and what Android reports right now. */
+    int currentRoute() {
+        return route(output(), systemMuted(), volume(AudioManager.STREAM_SYSTEM));
+    }
+
+    /** Whether sounds would be heard on the current route; for the Output menu. */
+    boolean audibleNow() {
+        return audible(currentRoute(), systemMuted(), volume(AudioManager.STREAM_SYSTEM),
+                muted(AudioManager.STREAM_MUSIC), volume(AudioManager.STREAM_MUSIC));
+    }
+
+    /** Android's System channel is muted or at 0, as some TVs leave it. */
+    boolean systemSilent() {
+        return systemMuted() || volume(AudioManager.STREAM_SYSTEM) <= 0;
+    }
+
     /** Home is on screen (or the panel opened): samples in, sounds allowed. */
     void start() {
         visible = true;
         handler.post(() -> {
             handler.removeCallbacks(release);
-            if (enabled()) load();
-            else releaseNow();
+            if (!enabled()) releaseNow();
+            else {
+                // Back on screen or a setting changed: the channel may have changed since.
+                if (pool != null && currentRoute() != poolRoute) releaseNow();
+                load();
+            }
         });
     }
 
@@ -170,9 +244,9 @@ final class Sounds {
 
     private void load() {
         if (pool != null) return;
-        pool = new SoundPool.Builder().setMaxStreams(2).setAudioAttributes(new AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build()).build();
+        poolRoute = currentRoute();
+        pool = new SoundPool.Builder().setMaxStreams(2).setAudioAttributes(attributes(poolRoute)).build();
+        if (BuildConfig.DEBUG) android.util.Log.d("Sounds", "route " + (poolRoute == ROUTE_SYSTEM ? "system" : "media"));
         java.util.Arrays.fill(loaded, false);
         pool.setOnLoadCompleteListener((p, id, status) -> {
             for (int i = 0; i < sample.length; i++) {
@@ -195,16 +269,25 @@ final class Sounds {
         outputs = new AudioDeviceCallback() {
             @Override
             public void onAudioDevicesAdded(AudioDeviceInfo[] added) {
-                readOutputs();
+                outputsChanged();
             }
 
             @Override
             public void onAudioDevicesRemoved(AudioDeviceInfo[] removed) {
-                readOutputs();
+                outputsChanged();
             }
         };
         audio.registerAudioDeviceCallback(outputs, handler);
         readOutputs();
+    }
+
+    /** HDMI or Bluetooth came or went: the System channel may be heard differently there. */
+    private void outputsChanged() {
+        readOutputs();
+        if (pool != null && visible && currentRoute() != poolRoute) {
+            releaseNow();
+            load();
+        }
     }
 
     private void readOutputs() {
