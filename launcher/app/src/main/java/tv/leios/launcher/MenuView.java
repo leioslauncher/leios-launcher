@@ -34,6 +34,8 @@ final class MenuView extends LinearLayout {
         String disabledReason;
         boolean selected;
         float fraction;
+        /** The longest value this row will show, so the value's space never changes as it does. */
+        String widestValue;
 
         private Row(int kind, int icon, String label) {
             this.kind = kind;
@@ -75,6 +77,11 @@ final class MenuView extends LinearLayout {
 
         Row value(String v) {
             value = v == null ? "" : v;
+            return this;
+        }
+
+        Row widest(String v) {
+            widestValue = v;
             return this;
         }
 
@@ -381,7 +388,10 @@ final class MenuView extends LinearLayout {
         value.setGravity(Gravity.END);
         LayoutParams vlp = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         vlp.setMarginStart(tk.space3);
-        if (r.kind == SLIDER) value.setMinWidth(Math.round(tk.textLabel * 1.9f));
+        int minWidth = r.kind == SLIDER ? Math.round(tk.textLabel * 1.9f) : 0;
+        // Room for the longest value up front, so the slider beside it never moves ("9 of 10" to "10 of 10").
+        if (r.widestValue != null) minWidth = Math.max(minWidth, (int) Math.ceil(value.getPaint().measureText(r.widestValue)));
+        if (minWidth > 0) value.setMinWidth(minWidth);
         v.addView(value, vlp);
 
         if (r.kind == NAV || r.kind == STEPPER) {

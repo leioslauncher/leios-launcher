@@ -246,6 +246,18 @@ final class Sounds {
         });
     }
 
+    /**
+     * A sound right after sounds were turned on or their output changed: the samples are still
+     * loading then, so it waits for its own sample instead of being dropped.
+     */
+    void playWhenReady(int id) {
+        if (!visible) return;
+        handler.post(() -> {
+            if (pool != null && loaded[id]) playNow(id, 1f);
+            else pendingSound = id;
+        });
+    }
+
     /** A focus move or slider step; {@code repeat} when it comes from a held key. */
     void tick(int id, boolean repeat) {
         if (!visible) return;

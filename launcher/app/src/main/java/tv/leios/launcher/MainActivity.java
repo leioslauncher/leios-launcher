@@ -4506,7 +4506,8 @@ public class MainActivity extends Activity {
         String crumb = crumb("Look");
         startMenu(crumb, "Sounds");
         int volume = Sounds.volume(prefs);
-        addAdjust(MenuView.Row.slider(0, "Volume", volume / (float) Sounds.VOLUME_MAX, soundVolumeText(volume)), dir -> {
+        addAdjust(MenuView.Row.slider(0, "Volume", volume / (float) Sounds.VOLUME_MAX, soundVolumeText(volume))
+                .widest(soundVolumeText(Sounds.VOLUME_MAX)), dir -> {
             int old = Sounds.volume(prefs);
             // Turning sounds on starts at a quiet level, not at the very bottom.
             int nv = old == 0 && dir > 0 ? Sounds.VOLUME_FIRST : Math.max(0, Math.min(Sounds.VOLUME_MAX, old + dir));
@@ -4517,8 +4518,8 @@ public class MainActivity extends Activity {
             if ((old == 0) != (nv == 0)) {
                 // Turned on or off: the other rows come or go.
                 sounds.refresh();
-                // The samples take a moment to load; this is the first thing heard from them.
-                if (nv > 0) ui.postDelayed(() -> sounds.play(Sounds.SELECT), tk.medium);
+                // The first thing heard once the samples have loaded.
+                if (nv > 0) sounds.playWhenReady(Sounds.SELECT);
                 ui.post(() -> openSoundsMenu(0));
                 return;
             }
@@ -4570,7 +4571,7 @@ public class MainActivity extends Activity {
                     prefs.edit().putInt("sound_output", i).apply();
                     sounds.refresh();
                     // The samples reload for the new channel; this is the first thing heard from it.
-                    ui.postDelayed(() -> sounds.play(Sounds.SELECT), tk.medium);
+                    sounds.playWhenReady(Sounds.SELECT);
                     openSoundsOutputMenu(0);
                 }, null, () -> openSoundsOutputMenu(0)));
         addToggle("Silent on Bluetooth or ARC", "sound_quiet_slow", true, () -> openSoundsOutputMenu(1));
