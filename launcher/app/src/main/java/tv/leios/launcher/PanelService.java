@@ -374,9 +374,15 @@ public class PanelService extends AccessibilityService {
 
     @Override
     protected boolean onKeyEvent(KeyEvent e) {
-        boolean taken = takeKey(e);
-        if (taken && e.getAction() == KeyEvent.ACTION_DOWN) countAsUse();
-        return taken;
+        // Before the key acts: opening Settings ends the screensaver, and Android sleeps at once
+        // if it still thinks the TV has been idle.
+        if (e.getAction() == KeyEvent.ACTION_DOWN && mayTake(e.getKeyCode())) countAsUse();
+        return takeKey(e);
+    }
+
+    /** Keys this service might take: the PIN screen's, ≡ and the gear always, the rest while the panel is open. */
+    private boolean mayTake(int code) {
+        return pinPad != null || open || code == KeyEvent.KEYCODE_NOTIFICATION || code == KeyEvent.KEYCODE_MENU;
     }
 
     private PowerManager.WakeLock awake;
