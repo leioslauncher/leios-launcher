@@ -13,8 +13,9 @@ The app contacts these services only for the features below. Each request also s
 | `geocoding-api.open-meteo.com` | When you search for a weather city | The text you typed |
 | `api.open-meteo.com` | After you've chosen a city and weather is on: while Home is open, at most about every 30 minutes | The city's coordinates, rounded to about 1 km, and your temperature units |
 | `api.wikimedia.org` and the Wikimedia image address it returns | Only if you choose the online photo-of-the-day background | Today's date, and a request for that picture |
+| `api.themoviedb.org` and `image.tmdb.org` (TMDB) | Only if you turn on **online title search** (off by default; asked once, the first time you search). Only in builds made with a TMDB key | What you type in search, the language and the region (your TV's country or the one you pick), and requests for title posters. The app's name is the only User-Agent. No account, no device details. Answers are cached on the TV for a day (posters for a month), so the same search isn't sent twice |
 
-Nothing else leaves the device through the app. If you never choose a city or the online background, the app makes no web requests.
+Nothing else leaves the device through the app. If you never choose a city or the online background, and don't turn on online title search, the app makes no web requests. Searching apps and settings never leaves the TV.
 
 ## Permissions
 
@@ -30,13 +31,15 @@ Nothing else leaves the device through the app. If you never choose a city or th
 
 ## Special access you turn on yourself
 
-- **Accessibility (≡ panel):** it watches remote buttons so the panel works in any app. It can't read screen content. When you've locked apps, it also sees which app came to the front, so it can show the PIN screen. It stores no record of this.
+- **Accessibility (≡ panel):** it watches remote buttons so the panel works in any app. It also notices how long Home is held, so holding Home on Leios's Home can open search (the press itself goes on unchanged). It can't read screen content. When you've locked apps, it also sees which app came to the front, so it can show the PIN screen. It stores no record of this.
 - **Notification access (bell):** it keeps notification titles and app names in memory to show the list on Home. They aren't saved to storage, and they don't leave the device.
 - **Device admin (sleep timer):** only the "lock the screen" permission, used to turn the projector off.
 
 ## What's stored on the device
 
 Your settings stay in the app's private storage: city and coordinates, app order, how often you open apps from Home, and a salted hash of your PIN, never the PIN itself. Android's cloud backup is turned off for this app.
+
+**Search:** recent searches are kept on the TV only, never in backups. Turn them off or clear them in **Customization › System › Search & privacy**. Turning online title search off also deletes its cache.
 
 **Backups:** saved backups are pictures in your device's Pictures folder, so other apps with photo access can open them. A backup holds your settings, including your city, usage counts and the PIN hash. Be careful who you share one with.
 

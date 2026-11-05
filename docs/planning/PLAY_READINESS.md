@@ -68,6 +68,7 @@ Everything was put back afterwards: Leios is Home and Google TV's home is disabl
 | Disclosure and consent | **Needs work** | Apps not declared as accessibility tools need a [clear in-app disclosure, affirmative consent and a Play Console declaration](https://support.google.com/googleplay/android-developer/answer/10964491?hl=en). The service description text can't replace the disclosure | Add a full-screen explanation with a clear "Agree" before sending the user to Settings. List what it sees: key presses and, when apps are locked, which app came forward | M |
 | Scope | OK | `panel_service.xml` has `canRetrieveWindowContent="false"`, and no text is read. `onKeyEvent` handles only its own keys | Keep it minimal | S |
 | Overlay on other apps | Needs work | [TV-TR](https://developer.android.com/docs/quality-guidelines/tv-app-quality) says an app must not partially obscure other apps. The panel does exactly that on request | Ask in review, or make the panel an opt-in extra | S |
+| Search triggers | Needs work | Only **holding Home** needs the service: it watches how long Home is held (never takes or delays the press) and opens search only when Leios's Home is in front. The Search button, Up at the top of Home and holding OK on the top bar work without it; hold ≡ / hold Settings → "Open search" need it, like all remote shortcuts | List "holding Home on Home opens search" in the disclosure; everything still works without the service | S |
 | PIN over locked apps | Needs work | Watching which app comes forward is sensitive, even though it's stored nowhere. It's also easy to bypass, so it can't be sold as security | Keep it off by default, and describe it as a household control | S |
 | Alternatives | | No narrower Android API catches a button inside other apps. Google says to [prefer narrower APIs where possible](https://support.google.com/googleplay/android-developer/answer/10964491?hl=en). The fallback is a Play build where quick settings live on Home only, with no service at all | Build the app so the service is optional; Home must work fully without it | M |
 
@@ -120,6 +121,7 @@ Everything was put back afterwards: Leios is Home and Google TV's home is disabl
 | Item | Status | Finding | Proposed change | Effort |
 |---|---|---|---|---|
 | Data safety form | Needs work | [Declare your data use](https://developer.android.com/privacy-and-security/declare-data-use). Likely answers: approximate location or city text is sent to Open-Meteo to deliver weather, optional, and not stored by us. No ads, analytics, sale or accounts | Fill it in from `PRIVACY.md`, and re-check how Google treats rounded coordinates | S |
+| Data safety: online title search | Needs work | Optional and off by default. With the user's yes, the search text, language and region go to TMDB (a third party) to deliver results; posters are fetched from TMDB too. Nothing is linked to an identity, no account, not stored by us; cached on the device for a day (posters a month). Recent searches stay on the device and out of backups. Likely Data safety answers: "App activity › In-app search history" **shared** with TMDB for app functionality, optional, not collected by the developer, encrypted in transit. A Play build would also need TMDB's logo with its credit, and must stay free (TMDB's terms forbid commercial use without a deal) | Re-check the category wording against the form when filling it in | S |
 | Privacy policy URL | Needs work | Expected for this kind of app, though my search didn't confirm the exact rule | Host `PRIVACY.md` at a stable public address | S |
 | Backup pictures | Needs work | They're readable by other apps with photo access, and hold the city and PIN hash | Leave out the PIN hash and coordinates, or warn before saving | M |
 
@@ -161,6 +163,7 @@ If you'd rather let Google generate the Play key, that's simpler, but GitHub and
 - Whether the system photo picker works on TV devices.
 - Whether JMGO has terms covering its service.
 - Trademark clearance of the name.
+- Whether each streaming app really opens its search from Leios (read from the apps' declared intents only; not yet tried on hardware).
 
 ## 11. Recommended plan
 

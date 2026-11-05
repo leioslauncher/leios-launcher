@@ -2,13 +2,26 @@
 
 ## Unreleased
 
+### Added
+- **Search on Home.** Open it with the new **Search** button in the top bar, **Up** at the top of Home, holding **OK** on the top bar, or holding **Home** (with the ≡ helper on; it never delays a normal press). Hold ≡ and hold Settings can open it too. Inside other apps, nothing changes.
+  - A keyboard made for the D-pad, and recent searches when the field is empty (kept on the TV only).
+  - Results update as you type: **Apps**, then **Settings** (every Leios setting, also by other words for it, such as "wallpaper" for Background), then **Movies & TV**.
+  - **Movies & TV** comes from TMDB, with where to watch from JustWatch. It's off until you say yes, and is only in builds made with a TMDB key. Titles on your apps come first, with the app names; titles none of your apps has are shown quietly below, or hidden if you prefer. Picking a title opens that app's own search with the title filled in where the app allows it, otherwise the app with a note. If more than one of your apps has it, you choose, with your most-used app first.
+  - Search never shows hidden or locked apps, and shows no settings in guest mode. A setting opens in Customization with its row highlighted, behind the PIN if Customize is locked; Back returns to search.
+- **Customization:** a full screen with every setting in seven sections. **Customization › System › Search & privacy** controls online search, region, titles not on your apps and recent searches; **About** shows the version and the TMDB and JustWatch credits.
+
+### Changed
+- **Customize** on Home is now a quick sheet: Background, Appearance, Dock & arrange apps, and **All customization**.
+- **Look** is now **Look & sound**, and **Backup & reset** is now **System**. All saved settings keep working, and older backups and themes still restore.
+- **Top bar** has a **Search button** toggle. Themes carry it.
+
 ### Fixed
 - Interface sounds were silent on TVs that mute Android's System sound channel at start, such as the JMGO N3 4K. Sounds now play at the TV's media volume when system sounds are muted. They never take audio focus, so other apps are never paused or turned down.
 - Holding left or right at either end of the sounds Volume slider replayed the sound until the button was released.
 - The first sound after turning sounds on, or changing their output, could be lost while the sounds were still loading.
 
 ### Changed
-- Customize › Look › Sounds has one **Volume** slider, from Off to 10, in place of Off / Subtle / Normal and a level of 1–5. Earlier settings carry over at the same loudness.
+- Customization › Look & sound › Sounds has one **Volume** slider, from Off to 10, in place of Off / Subtle / Normal and a level of 1–5. Earlier settings carry over at the same loudness.
 - New **Sounds › Output**: Automatic (the default), System sounds or Media volume, with a note that says when sounds can't be heard and why. **Silent on Bluetooth or ARC** moved here.
 
 ## 1.2.1 (versionCode 4)

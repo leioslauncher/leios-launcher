@@ -35,6 +35,8 @@ The JMGO-only rows hide themselves on other devices, but that has never been tes
 ## Features
 
 - **Home:** a dock, an app grid, categories, and moving, hiding and renaming apps.
+- **Search on Home:** find apps and Leios settings as you type, with a keyboard made for the remote. Optionally also movies and shows on your streaming apps, from TMDB (off until you turn it on). Open it with the **Search** button, **Up** at the top of Home, holding **OK** on the top bar, or holding **Home**.
+- **Customize:** a quick sheet for background, appearance and the dock, and a full **Customization** screen with every setting.
 - **Quick settings on the ≡ button, in any app:** volume, brightness, inputs, Wi-Fi and sleep timer.
 - **Backgrounds:** colours, shapes, photos, GIFs, a slideshow, video, and an optional online photo of the day.
 - **Look:** light, dark or automatic, plus fonts, clock, top bar, tile styles, accent colour, themes and optional sounds.
@@ -50,6 +52,9 @@ Icon packs have only been tested with a test pack. Bluetooth and ARC auto-mute, 
 
 - **Interface sounds on TVs that mute system sounds.** Some TVs, the JMGO N3 4K among them, mute Android's System sound channel at every start, so sounds sent there are never heard (Android's own clicks are silent too). With **Sounds › Output › Automatic** (the default), Leios notices and plays its sounds at your TV's media volume instead, without pausing or lowering other apps. On other TVs Automatic keeps using system sounds. If you hear nothing, **Sounds › Output** says why.
 - **Bluetooth and ARC speakers:** sounds are off there by default (**Silent on Bluetooth or ARC**), because those outputs add a delay. This hasn't been tested with real Bluetooth or ARC audio.
+- **Search and the remote's mic button:** on the tested projector the mic button goes straight to Google's remote service, so no app can receive it. Search uses the on-screen keyboard. Voice input hasn't been added.
+- **Movies & TV in search** can't open a title directly in an app: TMDB doesn't give apps' own title IDs. Hulu, Crunchyroll and YouTube open their own search with the title filled in; other apps open, and a note says what to search for. Which apps do what was read from what they declare on the tested projector and still needs checking on hardware.
+- **Holding Home** needs the ≡ helper (Leios quick settings) on. It works only on Leios's Home and never delays a normal Home press. Turn it off in **Lock & remote › Remote shortcuts**.
 - **Disabling or uninstalling Leios while it's still a device admin** (for the sleep timer) can make the TV unresponsive until a reboot. Deactivate it first in Settings › Device admin apps.
 
 ## Build from source
@@ -68,6 +73,8 @@ cd launcher
 ```
 
 The debug APK lands in `launcher\app\build\outputs\apk\debug\`. It's signed with your own automatic debug key.
+
+**Online title search** needs a free TMDB key. Copy `launcher\tmdb.properties.example` to `launcher\tmdb.properties` and put your key in it, or set `TMDB_API_KEY`. The file is git-ignored. Without a key, Leios builds as normal and search finds apps and settings only. Any key built into an APK can be read out of it, so don't put your key into builds you publish unless you accept that. For the same reason, the public GitHub build doesn't use one.
 
 **Release builds** need your own signing key, and never use the debug key. Without one, `assembleRelease` stops with a message saying what's missing. To sign, copy `launcher\keystore.properties.example` to `launcher\keystore.properties` and fill it in, or set the `LEIOS_*` environment variables listed there. Or run `.\dev-tools\build-release.ps1 -Keystore <path>`, which asks for the password and keeps it out of files. Keep the key outside the repo, and never commit it.
 
