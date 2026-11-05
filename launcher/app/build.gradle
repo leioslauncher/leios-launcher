@@ -15,6 +15,14 @@ def releaseStore = signingValue('storeFile', 'LEIOS_STORE_FILE')
 if (releaseStore && !file(releaseStore).exists()) signingMissing << 'storeFile: no keystore at that path'
 def canSignRelease = signingMissing.isEmpty()
 
+// Online title search (TMDB): the key comes only from launcher/tmdb.properties (untracked) or the
+// TMDB_API_KEY environment variable. Without one, the app builds with online search hidden.
+def tmdb = new Properties()
+def tmdbFile = rootProject.file('tmdb.properties')
+if (tmdbFile.exists()) tmdbFile.withInputStream { tmdb.load(it) }
+def tmdbKey = (tmdb.getProperty('tmdbApiKey') ?: System.getenv('TMDB_API_KEY') ?: '').trim()
+if (!(tmdbKey ==~ /[A-Za-z0-9._-]*/)) throw new GradleException('tmdb.properties: tmdbApiKey has characters a TMDB key never has.')
+
 gradle.taskGraph.whenReady { graph ->
     def releaseOutput = graph.allTasks.any { t ->
         t.project == project && t.name ==~ /(assemble|bundle|package)Release/
@@ -38,6 +46,7 @@ android {
         targetSdk 34
         versionCode 4
         versionName '1.2.1'
+        buildConfigField 'String', 'TMDB_KEY', "\"${tmdbKey}\""
     }
 
     signingConfigs {

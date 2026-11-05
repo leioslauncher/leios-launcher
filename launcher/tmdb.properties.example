@@ -1,0 +1,5 @@
+# Online title search (Search › Movies & TV) uses TMDB. Copy this file to tmdb.properties (which git
+# ignores) and put your own key in it. The TMDB_API_KEY environment variable works too.
+# Get a free key at https://www.themoviedb.org/settings/api. Either the API key or the API read
+# access token works. Without a key, Leios builds as normal and online search stays hidden.
+tmdbApiKey=

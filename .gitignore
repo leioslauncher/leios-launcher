@@ -4,6 +4,7 @@
 *.p12
 *.pem
 keystore.properties
+tmdb.properties
 .env*
 
 # Build output
