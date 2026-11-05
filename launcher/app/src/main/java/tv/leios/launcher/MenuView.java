@@ -23,7 +23,7 @@ import java.util.List;
 final class MenuView extends LinearLayout {
 
     /** What a row shows on its right: a chevron, a tick, a slider, ◀ value ▶, a spinner, or nothing. */
-    static final int NAV = 0, ACTION = 1, CHOICE = 2, SLIDER = 3, STEPPER = 4, LOADING = 5, NOTE = 6;
+    static final int NAV = 0, ACTION = 1, CHOICE = 2, SLIDER = 3, STEPPER = 4, LOADING = 5, NOTE = 6, HEADER = 7;
 
     static final class Row {
         final int kind;
@@ -36,6 +36,13 @@ final class MenuView extends LinearLayout {
         float fraction;
         /** The longest value this row will show, so the value's space never changes as it does. */
         String widestValue;
+        /** A second line under the label (search: where a setting is, a title's year). */
+        String detail;
+        /** A picture in place of the icon (search: an app's icon, a poster); see {@link #image(int, int)}. */
+        android.graphics.drawable.Drawable image;
+        int imageW, imageH;
+        /** Quieter text: search results that are less likely to be what you want. */
+        boolean quiet;
 
         private Row(int kind, int icon, String label) {
             this.kind = kind;
@@ -75,6 +82,28 @@ final class MenuView extends LinearLayout {
             return new Row(NOTE, icon, label);
         }
 
+        /** A small heading over a group of rows ("Apps", "Settings"); focus steps over it. */
+        static Row header(String label) {
+            return new Row(HEADER, 0, label);
+        }
+
+        Row detail(String d) {
+            detail = d == null || d.isEmpty() ? null : d;
+            return this;
+        }
+
+        /** Room for a picture of this size at the start of the row (it can arrive later). */
+        Row image(int w, int h) {
+            imageW = w;
+            imageH = h;
+            return this;
+        }
+
+        Row quiet() {
+            quiet = true;
+            return this;
+        }
+
         Row value(String v) {
             value = v == null ? "" : v;
             return this;
@@ -91,7 +120,12 @@ final class MenuView extends LinearLayout {
         }
 
         boolean enabled() {
-            return disabledReason == null && kind != NOTE && kind != LOADING;
+            return disabledReason == null && kind != NOTE && kind != LOADING && kind != HEADER;
+        }
+
+        /** Focus never stops here. */
+        boolean skipped() {
+            return kind == NOTE || kind == HEADER;
         }
     }
 
@@ -216,6 +250,11 @@ final class MenuView extends LinearLayout {
     }
 
     void setRows(List<Row> list, int focusIndex) {
+        setRows(list, focusIndex, true);
+    }
+
+    /** {@code fade}: a new level (a quick fade); false for the same list refreshing (search results). */
+    void setRows(List<Row> list, int focusIndex, boolean fade) {
         rows.clear();
         rows.addAll(list);
         rowsBox.removeAllViews();
@@ -228,11 +267,11 @@ final class MenuView extends LinearLayout {
         focus = -1;
         scroll.scrollTo(0, 0);
         int f = Math.max(0, Math.min(focusIndex, rows.size() - 1));
-        while (f + 1 < rows.size() && rows.get(f).kind == NOTE) f++;
+        while (f + 1 < rows.size() && rows.get(f).skipped()) f++;
         setFocus(f, false);
         post(this::updateFades);
         // Going into or out of a submenu: a quick fade, so the swap reads as a change of level.
-        if (isShown()) {
+        if (fade && isShown()) {
             content.setAlpha(0f);
             content.animate().alpha(1f).setDuration(tk.fast).setInterpolator(Tokens.EASE_OUT).start();
         }
@@ -263,7 +302,7 @@ final class MenuView extends LinearLayout {
     /** Moves to the next row in {@code dir}, stepping over notes (they're text, not choices). */
     boolean moveFocus(int dir) {
         int next = focus + dir;
-        while (next >= 0 && next < rows.size() && rows.get(next).kind == NOTE) next += dir;
+        while (next >= 0 && next < rows.size() && rows.get(next).skipped()) next += dir;
         if (next < 0 || next >= rows.size()) {
             // Only notes that way: still scroll so the note is read, but keep focus where it is.
             if (dir < 0) scroll.smoothScrollTo(0, 0);
@@ -273,9 +312,58 @@ final class MenuView extends LinearLayout {
         return true;
     }
 
+    /** Is there a row focus could stop on? */
+    boolean hasChoices() {
+        for (Row r : rows) if (!r.skipped() && r.kind != LOADING) return true;
+        return false;
+    }
+
+    private boolean active = true;
+
+    /**
+     * Inactive: another part of the screen has focus (search's keyboard, Customization's section
+     * list), so the focus bar steps back to a quiet outline and the row reads as normal.
+     */
+    void setActive(boolean on) {
+        if (active == on) return;
+        active = on;
+        if (focus >= 0 && focus < rows.size()) {
+            bind(rows.get(focus), rowViews.get(focus), true);
+            setFocus(focus, false);
+        }
+    }
+
+    boolean isActive() {
+        return active;
+    }
+
+    /** A short pulse on the focused row: "this is the setting you searched for". */
+    void pulse() {
+        indicator.animate().cancel();
+        ValueAnimatorHolder.pulse(indicator, tk.slow);
+    }
+
+    /** A picture for a row that was waiting for one (a poster that just arrived). */
+    void setRowImage(int i, android.graphics.drawable.Drawable d) {
+        if (i < 0 || i >= rows.size()) return;
+        rows.get(i).image = d;
+        bind(rows.get(i), rowViews.get(i), i == focus);
+    }
+
+    private static final class ValueAnimatorHolder {
+        static void pulse(View v, int duration) {
+            android.animation.ObjectAnimator a = android.animation.ObjectAnimator.ofFloat(v, View.ALPHA,
+                    1f, 0.35f, 1f, 0.35f, 1f);
+            a.setDuration(duration * 3L);
+            a.setInterpolator(Tokens.EASE_IN_OUT);
+            a.start();
+        }
+    }
+
     void setFocus(int i, boolean animate) {
-        if (rows.isEmpty()) {
+        if (rows.isEmpty() || rows.get(i).kind == HEADER) {
             indicator.setVisibility(INVISIBLE);
+            if (!rows.isEmpty()) focus = i;
             return;
         }
         int old = focus;
@@ -285,7 +373,8 @@ final class MenuView extends LinearLayout {
         View target = rowViews.get(i);
         Runnable place = () -> {
             Row r = rows.get(focus);
-            indicator.setBackground(Ui.rounded(tk.radiusMd, r.enabled() ? th.accentFill : th.surfaceRaised,
+            if (!active) indicator.setBackground(Ui.rounded(tk.radiusMd, 0, th.textTertiary, tk.stroke));
+            else indicator.setBackground(Ui.rounded(tk.radiusMd, r.enabled() ? th.accentFill : th.surfaceRaised,
                     th.accent, r.enabled() ? 0 : tk.stroke));
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) indicator.getLayoutParams();
             if (lp.height != target.getHeight()) {
@@ -325,17 +414,42 @@ final class MenuView extends LinearLayout {
     // ---- rows -------------------------------------------------------------------------------
 
     private static final int TAG_ICON = 1, TAG_LABEL = 2, TAG_SUB = 3, TAG_VALUE = 4, TAG_TRAIL = 5,
-            TAG_SLIDER = 6, TAG_LEFT = 7;
+            TAG_SLIDER = 6, TAG_LEFT = 7, TAG_IMAGE = 8;
 
     private View build(Row r) {
         Context c = getContext();
         LinearLayout v = new LinearLayout(c);
         v.setOrientation(HORIZONTAL);
         v.setGravity(Gravity.CENTER_VERTICAL);
+        if (r.kind == HEADER) {
+            // A group heading: small caps, like the menu's own breadcrumb.
+            v.setPadding(tk.space4, tk.space3, tk.space4, tk.space1);
+            TextView h = Ui.text(c, r.label, tk.textCaption, th.textTertiary, tk.medium500);
+            h.setLetterSpacing(0.06f);
+            h.setAllCaps(true);
+            h.setTag(TAG_LABEL);
+            v.addView(h);
+            return v;
+        }
         v.setMinimumHeight(tk.rowHeight);
         v.setPadding(tk.space4, tk.space2 - tk.space1 / 2, tk.space4, tk.space2 - tk.space1 / 2);
 
-        if (r.icon != 0) {
+        if (r.imageW > 0) {
+            ImageView img = new ImageView(c);
+            img.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            img.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+            img.setClipToOutline(true);
+            img.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, android.graphics.Outline o) {
+                    o.setRoundRect(0, 0, view.getWidth(), view.getHeight(), tk.radiusSm / 2f);
+                }
+            });
+            LayoutParams ilp = new LayoutParams(r.imageW, r.imageH);
+            ilp.setMarginEnd(tk.space3);
+            img.setTag(TAG_IMAGE);
+            v.addView(img, ilp);
+        } else if (r.icon != 0) {
             ImageView icon = Ui.icon(c, r.icon, tk.iconMd, th.textSecondary);
             ((LayoutParams) icon.getLayoutParams()).setMarginEnd(tk.space3);
             icon.setTag(TAG_ICON);
@@ -410,13 +524,20 @@ final class MenuView extends LinearLayout {
     }
 
     private void bind(Row r, View v, boolean focused) {
-        boolean on = focused && r.enabled();
-        int main = on ? th.onAccent : r.enabled() || r.kind == LOADING ? th.text : th.disabled;
+        if (r.kind == HEADER) return;
+        boolean on = focused && r.enabled() && active;
+        int main = on ? th.onAccent : r.quiet ? th.textSecondary : r.enabled() || r.kind == LOADING ? th.text : th.disabled;
         int soft = on ? (th.onAccent & 0x00FFFFFF) | 0xE0000000 : th.textSecondary;
         TextView label = v.findViewWithTag(TAG_LABEL);
         label.setTextColor(r.kind == NOTE ? th.textSecondary : main);
+        ImageView img = v.findViewWithTag(TAG_IMAGE);
+        if (img != null) {
+            img.setImageDrawable(r.image);
+            img.setBackground(r.image == null ? Ui.rounded(tk.radiusSm / 2f, th.surfaceRaised, 0, 0) : null);
+            img.setAlpha(r.quiet && !on ? 0.6f : 1f);
+        }
         TextView sub = v.findViewWithTag(TAG_SUB);
-        String subText = r.disabledReason != null ? r.disabledReason : null;
+        String subText = r.disabledReason != null ? r.disabledReason : r.detail;
         sub.setVisibility(subText == null ? GONE : VISIBLE);
         sub.setText(subText);
         sub.setTextColor(on ? soft : th.textTertiary);
