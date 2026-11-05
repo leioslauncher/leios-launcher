@@ -68,10 +68,18 @@ final class Backups {
         o.put("kind", "backup");
         o.put("version", 1);
         o.put("time", System.currentTimeMillis());
-        o.put("focus", prefsToJson(c.getSharedPreferences("focus", Context.MODE_PRIVATE), null));
+        o.put("focus", withoutPrivate(prefsToJson(c.getSharedPreferences("focus", Context.MODE_PRIVATE), null)));
         o.put("usage", prefsToJson(c.getSharedPreferences("usage", Context.MODE_PRIVATE), null));
         if (withFiles) o.put("files", filesToJson(c));
         return o;
+    }
+
+    /** Settings that never leave this TV in a backup: what you searched for. */
+    static final String[] NOT_BACKED_UP = {"search_recent"};
+
+    static JSONObject withoutPrivate(JSONObject focus) {
+        for (String k : NOT_BACKED_UP) focus.remove(k);
+        return focus;
     }
 
     /** Only these keys from "focus" (a theme), with the background photo if it's one. */

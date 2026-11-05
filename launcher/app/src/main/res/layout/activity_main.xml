@@ -146,10 +146,25 @@
                                 style="@style/PillText" />
                         </LinearLayout>
 
+                        <!-- Search (Customize › Look › Top bar). -->
                         <LinearLayout
-                            android:id="@+id/pillInputs"
+                            android:id="@+id/pillSearch"
                             style="@style/Pill"
                             android:layout_marginStart="0dp">
+
+                            <ImageView
+                                style="@style/PillIcon"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_search" />
+
+                            <TextView
+                                style="@style/PillText"
+                                android:text="@string/search" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/pillInputs"
+                            style="@style/Pill">
 
                             <ImageView
                                 style="@style/PillIcon"

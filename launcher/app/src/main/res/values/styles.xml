@@ -4,6 +4,7 @@
     <string name="wifi">Wi-Fi</string>
     <string name="settings">Settings</string>
     <string name="customize">Customize</string>
+    <string name="search">Search</string>
     <string name="panel_label">Leios quick settings (≡ button)</string>
     <string name="panel_description">Opens the quick settings panel when you press the ≡ button on the remote, in any app. It only listens for that button, the Settings button (and the D-pad while the panel or a PIN screen is open); it does not read the screen. If you lock apps with Leios\'s PIN, it also notices which app comes to the front (its name only) to ask for the PIN.</string>
     <string name="sleep_admin">Lets the sleep timer put the projector to sleep. It can do nothing else.</string>

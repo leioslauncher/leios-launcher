@@ -32,7 +32,7 @@ final class Themes {
             "appearance", "bg", "bg_light", "slide_seconds", "slide_folder", "bg_video",
             "adj_b", "adj_c", "adj_s", "adj_blur", "accent_auto",
             "font", "text_scale", "clock_fmt", "clock_size", "clock_pos", "clock_date", "greeting", "clock_shadow",
-            "bar_inputs", "bar_wifi", "bar_settings", "bar_size",
+            "bar_search", "bar_inputs", "bar_wifi", "bar_settings", "bar_size",
             "tile_corners", "focus_color", "icon_bg", "tile_style", "labels", "glow",
             "columns", "gap", "row_gap", "margin"));
 

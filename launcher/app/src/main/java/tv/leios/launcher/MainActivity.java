@@ -105,7 +105,8 @@ public class MainActivity extends Activity {
 
     private static final int TOP = 0, DOCK = 1, GRID = 2, MENU = 3;
     // Top-bar buttons, left to right.
-    private static final int PILL_NOTIF = 0, PILL_INPUTS = 1, PILL_WIFI = 2, PILL_CUSTOMIZE = 3, PILL_SETTINGS = 4;
+    private static final int PILL_NOTIF = 0, PILL_SEARCH = 1, PILL_INPUTS = 2, PILL_WIFI = 3, PILL_CUSTOMIZE = 4,
+            PILL_SETTINGS = 5;
     private static final int REQ_PHOTOS = 1, REQ_ADMIN = 2, REQ_SLIDES = 3, REQ_VIDEOS = 4;
 
     // Customize sections, in menu order (also used to return to the right row on Back).
@@ -126,6 +127,9 @@ public class MainActivity extends Activity {
     private GradientDrawable glowDrawable;
     private MenuView menu;
     private Ui.Toaster toaster;
+    private SearchOverlay search;
+    /** When holding Home last opened search: the Home press that may follow is ignored. */
+    private long searchHeldAt;
     private Theme theme;
     private Tokens tk;
 
@@ -287,8 +291,8 @@ public class MainActivity extends Activity {
         wallpaperNext.setVisibility(View.GONE);
         root.addView(wallpaperNext, root.indexOfChild(wallpaper) + 1, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        pills = new View[] {findViewById(R.id.pillNotif), findViewById(R.id.pillInputs), findViewById(R.id.pillWifi),
-                findViewById(R.id.pillCustomize), findViewById(R.id.pillSettings)};
+        pills = new View[] {findViewById(R.id.pillNotif), findViewById(R.id.pillSearch), findViewById(R.id.pillInputs),
+                findViewById(R.id.pillWifi), findViewById(R.id.pillCustomize), findViewById(R.id.pillSettings)};
         notifLabel = findViewById(R.id.notifLabel);
         wifiIcon = findViewById(R.id.wifiIcon);
         prefs = SafePrefs.focus(this);
@@ -326,6 +330,9 @@ public class MainActivity extends Activity {
         menu.setVisibility(View.GONE);
         root.addView(menu, root.indexOfChild(highlight) + 1, new FrameLayout.LayoutParams(
                 tk.sheetWidth, ViewGroup.LayoutParams.WRAP_CONTENT));
+        search = new SearchOverlay(this, theme, tk, prefs, searchHost);
+        root.addView(search, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
         toaster = new Ui.Toaster(root, theme, tk);
         // A message saved before Home restarted itself (a theme, restore or reset).
         String pending = prefs.getString("toast", null);
@@ -519,6 +526,8 @@ public class MainActivity extends Activity {
         super.onPause();
         // Nothing decodes, fades or plays while an app is on screen.
         isResumedNow = false;
+        // Search never stays open behind an app; Home comes back without it.
+        if (search.isOpen()) search.hideNow();
         sounds.stop();
         resumed = new java.lang.ref.WeakReference<>(null);
         ui.removeCallbacks(idleTick);
@@ -552,6 +561,7 @@ public class MainActivity extends Activity {
     protected void onDestroy() {
         unregisterReceiver(packageReceiver);
         loader.shutdownNow();
+        search.destroy();
         // Nothing may keep this (old) screen alive after a theme or font change rebuilt it.
         ui.removeCallbacksAndMessages(null);
         if (Notifs.onChange == notifWatch) Notifs.onChange = null;
@@ -575,9 +585,11 @@ public class MainActivity extends Activity {
                 }
                 area = TOP;
                 requirePin(Lock.hasPin(this) && (Lock.guest(this) || customizeLocked()), "Customize",
-                        () -> openCustomize(lastSection));
+                        () -> openCustomize(0));
             } else if ("next_bg".equals(open)) {
                 nextBackground();
+            } else if ("search".equals(open)) {
+                openSearch(false);
             }
         }, tk.medium);
     }
@@ -587,6 +599,16 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         if (intent.hasExtra("open")) {
             handleOpen(intent);
+            return;
+        }
+        // The release of a Home held to open search can arrive as a Home press: search stays.
+        if (android.os.SystemClock.uptimeMillis() - searchHeldAt < 1500) return;
+        if (search.isOpen()) {
+            search.hide(false);
+            if (hasWindowFocus()) {
+                goToStart();
+                applyFocus(true);
+            }
             return;
         }
         // Home pressed while already on Home: back to the dock. Coming back from an app keeps focus.
@@ -1099,7 +1121,8 @@ public class MainActivity extends Activity {
 
     private void toast(String s, boolean done) {
         // Most confirmations come from a menu that reopens right after; keep them clear of it.
-        toaster.besideSheet = area == MENU || menu.getVisibility() == View.VISIBLE;
+        // In Customization the left side is the section list, so messages stay centred.
+        toaster.besideSheet = (area == MENU || menu.getVisibility() == View.VISIBLE) && custMode != CUST_FULL;
         toaster.show(s, done ? R.drawable.ic_check : R.drawable.ic_info);
     }
 
@@ -1253,7 +1276,7 @@ public class MainActivity extends Activity {
             if (wasIdle) wakeDownTime = e.getDownTime();
             resetIdle();
             if (wasIdle) return true;
-            if (e.getRepeatCount() == 0) watchSecret(code);
+            if (e.getRepeatCount() == 0 && !search.isOpen()) watchSecret(code);
         } else if (e.getAction() == KeyEvent.ACTION_UP && e.getDownTime() == wakeDownTime) {
             wakeDownTime = -1;
             return true;
@@ -1276,6 +1299,12 @@ public class MainActivity extends Activity {
                 else startSafely(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
             }
             return true;
+        }
+        // Search owns the keys while it shows (Back steps out of it one level at a time). The
+        // release and repeats of an OK held to open it land here too, so they do nothing else.
+        if (search.isOpen()) {
+            if (search.onKey(e)) return true;
+            return super.dispatchKeyEvent(e);
         }
         // OK acts on release, so holding it can open the quick actions instead.
         if (isSelect(code)) {
@@ -1327,6 +1356,18 @@ public class MainActivity extends Activity {
         }
         switch (area) {
             case MENU: {
+                if (custMode == CUST_FULL && railActive) {
+                    railNav(up, down, left, right, select, back);
+                    return;
+                }
+                if ((back || left) && custMode == CUST_FULL && searchReturnMenu != null
+                        && searchReturnMenu.equals(menuCrumb + "|" + menuTitle)
+                        && (back || entries.isEmpty() || menu.focus() < 0 || entries.get(menu.focus()).adjust == null)) {
+                    if (menuCancel != null) menuCancel.run();
+                    sounds.play(Sounds.BACK);
+                    backToSearch();
+                    return;
+                }
                 MenuView.Row row = menu.focused();
                 Entry entry = menu.focus() >= 0 && menu.focus() < entries.size() ? entries.get(menu.focus()) : null;
                 if ((left || right) && entry != null && entry.adjust != null && row != null && row.enabled()) {
@@ -1370,6 +1411,11 @@ public class MainActivity extends Activity {
                 break;
             }
             case TOP:
+                // Up at the very top pulls search down, like a swipe down on a phone's home screen.
+                if (up && !navRepeat) {
+                    openSearch(true);
+                    return;
+                }
                 if (left) topIndex = nextPill(topIndex, -1);
                 else if (right) topIndex = nextPill(topIndex, 1);
                 else if (down) {
@@ -1634,6 +1680,8 @@ public class MainActivity extends Activity {
 
     private void onLongSelect() {
         if ((area == DOCK || area == GRID) && focusedApp() != null) openQuickActions();
+        // Holding OK on the top bar: search (on an app it's still the app's options).
+        else if (area == TOP) openSearch(false);
     }
 
     private void startMove() {
@@ -1849,6 +1897,18 @@ public class MainActivity extends Activity {
      */
     private void showSheet(int focus, Runnable back, Runnable cancel) {
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) menu.getLayoutParams();
+        if (custMode == CUST_FULL) {
+            // Customization: beside the section list, full height.
+            lp.width = tk.sheetWidth;
+            lp.gravity = Gravity.TOP | Gravity.START;
+            lp.topMargin = tk.safeV;
+            lp.leftMargin = tk.safeH + railWidth() + tk.space5;
+            lp.rightMargin = 0;
+            lp.bottomMargin = 0;
+            menu.setMaxHeight(root.getHeight() - 2 * tk.safeV);
+            present(lp, focus, back, cancel, new String[] {"OK", "Select", "BACK", "Back"});
+            return;
+        }
         lp.width = tk.sheetWidth;
         lp.gravity = Gravity.TOP | Gravity.END;
         lp.topMargin = tk.safeV + tk.pillHeight + tk.space3;
@@ -1889,6 +1949,8 @@ public class MainActivity extends Activity {
             sounds.play(Sounds.OPEN);
         }
         menu.setRows(new ArrayList<>(pendingRows), focus);
+        // In Customization, while the section list has focus, this menu is only a preview.
+        menu.setActive(!(custMode == CUST_FULL && railActive));
         area = MENU;
         if (entering) {
             menu.setAlpha(0f);
@@ -1907,6 +1969,8 @@ public class MainActivity extends Activity {
     private void dismissMenu() {
         // Leaving Customize locks again (the PIN's grace is for an app you just unlocked).
         Lock.relock();
+        hideFull(true);
+        custMode = CUST_NONE;
         menu.animate().cancel();
         menu.animate().alpha(0f).translationX(tk.space4).setDuration(tk.fast).setInterpolator(Tokens.EASE_IN_OUT)
                 .withEndAction(() -> {
@@ -1931,8 +1995,9 @@ public class MainActivity extends Activity {
 
     private void pillAction(int index) {
         menuAnchorPill = index;
-        if (index == PILL_INPUTS) openInputsMenu();
-        else if (index == PILL_CUSTOMIZE) requirePin(customizeLocked(), "Customize", () -> openCustomize(lastSection));
+        if (index == PILL_SEARCH) openSearch(false);
+        else if (index == PILL_INPUTS) openInputsMenu();
+        else if (index == PILL_CUSTOMIZE) requirePin(customizeLocked(), "Customize", () -> openCustomize(0));
         else if (index == PILL_NOTIF) openNotifications();
         else requirePin(customizeLocked(), index == PILL_WIFI ? "Wi-Fi settings" : "Settings", () -> startSafely(
                 new Intent(index == PILL_WIFI ? Settings.ACTION_WIFI_SETTINGS : Settings.ACTION_SETTINGS)
@@ -2352,29 +2417,412 @@ public class MainActivity extends Activity {
         }
     }
 
+    // ---- Search -----------------------------------------------------------------------------
+
+    /**
+     * Opens search over Home. {@code pulled}: Up at the top of Home pulled it down. Only on Home:
+     * other apps are never touched.
+     */
+    private void openSearch(boolean pulled) {
+        if (moving || search.isOpen() || isDestroyed()) return;
+        if (area == MENU) {
+            leaveMenu();
+            dismissMenu();
+        }
+        search.show(pulled);
+    }
+
+    /**
+     * Holding Home while Home shows (the ≡ helper sees the hold; Home never waits for it, so a
+     * normal press is as quick as ever). False if Home isn't in a state to open search.
+     */
+    boolean openSearchFromHold() {
+        if (!isResumedNow || !hasWindowFocus() || moving || search.isOpen() || idleOverlay != null) return false;
+        searchHeldAt = android.os.SystemClock.uptimeMillis();
+        openSearch(false);
+        return true;
+    }
+
+    private final SearchOverlay.Host searchHost = new SearchOverlay.Host() {
+        @Override
+        public List<AppRepo.App> searchableApps() {
+            List<AppRepo.App> out = new ArrayList<>();
+            Set<String> hidden = hiddenApps();
+            Set<String> lockedApps = Lock.lockedApps(MainActivity.this), lockedCats = Lock.lockedCats(MainActivity.this);
+            boolean active = Lock.active(MainActivity.this);
+            for (AppRepo.App a : allApps) {
+                String cat = isInput(a) ? null : categories.of(a.pkg).id;
+                if (SearchPrefs.appVisible(a.pkg, cat, hidden, lockedApps, lockedCats, active)) out.add(a);
+            }
+            return out;
+        }
+
+        @Override
+        public void openApp(AppRepo.App app) {
+            search.hideNow();
+            launch(app);
+        }
+
+        @Override
+        public boolean settingsAllowed() {
+            return SearchPrefs.settingsVisible(Lock.guest(MainActivity.this));
+        }
+
+        @Override
+        public boolean settingAvailable(SettingsIndex.Entry e) {
+            if ("projector".equals(e.menu)) {
+                for (String[] p : PROJECTOR) if (p[0].equals(e.label)) return Device.has(MainActivity.this, p[2], p[3]);
+            }
+            if ("Inputs button".equals(e.label) || "Inputs row (HDMI)".equals(e.label)) return hasInputs;
+            return true;
+        }
+
+        @Override
+        public void openSetting(SettingsIndex.Entry e) {
+            openSettingFromSearch(e);
+        }
+
+        @Override
+        public void openSearchSettings() {
+            search.hideNow();
+            requirePin(customizeLocked(), "Customize", () -> {
+                fullBack = MainActivity.this::backToSearch;
+                showFullViews();
+                rail.setFocus(SEC_RESET, false);
+                railActive = false;
+                rail.setActive(false);
+                MainActivity.this.openSearchSettings(0);
+                searchReturnMenu = menuCrumb + "|" + menuTitle;
+            });
+        }
+
+        @Override
+        public Set<String> openablePackages() {
+            Set<String> out = new HashSet<>();
+            for (AppRepo.App a : searchableApps()) out.add(a.pkg);
+            return out;
+        }
+
+        @Override
+        public Map<String, Integer> uses() {
+            Map<String, Integer> out = new java.util.HashMap<>();
+            for (AppRepo.App a : allApps) out.put(a.pkg, usage.getInt(a.pkg, 0));
+            return out;
+        }
+
+        @Override
+        public void openTitle(AppLinks.App app, String title) {
+            AppRepo.App installed = null;
+            for (AppRepo.App a : allApps) if (a.pkg.equals(app.pkg)) installed = a;
+            if (installed == null) return;
+            AppRepo.App target = installed;
+            requirePin(Lock.appLocked(MainActivity.this, target.pkg, categories.of(target.pkg).id),
+                    "Open " + target.label, () -> openTitleNow(app, target, title));
+        }
+
+        @Override
+        public void sound(int id, boolean repeat) {
+            if (repeat) sounds.tick(id, true);
+            else sounds.play(id);
+        }
+
+        @Override
+        public void toast(String message) {
+            MainActivity.this.toast(message, false);
+        }
+
+        @Override
+        public void closed() {
+            applyFocus(true);
+        }
+    };
+
+    /**
+     * Sends a title to an app: into the app's own search when it takes one, otherwise the app opens
+     * and a note says what to look for (no app gives other apps a way to open a title directly).
+     */
+    private void openTitleNow(AppLinks.App app, AppRepo.App target, String title) {
+        search.hideNow();
+        usage.edit().putInt(target.pkg, usage.getInt(target.pkg, 0) + 1)
+                .putLong("t:" + target.pkg, System.currentTimeMillis()).apply();
+        Intent i = AppLinks.searchIntent(app, title);
+        if (i != null) {
+            try {
+                startActivity(i);
+                sounds.play(Sounds.LAUNCH);
+                return;
+            } catch (RuntimeException ignored) {
+                // Not taken after all: fall back to opening the app.
+            }
+        }
+        launchNow(target);
+        // Home's own toasts can't show over another app; Android's can.
+        android.widget.Toast.makeText(this, "Search for “" + title + "” in " + app.name,
+                android.widget.Toast.LENGTH_LONG).show();
+    }
+
     // ---- Customize --------------------------------------------------------------------------
 
     private static final String CUSTOMIZE = "Customize";
 
+    /**
+     * Quick Customize, the sheet on Home: the three things people change most, and the way into
+     * everything else. The same settings as Customization, so both stay in step.
+     */
     private void openCustomize(int focus) {
-        lastSection = focus;
+        hideFull(false);
+        custMode = CUST_QUICK;
         // In guest mode the Customize button is hidden; the menu then belongs to no button.
         menuAnchorPill = pills[PILL_CUSTOMIZE].getVisibility() == View.VISIBLE ? PILL_CUSTOMIZE : -1;
         startMenu(null, CUSTOMIZE);
         add(MenuView.Row.nav(R.drawable.ic_background, "Background", backgroundName()), () -> openBackgroundMenu());
-        add(MenuView.Row.nav(R.drawable.ic_dock, "Home layout", homeSummary()), () -> openHomeMenu(0));
-        add(MenuView.Row.nav(R.drawable.ic_apps, "Apps", appsSummary()), () -> openAppsMenu(0));
-        add(MenuView.Row.nav(R.drawable.ic_look, "Look", APPEARANCE[appearanceIndex()]), () -> openLookMenu(0));
-        int left = SleepTimer.minutesLeft(this);
-        add(MenuView.Row.nav(R.drawable.ic_projector, "Projector & tools",
-                left > 0 ? "Sleep in " + left + " min" : ""), () -> openProjectorMenu(0));
-        add(MenuView.Row.nav(R.drawable.ic_lock, "Lock & remote", lockSummary()), () -> openLockMenu(0));
-        add(MenuView.Row.nav(R.drawable.ic_reset, "Backup & reset", ""), () -> openBackupMenu(0));
+        add(MenuView.Row.nav(R.drawable.ic_look, "Appearance", APPEARANCE[appearanceIndex()]), () -> openAppearanceMenu(0));
+        add(MenuView.Row.nav(R.drawable.ic_dock, "Dock & arrange apps", ""), () -> openDockArrangeMenu(0));
+        add(MenuView.Row.nav(R.drawable.ic_palette, "All customization", ""), () -> openFull(lastSection, () -> openCustomize(3)));
         showSheet(focus, null, null);
     }
 
+    /** Quick Customize › Dock & arrange apps. */
+    private void openDockArrangeMenu(int focus) {
+        startMenu(CUSTOMIZE, "Dock & arrange apps");
+        MenuView.Row rearrange = add(MenuView.Row.action(R.drawable.ic_dock, "Rearrange the dock"), this::rearrangeDock);
+        if (dockApps.isEmpty()) rearrange.disabled("The dock is empty. Hold OK on an app in the grid to add it.");
+        MenuView.Row arrange = add(MenuView.Row.action(R.drawable.ic_move, "Arrange apps"), this::arrangeApps);
+        if (!hasGrid()) arrange.disabled("No apps under the dock to arrange.");
+        add(MenuView.Row.nav(R.drawable.ic_hide, "Show or hide apps", hiddenCount() + " hidden"), () -> openHideMenu(0));
+        add(MenuView.Row.action(R.drawable.ic_reset, "Reset dock to default"), this::resetDock);
+        showSheet(focus, () -> openCustomize(2), null);
+    }
+
+    private void rearrangeDock() {
+        area = DOCK;
+        dockIndex = Math.min(dockIndex, dockApps.size() - 1);
+        startMove();
+    }
+
+    private void arrangeApps() {
+        area = GRID;
+        enterSection(nextSection(-1, 1, false), 0, true);
+        startMove();
+    }
+
+    private void resetDock() {
+        prefs.edit().remove("dock_order").remove("dock_config").apply();
+        rebuildLists();
+        toast("Dock reset to the default apps", true);
+    }
+
+    /** Back from a section's own menu: the section list in Customization, or the quick sheet. */
     private Runnable backTo(int section) {
-        return () -> openCustomize(section);
+        return () -> {
+            if (custMode == CUST_FULL) showFullRoot(section);
+            else openCustomize(0);
+        };
+    }
+
+    // ---- Customization: the full screen ------------------------------------------------------
+
+    private static final int CUST_NONE = 0, CUST_QUICK = 1, CUST_FULL = 2;
+    private static final String[] SECTION_NAMES = {"Background", "Home layout", "Apps", "Look & sound",
+            "Projector & tools", "Lock & remote", "System"};
+    private static final int[] SECTION_ICONS = {R.drawable.ic_background, R.drawable.ic_dock, R.drawable.ic_apps,
+            R.drawable.ic_look, R.drawable.ic_projector, R.drawable.ic_lock, R.drawable.ic_settings};
+    /** Which Customize is showing, so Back from a section knows where "up" is. */
+    private int custMode = CUST_NONE;
+    private MenuView rail;
+    private View fullScrim;
+    /** The section list has focus (the section's rows show beside it as a preview). */
+    private boolean railActive;
+    /** Where Back from the section list goes: the quick sheet, search, or nowhere (closes). */
+    private Runnable fullBack;
+    /** A setting opened from search: Back from this menu goes back to search. */
+    private String searchReturnMenu;
+
+    private int railWidth() {
+        return tk.dp(236);
+    }
+
+    /**
+     * Customization: every setting, as a full screen. The seven sections on the left, the chosen
+     * section's rows beside them, and Home still showing on the right, so background and look
+     * changes preview live. Same menu look, same keys: Right or OK goes in, Left or Back comes out.
+     */
+    private void openFull(int section, Runnable back) {
+        fullBack = back;
+        searchReturnMenu = null;
+        showFullViews();
+        showFullRoot(Math.max(0, Math.min(SECTION_NAMES.length - 1, section)));
+    }
+
+    private void showFullViews() {
+        custMode = CUST_FULL;
+        if (rail == null) {
+            fullScrim = new View(this);
+            int a = Ui.alpha(theme.bg | 0xFF000000, 0.93f);
+            fullScrim.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
+                    new int[] {a, a, a, Ui.alpha(a, 0.55f), a & 0x00FFFFFF}));
+            fullScrim.setVisibility(View.GONE);
+            root.addView(fullScrim, root.indexOfChild(menu), new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            rail = new MenuView(this, theme);
+            rail.setVisibility(View.GONE);
+            FrameLayout.LayoutParams rlp = new FrameLayout.LayoutParams(railWidth(), ViewGroup.LayoutParams.WRAP_CONTENT,
+                    Gravity.TOP | Gravity.START);
+            rlp.leftMargin = tk.safeH;
+            rlp.topMargin = tk.safeV;
+            root.addView(rail, root.indexOfChild(menu), rlp);
+        }
+        rail.setMaxHeight(root.getHeight() - 2 * tk.safeV);
+        List<MenuView.Row> rows = new ArrayList<>();
+        for (int i = 0; i < SECTION_NAMES.length; i++) rows.add(MenuView.Row.nav(SECTION_ICONS[i], SECTION_NAMES[i], ""));
+        rail.setHeader(null, "Customization");
+        rail.setRows(rows, lastSection, false);
+        if (rail.getVisibility() != View.VISIBLE) {
+            for (View v : new View[] {fullScrim, rail}) {
+                v.animate().cancel();
+                v.setVisibility(View.VISIBLE);
+                v.setAlpha(0f);
+            }
+            fullScrim.animate().alpha(1f).setDuration(tk.medium).setInterpolator(Tokens.EASE_OUT).start();
+            rail.setTranslationX(-tk.space5);
+            rail.animate().alpha(1f).translationX(0).setDuration(tk.medium).setInterpolator(Tokens.EASE_OUT).start();
+        }
+    }
+
+    /** The section list has focus; the section's own menu shows beside it, as a preview. */
+    private void showFullRoot(int section) {
+        if (custMode != CUST_FULL) showFullViews();
+        railActive = true;
+        rail.setActive(true);
+        rail.setFocus(section, false);
+        rail.setHints("OK", "Open", "BACK", fullBack == null ? "Close" : "Back");
+        openSection(section);
+    }
+
+    private void openSection(int s) {
+        switch (s) {
+            case SEC_BACKGROUND: openBackgroundMenu(); break;
+            case SEC_HOME: openHomeMenu(0); break;
+            case SEC_APPS: openAppsMenu(0); break;
+            case SEC_LOOK: openLookMenu(0); break;
+            case SEC_PROJECTOR: openProjectorMenu(0); break;
+            case SEC_LOCK: openLockMenu(0); break;
+            default: openBackupMenu(0); break;
+        }
+    }
+
+    /** Keys while the section list has focus. */
+    private void railNav(boolean up, boolean down, boolean left, boolean right, boolean select, boolean back) {
+        if (up || down) {
+            if (rail.moveFocus(up ? -1 : 1)) {
+                sounds.tick(Sounds.FOCUS, navRepeat);
+                openSection(rail.focus());
+            }
+        } else if (right || select) {
+            railActive = false;
+            rail.setActive(false);
+            menu.setActive(true);
+            sounds.tick(Sounds.FOCUS, false);
+        } else if (back || left) {
+            Runnable b = fullBack;
+            hideFull(true);
+            sounds.play(b == null ? Sounds.CLOSE : Sounds.BACK);
+            if (b != null) b.run();
+            else {
+                leaveMenu();
+                dismissMenu();
+            }
+        }
+    }
+
+    /** Closes Customization's section list and backdrop (the menu itself is the caller's). */
+    private void hideFull(boolean animate) {
+        if (custMode == CUST_FULL) custMode = CUST_NONE;
+        railActive = false;
+        searchReturnMenu = null;
+        if (rail == null || rail.getVisibility() != View.VISIBLE) return;
+        for (View v : new View[] {fullScrim, rail}) {
+            v.animate().cancel();
+            if (!animate) {
+                v.setVisibility(View.GONE);
+                continue;
+            }
+            v.animate().alpha(0f).setDuration(tk.fast).setInterpolator(Tokens.EASE_IN_OUT)
+                    .withEndAction(() -> {
+                        if (custMode != CUST_FULL) v.setVisibility(View.GONE);
+                    }).start();
+        }
+    }
+
+    /** Opens one of SettingsIndex's menus by its id (search). */
+    private void openSettingMenu(String id) {
+        switch (id) {
+            case "background": openBackgroundMenu(); break;
+            case "background.slideshow": openSlideshowMenu(); break;
+            case "background.adjust": openAdjustMenu(0); break;
+            case "home": openHomeMenu(0); break;
+            case "home.layout": openLayoutMenu(0); break;
+            case "home.categories": openCategoriesMenu(0); break;
+            case "home.dock": openDockMenu(0); break;
+            case "home.weather": openWeatherMenu(0); break;
+            case "apps": openAppsMenu(0); break;
+            case "look": openLookMenu(0); break;
+            case "look.appearance": openAppearanceMenu(0); break;
+            case "look.font": openFontMenu(0); break;
+            case "look.clock": openClockMenu(0); break;
+            case "look.bar": openBarMenu(0); break;
+            case "look.bar.notif": openNotifSetting(); break;
+            case "look.tiles": openTilesMenu(0); break;
+            case "look.tiles.advanced": openTilesAdvanced(0); break;
+            case "look.themes": openThemesMenu(0); break;
+            case "look.sounds": openSoundsMenu(0); break;
+            case "look.sounds.output": openSoundsOutputMenu(0); break;
+            case "look.sounds.quiet": openSoundsQuietMenu(0); break;
+            case "projector": openProjectorMenu(0); break;
+            case "projector.startup": openStartupMenu(0); break;
+            case "projector.idle": openIdleMenu(); break;
+            case "lock": openLockMenu(0); break;
+            case "lock.shortcuts": openShortcutsMenu(0); break;
+            case "system": openBackupMenu(0); break;
+            case "system.search": openSearchSettings(0); break;
+            case "system.about": openAboutMenu(0); break;
+            default: openSection(SettingsIndex.section(id)); break;
+        }
+    }
+
+    /** A setting picked in search: its menu in Customization, on its row, which pulses once. */
+    private void openSettingFromSearch(SettingsIndex.Entry e) {
+        requirePin(customizeLocked(), "Customize", () -> {
+            search.hideNow();
+            int section = SettingsIndex.section(e.menu);
+            lastSection = section;
+            fullBack = this::backToSearch;
+            showFullViews();
+            rail.setFocus(section, false);
+            railActive = false;
+            rail.setActive(false);
+            rail.setHints("OK", "Open", "BACK", "Back");
+            openSettingMenu(e.menu);
+            menu.setActive(true);
+            for (int i = 0; i < menu.size(); i++) {
+                if (e.label.equals(menu.row(i).label)) {
+                    menu.setFocus(i, false);
+                    break;
+                }
+            }
+            menu.pulse();
+            searchReturnMenu = menuCrumb + "|" + menuTitle;
+        });
+    }
+
+    /** Back from Customization to search, as you left it. */
+    private void backToSearch() {
+        hideFull(false);
+        leaveMenu();
+        menu.animate().cancel();
+        menu.setVisibility(View.GONE);
+        Lock.relock();
+        search.reshow();
     }
 
     private static String crumb(String section) {
@@ -3089,7 +3537,7 @@ public class MainActivity extends Activity {
                         prefs.edit().putString("bg_video", uri.toString()).apply();
                         applyBackground("video", true);
                         toast("Video background set. It plays muted and pauses while an app is open.", true);
-                        openCustomize(SEC_BACKGROUND);
+                        backTo(SEC_BACKGROUND).run();
                     }, () -> {
                         cancelPhotoPreview();
                         pendingPreview = () -> {
@@ -3269,7 +3717,7 @@ public class MainActivity extends Activity {
                 toast("Background set", true);
             });
         });
-        openCustomize(SEC_BACKGROUND);
+        backTo(SEC_BACKGROUND).run();
     }
 
     // Animated photos (GIF, animated WebP): Android's own decoder, scaled to the screen as it plays.
@@ -3940,7 +4388,10 @@ public class MainActivity extends Activity {
             });
         }
         if (allApps.isEmpty()) add(MenuView.Row.loading("Loading apps…"), null);
-        showSheet(focus, () -> openAppsMenu(0), null);
+        showSheet(focus, () -> {
+            if (custMode == CUST_QUICK) openDockArrangeMenu(2);
+            else openAppsMenu(0);
+        }, null);
         menu.setHints("OK", "Show / hide", "BACK", "Back");
     }
 
@@ -4142,9 +4593,9 @@ public class MainActivity extends Activity {
 
     // Remote shortcuts: what holding ≡ or the Settings (gear) button does. Off by default.
 
-    static final String[] HOLD_ACTIONS = {"", "home", "customize", "next_bg", "sleep30"};
-    private static final String[] HOLD_NAMES = {"Nothing", "Go to Home", "Open Customize", "Next background",
-            "Sleep in 30 minutes"};
+    static final String[] HOLD_ACTIONS = {"", "home", "customize", "search", "next_bg", "sleep30"};
+    private static final String[] HOLD_NAMES = {"Nothing", "Go to Home", "Open Customize", "Open search",
+            "Next background", "Sleep in 30 minutes"};
 
     private String holdName(String key) {
         int i = Arrays.asList(HOLD_ACTIONS).indexOf(prefs.getString(key, ""));
@@ -4161,8 +4612,15 @@ public class MainActivity extends Activity {
         add(MenuView.Row.nav(0, "Hold ≡", holdName("hold_menu")), () -> openHoldChoice("hold_menu", "Hold ≡", 0));
         add(MenuView.Row.nav(0, "Hold the Settings button", holdName("hold_gear")),
                 () -> openHoldChoice("hold_gear", "Hold the Settings button", 1));
-        add(MenuView.Row.note(R.drawable.ic_info, "A short press still does what it always did. Works in any app "
-                + "while the ≡ helper is on."), null);
+        boolean homeHold = prefs.getBoolean("hold_home_search", true);
+        MenuView.Row home = add(MenuView.Row.action(0, "Hold Home for search").value(homeHold ? "On" : "Off"), () -> {
+            prefs.edit().putBoolean("hold_home_search", !homeHold).apply();
+            menuSound = homeHold ? Sounds.OFF : Sounds.ON;
+            openShortcutsMenu(2);
+        });
+        if (!PanelService.isRunning()) home.disabled("Needs the ≡ helper (Leios quick settings) on in Accessibility.");
+        add(MenuView.Row.note(R.drawable.ic_info, "A short press still does what it always did. ≡ and Settings work in "
+                + "any app while the ≡ helper is on; holding Home opens search only on Home."), null);
         showSheet(focus, () -> openLockMenu(4), null);
     }
 
@@ -4452,7 +4910,7 @@ public class MainActivity extends Activity {
 
     private void openLookMenu(int focus) {
         lastSection = SEC_LOOK;
-        startMenu(CUSTOMIZE, "Look");
+        startMenu(CUSTOMIZE, "Look & sound");
         add(MenuView.Row.nav(0, "Appearance", APPEARANCE[appearanceIndex()]), () -> openAppearanceMenu(0));
         add(MenuView.Row.nav(0, "Font and text size", Tokens.FONT_NAMES[fontIndex()]), () -> openFontMenu(0));
         add(MenuView.Row.nav(0, "Clock", clockSummary()), () -> openClockMenu(0));
@@ -4464,7 +4922,7 @@ public class MainActivity extends Activity {
     }
 
     private void openAppearanceMenu(int focus) {
-        String crumb = crumb("Look");
+        String crumb = crumb("Look & sound");
         startMenu(crumb, "Appearance");
         int mode = appearanceIndex();
         add(MenuView.Row.nav(0, "Mode", APPEARANCE[mode]), () -> openChoice(crumb + "  ›  Appearance", "Mode",
@@ -4493,7 +4951,10 @@ public class MainActivity extends Activity {
                     }
                     openAppearanceMenu(1);
                 }, null, () -> openAppearanceMenu(1)));
-        showSheet(focus, () -> openLookMenu(0), null);
+        showSheet(focus, () -> {
+            if (custMode == CUST_QUICK) openCustomize(1);
+            else openLookMenu(0);
+        }, null);
     }
 
     // Sounds: all off until chosen here. Sounds.java decides when one may play.
@@ -4503,7 +4964,7 @@ public class MainActivity extends Activity {
     }
 
     private void openSoundsMenu(int focus) {
-        String crumb = crumb("Look");
+        String crumb = crumb("Look & sound");
         startMenu(crumb, "Sounds");
         int volume = Sounds.volume(prefs);
         addAdjust(MenuView.Row.slider(0, "Volume", volume / (float) Sounds.VOLUME_MAX, soundVolumeText(volume))
@@ -4562,7 +5023,7 @@ public class MainActivity extends Activity {
 
     /** Which of Android's channels the sounds use, and why you might not hear them. */
     private void openSoundsOutputMenu(int focus) {
-        String crumb = crumb("Look") + "  ›  Sounds";
+        String crumb = crumb("Look & sound") + "  ›  Sounds";
         startMenu(crumb, "Output");
         int output = pref("sound_output", 0, 2);
         add(MenuView.Row.nav(0, "Sound output", SOUND_OUTPUTS[output]), () -> openChoice(crumb + "  ›  Output",
@@ -4592,7 +5053,7 @@ public class MainActivity extends Activity {
     }
 
     private void openSoundsQuietMenu(int focus) {
-        startMenu(crumb("Look") + "  ›  Sounds", "Quiet times");
+        startMenu(crumb("Look & sound") + "  ›  Sounds", "Quiet times");
         addToggle("Silent at bedtime", "sound_mute_bed", false, () -> openSoundsQuietMenu(0));
         if (prefs.getString("lock_sched", "").isEmpty()) {
             pendingRows.get(pendingRows.size() - 1).disabled("Choose a time in Lock & remote › When first.");
@@ -4604,7 +5065,7 @@ public class MainActivity extends Activity {
     private static final String[] TEXT_SIZES = {"Smaller", "Normal", "Larger"};
 
     private void openFontMenu(int focus) {
-        String crumb = crumb("Look");
+        String crumb = crumb("Look & sound");
         startMenu(crumb, "Font and text size");
         int font = fontIndex();
         add(MenuView.Row.nav(0, "Font", Tokens.FONT_NAMES[font]), () -> openChoice(crumb + "  ›  Font and text size",
@@ -4634,7 +5095,7 @@ public class MainActivity extends Activity {
     // Themes: the whole look, saved, shared as a picture, or one of three built in.
 
     private void openThemesMenu(int focus) {
-        String crumb = crumb("Look");
+        String crumb = crumb("Look & sound");
         startMenu(crumb, "Themes");
         for (int i = 0; i < Themes.PRESETS.length; i++) {
             int n = i;
@@ -4699,7 +5160,7 @@ public class MainActivity extends Activity {
     }
 
     private void openSavedTheme(File f, String name) {
-        String crumb = crumb("Look") + "  ›  Themes";
+        String crumb = crumb("Look & sound") + "  ›  Themes";
         startMenu(crumb, name);
         add(MenuView.Row.action(R.drawable.ic_check, "Apply"), () -> {
             try {
@@ -4736,7 +5197,7 @@ public class MainActivity extends Activity {
             requestPermissions(new String[] {imagePermission()}, REQ_PHOTOS);
             return;
         }
-        String crumb = crumb("Look") + "  ›  Themes";
+        String crumb = crumb("Look & sound") + "  ›  Themes";
         startMenu(crumb, "Import a theme");
         add(MenuView.Row.loading("Looking for theme pictures…"), null);
         showSheet(0, () -> openThemesMenu(0), null);
@@ -4825,7 +5286,7 @@ public class MainActivity extends Activity {
     }
 
     private void openClockMenu(int focus) {
-        String crumb = crumb("Look");
+        String crumb = crumb("Look & sound");
         startMenu(crumb, "Clock");
         int fmt = Math.max(0, Arrays.asList(CLOCK_FORMATS).indexOf(prefs.getString("clock_fmt", "auto")));
         add(MenuView.Row.nav(0, "Format", CLOCK_FORMAT_NAMES[fmt]), () -> openChoice(crumb + "  ›  Clock", "Format",
@@ -4940,37 +5401,38 @@ public class MainActivity extends Activity {
     }
 
     private void openBarMenu(int focus) {
-        String crumb = crumb("Look");
+        String crumb = crumb("Look & sound");
         startMenu(crumb, "Top bar");
-        addToggle("Inputs button", "bar_inputs", true, () -> openBarMenu(0));
+        addToggle("Search button", "bar_search", true, () -> openBarMenu(0));
+        addToggle("Inputs button", "bar_inputs", true, () -> openBarMenu(1));
         if (!hasInputs) pendingRows.get(pendingRows.size() - 1).disabled("This TV has no HDMI inputs.");
         int wifi = pref("bar_wifi", 0, 2);
         add(MenuView.Row.nav(0, "Wi-Fi", WIFI_SHOW[wifi]), () -> openChoice(crumb + "  ›  Top bar", "Wi-Fi",
                 new String[] {"Name and signal", "Signal only", "Hidden"}, wifi, i -> {
                     prefs.edit().putInt("bar_wifi", i).apply();
                     applyBarLook();
-                    openBarMenu(1);
-                }, null, () -> openBarMenu(1)));
+                    openBarMenu(2);
+                }, null, () -> openBarMenu(2)));
         boolean notif = prefs.getBoolean("bar_notif", false);
         add(MenuView.Row.nav(0, "Notifications", !notif ? "Off" : Notifs.connected() ? "On" : "Needs access"),
                 this::openNotifSetting);
-        addToggle("Settings button", "bar_settings", true, () -> openBarMenu(3));
+        addToggle("Settings button", "bar_settings", true, () -> openBarMenu(4));
         boolean compact = pref("bar_size", 0, 1) == 1;
         add(MenuView.Row.nav(0, "Size", compact ? "Compact" : "Normal"), () -> openChoice(crumb + "  ›  Top bar", "Size",
                 new String[] {"Normal", "Compact"}, compact ? 1 : 0, i -> {
                     prefs.edit().putInt("bar_size", i).apply();
                     applyBarLook();
-                    openBarMenu(4);
+                    openBarMenu(5);
                 }, i -> {
                     prefs.edit().putInt("bar_size", i).apply();
                     applyBarLook();
-                }, () -> openBarMenu(4)));
+                }, () -> openBarMenu(5)));
         add(MenuView.Row.action(R.drawable.ic_reset, "Reset top bar"), () -> {
-            prefs.edit().remove("bar_inputs").remove("bar_wifi").remove("bar_notif").remove("bar_settings")
-                    .remove("bar_size").apply();
+            prefs.edit().remove("bar_search").remove("bar_inputs").remove("bar_wifi").remove("bar_notif")
+                    .remove("bar_settings").remove("bar_size").apply();
             applyBarLook();
             toast("Top bar back to the default", true);
-            openBarMenu(5);
+            openBarMenu(6);
         });
         showSheet(focus, () -> openLookMenu(3), null);
     }
@@ -4981,7 +5443,7 @@ public class MainActivity extends Activity {
      */
     private void openNotifSetting() {
         boolean on = prefs.getBoolean("bar_notif", false);
-        String crumb = crumb("Look") + "  ›  Top bar";
+        String crumb = crumb("Look & sound") + "  ›  Top bar";
         startMenu(crumb, "Notifications");
         add(MenuView.Row.note(R.drawable.ic_info, "Shows a bell in the top bar when an app has a notification. "
                 + "OK on it lists them. Needs notification access, which you turn on in Android's settings."), null);
@@ -4996,7 +5458,7 @@ public class MainActivity extends Activity {
                 .value(Notifs.connected() ? "Allowed" : "Not allowed"),
                 () -> startSafely(new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")));
         if (!on) access.disabled("Turn on the bell first.");
-        showSheet(1, () -> openBarMenu(2), null);
+        showSheet(1, () -> openBarMenu(3), null);
     }
 
     private int pillHeight() {
@@ -5021,6 +5483,7 @@ public class MainActivity extends Activity {
         int wifi = pref("bar_wifi", 0, 2);
         // A TV without inputs (or a tuner) has nothing to switch to: no Inputs button.
         pills[PILL_INPUTS].setVisibility(hasInputs && prefs.getBoolean("bar_inputs", true) ? View.VISIBLE : View.GONE);
+        pills[PILL_SEARCH].setVisibility(prefs.getBoolean("bar_search", true) ? View.VISIBLE : View.GONE);
         pills[PILL_WIFI].setVisibility(wifi == 2 ? View.GONE : View.VISIBLE);
         wifiLabel.setVisibility(wifi == 1 ? View.GONE : View.VISIBLE);
         // Icon only: even padding, so the pill is a neat circle-ish chip.
@@ -5075,7 +5538,7 @@ public class MainActivity extends Activity {
             area = TOP;
             menuAnchorPill = PILL_CUSTOMIZE;
             requirePin(Lock.hasPin(this) && (Lock.guest(this) || customizeLocked()), "Customize",
-                    () -> openCustomize(SEC_LOCK));
+                    () -> openFull(SEC_LOCK, null));
         }
     }
 
@@ -5106,7 +5569,7 @@ public class MainActivity extends Activity {
     }
 
     private void openTilesMenu(int focus) {
-        String crumb = crumb("Look");
+        String crumb = crumb("Look & sound");
         startMenu(crumb, "Tiles");
         int style = tileStyleIndex();
         add(MenuView.Row.nav(0, "Style", TILE_STYLES[style]), () -> {
@@ -5163,7 +5626,7 @@ public class MainActivity extends Activity {
     }
 
     private void openTilesAdvanced(int focus) {
-        String crumb = crumb("Look") + "  ›  Tiles";
+        String crumb = crumb("Look & sound") + "  ›  Tiles";
         startMenu(crumb, "Advanced");
         tileOption(0, "Corners", CORNERS, "tile_corners", 1, true);
         tileOption(1, "Focus colour", FOCUS_COLOURS, "focus_color", 0, false);
@@ -5180,7 +5643,7 @@ public class MainActivity extends Activity {
     /** One tile setting that previews on the tiles as you move; {@code banners} redraws banner corners. */
     private void tileOption(int row, String title, String[] options, String key, int def, boolean banners) {
         int cur = pref(key, def, options.length - 1);
-        add(MenuView.Row.nav(0, title, options[cur]), () -> openChoice(crumb("Look") + "  ›  Tiles  ›  Advanced",
+        add(MenuView.Row.nav(0, title, options[cur]), () -> openChoice(crumb("Look & sound") + "  ›  Tiles  ›  Advanced",
                 title, options, cur, i -> {
                     prefs.edit().putInt(key, i).apply();
                     relayout();
@@ -5468,20 +5931,107 @@ public class MainActivity extends Activity {
         pendingSleepMinutes = 0;
     }
 
-    // Backup & reset
+    // System: search and privacy, backup and reset, about
 
     private void openBackupMenu(int focus) {
         lastSection = SEC_RESET;
-        startMenu(CUSTOMIZE, "Backup & reset");
+        startMenu(CUSTOMIZE, "System");
+        add(MenuView.Row.nav(R.drawable.ic_search, "Search & privacy", searchSummary()), () -> openSearchSettings(0));
         add(MenuView.Row.nav(R.drawable.ic_open, "Save a backup", ""), this::openBackupSave);
         add(MenuView.Row.nav(R.drawable.ic_reset, "Restore a backup", ""), this::openRestoreList);
         boolean auto = prefs.getBoolean("auto_backup", true);
         add(MenuView.Row.action(0, "Automatic backups").value(auto ? "On" : "Off"), () -> {
             prefs.edit().putBoolean("auto_backup", !auto).apply();
-            openBackupMenu(2);
+            openBackupMenu(3);
         });
         add(MenuView.Row.nav(R.drawable.ic_trash, "Reset everything", ""), this::openResetMenu);
+        add(MenuView.Row.nav(R.drawable.ic_info, "About", BuildConfig.VERSION_NAME), () -> openAboutMenu(0));
         showSheet(focus, backTo(SEC_RESET), null);
+    }
+
+    private String searchSummary() {
+        switch (SearchPrefs.online(prefs, Titles.hasKey())) {
+            case SearchPrefs.ON: return "Online on";
+            case SearchPrefs.UNAVAILABLE: return "On this TV";
+            default: return "Online off";
+        }
+    }
+
+    /** Customization › System › Search & privacy. */
+    private void openSearchSettings(int focus) {
+        String crumb = crumb("System");
+        startMenu(crumb, "Search & privacy");
+        int state = SearchPrefs.online(prefs, Titles.hasKey());
+        MenuView.Row online = add(MenuView.Row.action(0, "Online title search")
+                .value(state == SearchPrefs.ON ? "On" : "Off"), () -> {
+            boolean on = state != SearchPrefs.ON;
+            SearchPrefs.setOnline(prefs, on);
+            menuSound = on ? Sounds.ON : Sounds.OFF;
+            if (!on) loader.execute(() -> Titles.clearCache(this));
+            openSearchSettings(0);
+        });
+        if (state == SearchPrefs.UNAVAILABLE) online.disabled("This copy of Leios was built without a TMDB key, "
+                + "so search finds apps and settings only.");
+        else online.detail("Sends only what you type and your region to TMDB");
+        String region = SearchPrefs.region(prefs, Locale.getDefault());
+        boolean autoRegion = prefs.getString("search_region", "").isEmpty();
+        MenuView.Row regionRow = add(MenuView.Row.nav(0, "Region", autoRegion ? "Automatic (" + region + ")" : region),
+                () -> openRegionChoice());
+        MenuView.Row elsewhere = add(MenuView.Row.action(0, "Titles not on your apps")
+                .value(SearchPrefs.showElsewhere(prefs) ? "Show" : "Hide"), () -> {
+            prefs.edit().putBoolean("search_elsewhere", !SearchPrefs.showElsewhere(prefs)).apply();
+            openSearchSettings(2);
+        });
+        if (state != SearchPrefs.ON) {
+            regionRow.disabled("For online title search.");
+            elsewhere.disabled("For online title search.");
+        }
+        boolean recent = SearchPrefs.remembersRecent(prefs);
+        add(MenuView.Row.action(0, "Recent searches").value(recent ? "On" : "Off"), () -> {
+            prefs.edit().putBoolean("search_recent_on", !recent).apply();
+            if (recent) SearchPrefs.clearRecent(prefs);
+            menuSound = recent ? Sounds.OFF : Sounds.ON;
+            openSearchSettings(3);
+        });
+        MenuView.Row clear = add(MenuView.Row.action(R.drawable.ic_trash, "Clear recent searches"), () -> {
+            SearchPrefs.clearRecent(prefs);
+            toast("Recent searches cleared", true);
+            openSearchSettings(4);
+        });
+        if (SearchPrefs.recent(prefs).isEmpty()) clear.disabled("Nothing to clear.");
+        add(MenuView.Row.note(R.drawable.ic_info, "Apps and settings are always found on this TV. Recent searches stay "
+                + "on this TV too. Movie and show details come from TMDB, and where to watch from JustWatch."), null);
+        showSheet(focus, () -> openBackupMenu(0), null);
+    }
+
+    private static final String[] REGIONS = {"US", "GB", "CA", "AU", "IE", "NZ", "DE", "FR", "ES", "IT", "NL", "SE",
+            "NO", "DK", "FI", "PT", "BR", "MX", "AR", "IN", "JP", "KR"};
+
+    private void openRegionChoice() {
+        String[] names = new String[REGIONS.length + 1];
+        String device = Locale.getDefault().getCountry();
+        names[0] = "Automatic (" + new Locale("", device.isEmpty() ? "US" : device).getDisplayCountry() + ")";
+        for (int i = 0; i < REGIONS.length; i++) names[i + 1] = new Locale("", REGIONS[i]).getDisplayCountry();
+        String cur = prefs.getString("search_region", "");
+        // A region picked before that isn't listed any more counts as Automatic.
+        int current = cur.isEmpty() ? 0 : Math.max(0, Arrays.asList(REGIONS).indexOf(cur) + 1);
+        openChoice(crumb("System") + "  ›  Search & privacy", "Region", names, current, i -> {
+            prefs.edit().putString("search_region", i == 0 ? "" : REGIONS[i - 1]).apply();
+            openSearchSettings(1);
+        }, null, () -> openSearchSettings(1));
+    }
+
+    /** Customization › System › About: version, credits, and the attribution TMDB and JustWatch ask for. */
+    private void openAboutMenu(int focus) {
+        startMenu(crumb("System"), "About");
+        add(MenuView.Row.note(R.drawable.ic_info, "Leios " + BuildConfig.VERSION_NAME + ". A free, open-source home "
+                + "screen for Android TV and projectors. github.com/leioslauncher/leios-launcher"), null);
+        add(MenuView.Row.note(R.drawable.ic_search, "This application uses TMDB and the TMDB APIs but is not endorsed, "
+                + "certified, or otherwise approved by TMDB. Where-to-watch information is provided by JustWatch."), null);
+        add(MenuView.Row.note(R.drawable.ic_info, "Fonts, icons and other parts made by others, with their licences, are "
+                + "listed in THIRD_PARTY_NOTICES.md in the project."), null);
+        showSheet(focus, () -> openBackupMenu(5), null);
+        menu.setHints("BACK", "Back");
     }
 
     /** Before anything big: your current settings, in the restore list (unless you turned this off). */
@@ -5490,7 +6040,7 @@ public class MainActivity extends Activity {
     }
 
     private void openBackupSave() {
-        String crumb = crumb("Backup & reset");
+        String crumb = crumb("System");
         startMenu(crumb, "Save a backup");
         add(MenuView.Row.note(R.drawable.ic_info, "Everything you've set on Home, with your photo and icons, as a "
                 + "picture in Pictures › Leios. Restore it here, or on another projector."), null);
@@ -5508,19 +6058,19 @@ public class MainActivity extends Activity {
                     Uri saved = uri;
                     ui.post(() -> toast(saved == null ? "Couldn't save the backup" : "Backup saved in Pictures › Leios", saved != null));
                 });
-                openBackupMenu(0);
+                openBackupMenu(1);
             });
         }
         if (Backups.volumes(this).isEmpty()) add(MenuView.Row.note(R.drawable.ic_info,
                 "Saving a backup file needs Android 10 or newer. Automatic backups still work."), null);
-        showSheet(1, () -> openBackupMenu(0), null);
+        showSheet(1, () -> openBackupMenu(1), null);
     }
 
     private void openRestoreList() {
-        String crumb = crumb("Backup & reset");
+        String crumb = crumb("System");
         startMenu(crumb, "Restore a backup");
         add(MenuView.Row.loading("Looking for backups…"), null);
-        showSheet(0, () -> openBackupMenu(1), null);
+        showSheet(0, () -> openBackupMenu(2), null);
         boolean pictures = checkSelfPermission(imagePermission()) == PackageManager.PERMISSION_GRANTED;
         loader.execute(() -> {
             List<Backups.Entry> list = Backups.list(this, pictures);
@@ -5532,13 +6082,13 @@ public class MainActivity extends Activity {
                 }
                 if (list.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, "No backups yet. One is made "
                         + "automatically after each update and before big changes."), null);
-                showSheet(0, () -> openBackupMenu(1), null);
+                showSheet(0, () -> openBackupMenu(2), null);
             });
         });
     }
 
     private void confirmRestore(Backups.Entry e) {
-        String crumb = crumb("Backup & reset") + "  ›  Restore";
+        String crumb = crumb("System") + "  ›  Restore";
         startMenu(crumb, "Restore " + e.label + "?");
         add(MenuView.Row.note(R.drawable.ic_info, "Home goes back to how it was on " + Backups.when(e.time)
                 + ". What you have now is backed up first, so you can come back to it."), null);
@@ -5579,18 +6129,18 @@ public class MainActivity extends Activity {
     @android.annotation.SuppressLint("ApplySharedPref")
     private void openResetMenu() {
         lastSection = SEC_RESET;
-        startMenu(crumb("Backup & reset"), "Reset everything?");
+        startMenu(crumb("System"), "Reset everything?");
         add(MenuView.Row.note(R.drawable.ic_info, "Background, dock, categories, hidden apps, weather and look go "
                 + "back to how they started. Your apps and the projector's settings aren't touched. A backup is "
                 + "made first."), null);
-        add(MenuView.Row.action(R.drawable.ic_close, "Cancel"), () -> openBackupMenu(3));
+        add(MenuView.Row.action(R.drawable.ic_close, "Cancel"), () -> openBackupMenu(4));
         add(MenuView.Row.action(R.drawable.ic_reset, "Reset everything"), () -> {
             Backups.auto(this, "Before reset");
             stopSlideshow();
             stopVideo();
             stopAnim();
             SleepTimer.cancel(this);
-            prefs.edit().clear().putString("toast", "Home is back to how it started. Backup & reset › Restore undoes this.")
+            prefs.edit().clear().putString("toast", "Home is back to how it started. System › Restore a backup undoes this.")
                     .commit();
             usage.edit().clear().commit();
             //noinspection ResultOfMethodCallIgnored
@@ -5602,7 +6152,7 @@ public class MainActivity extends Activity {
             recreate();
         });
         // Cancel is preselected.
-        showSheet(1, () -> openBackupMenu(3), null);
+        showSheet(1, () -> openBackupMenu(4), null);
     }
 
     // ---- network pill: event driven, no polling ---------------------------------------------

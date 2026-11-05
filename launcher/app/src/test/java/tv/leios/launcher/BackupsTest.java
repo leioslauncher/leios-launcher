@@ -17,6 +17,25 @@ import java.util.zip.CRC32;
 
 public class BackupsTest {
 
+    @Test
+    public void recentSearchesStayOutOfBackupsButSearchSettingsGoIn() throws Exception {
+        JSONObject focus = new JSONObject();
+        focus.put("search_recent", "[\"netflix\"]");
+        focus.put("search_online", true);
+        focus.put("bar_search", false);
+        JSONObject out = Backups.withoutPrivate(focus);
+        assertFalse(out.has("search_recent"));
+        assertTrue(out.has("search_online"));
+        assertTrue(out.has("bar_search"));
+    }
+
+    @Test
+    public void themesCarryTheSearchButtonOnly() {
+        assertTrue(Themes.KEYS.contains("bar_search"));
+        assertFalse(Themes.KEYS.contains("search_online"));
+        assertFalse(Themes.KEYS.contains("search_recent"));
+    }
+
     /** The smallest valid PNG header: signature, IHDR (1×1), IEND. */
     private static byte[] tinyPng() {
         ByteArrayOutputStream out = new ByteArrayOutputStream();

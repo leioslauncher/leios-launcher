@@ -306,6 +306,28 @@ public class PanelService extends AccessibilityService {
         else go.run();
     }
 
+    // ---- holding Home on Home opens search ----------------------------------------------------
+
+    /**
+     * Only watched, never held back: the press goes on to Android at once, and a timer starts. If
+     * Home is still down after Android's own long-press time, and Leios's Home is what's showing,
+     * search opens. Let go sooner and the timer is simply cancelled. Inside other apps nothing
+     * happens, so their Home button is untouched.
+     */
+    private final Runnable homeHold = () -> {
+        MainActivity home = MainActivity.resumedHome();
+        if (home != null && SafePrefs.focus(this).getBoolean("hold_home_search", true)) home.openSearchFromHold();
+    };
+
+    private void watchHomeHold(boolean down, int repeatCount) {
+        if (down && repeatCount == 0) {
+            repeat.removeCallbacks(homeHold);
+            if (MainActivity.resumedHome() != null) repeat.postDelayed(homeHold, ViewConfiguration.getLongPressTimeout());
+        } else if (!down) {
+            repeat.removeCallbacks(homeHold);
+        }
+    }
+
     // ---- remote shortcuts: hold ≡ or the Settings button ------------------------------------
 
     private boolean holdFired;
@@ -324,6 +346,9 @@ public class PanelService extends AccessibilityService {
                 break;
             case "customize":
                 launch(new Intent(this, MainActivity.class).putExtra("open", "customize"));
+                break;
+            case "search":
+                launch(new Intent(this, MainActivity.class).putExtra("open", "search"));
                 break;
             case "next_bg": {
                 MainActivity home = MainActivity.resumedHome();
@@ -458,6 +483,11 @@ public class PanelService extends AccessibilityService {
         }
         if (code == KeyEvent.KEYCODE_MENU) {
             return shortcutKey(code, down, e.getRepeatCount());
+        }
+        if (code == KeyEvent.KEYCODE_HOME && !open) {
+            watchHomeHold(down, e.getRepeatCount());
+            // Never taken: Home works exactly as before, with no wait.
+            return false;
         }
         if (!open) return false;
         // A different key interrupts a held one; the held key's own repeats are ignored below.
