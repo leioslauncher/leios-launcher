@@ -11,8 +11,9 @@ There are no accounts, no ads and no tracking. It's controlled entirely from the
 | ![Quick settings](docs/screenshots/02-quick-settings.jpg) | ![Customize](docs/screenshots/03-customize.jpg) |
 | ![App options](docs/screenshots/04-app-options.jpg) | ![Arranging apps](docs/screenshots/05-arrange.jpg) |
 | ![Light and dark](docs/screenshots/06-light-dark.jpg) | ![Backgrounds](docs/screenshots/07-backgrounds.jpg) |
+| ![Search](docs/screenshots/10-search.jpg) | ![Customization](docs/screenshots/11-customization.jpg) |
 
-App logos in the screenshots belong to their owners. They're shown only because those apps were installed on the test device.
+App logos in the screenshots belong to their owners. They're shown only because those apps were installed on the test device. Posters in the search screenshot come from TMDB and belong to their owners.
 
 ## Before you start
 
