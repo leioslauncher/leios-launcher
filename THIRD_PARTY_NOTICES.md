@@ -31,7 +31,7 @@ Only in builds made with a TMDB key, and only when you turn online title search 
 - Movie and show details and posters come from [TMDB](https://www.themoviedb.org/). This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.
 - Where-to-watch information comes from [JustWatch](https://www.justwatch.com/), through TMDB.
 - Streaming apps' own IDs for titles (to open a title directly in Netflix, Apple TV, Max or Prime Video) come from [Wikidata](https://www.wikidata.org/), whose data is CC0 (public domain).
-- TMDB's terms ask for its logo next to that credit. The app shows the credit in text for now; adding TMDB's own logo file is still to do.
+- TMDB's logo (`res/drawable/tmdb_logo.xml`) is TMDB's official "Alt short (blue)" logo from https://www.themoviedb.org/about/logos-attribution, converted from SVG unchanged. It's TMDB's trademark, used as their terms require, next to the credit in search and in About; it isn't covered by this project's license.
 
 The fonts are unmodified. A copy of the license also sits beside each font in `launcher/app/src/main/assets/fonts/`.
 

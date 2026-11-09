@@ -80,7 +80,8 @@ final class SearchOverlay extends FrameLayout {
     private final SharedPreferences prefs;
     private final View scrim;
     private final LinearLayout content;
-    private final TextView field, ghost, attribution;
+    private final TextView field, ghost;
+    private final View attribution;
     private final View caret;
     private final SearchKeyboard keyboard;
     private final MenuView results;
@@ -178,8 +179,19 @@ final class SearchOverlay extends FrameLayout {
         right.addView(results, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
         // Where online results come from (TMDB, and JustWatch for where to watch): only while they show.
-        attribution = Ui.text(c, "Movie and show details from TMDB. Where to watch from JustWatch.",
-                tk.textCaption, th.textTertiary, tk.regular);
+        // TMDB's terms ask for its logo with the credit, smaller than Leios's own name.
+        LinearLayout credit = new LinearLayout(c);
+        credit.setOrientation(LinearLayout.HORIZONTAL);
+        credit.setGravity(Gravity.CENTER_VERTICAL);
+        ImageView logo = new ImageView(c);
+        logo.setImageResource(R.drawable.tmdb_logo);
+        logo.setContentDescription("TMDB");
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(tk.dp(77), tk.dp(10));
+        llp.setMarginEnd(tk.space3);
+        credit.addView(logo, llp);
+        credit.addView(Ui.text(c, "Movie and show details from TMDB. Where to watch from JustWatch.",
+                tk.textCaption, th.textTertiary, tk.regular));
+        attribution = credit;
         attribution.setVisibility(GONE);
         LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);

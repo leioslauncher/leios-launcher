@@ -6117,9 +6117,12 @@ public class MainActivity extends Activity {
         startMenu(crumb("System"), "About");
         add(MenuView.Row.note(R.drawable.ic_info, "Leios " + BuildConfig.VERSION_NAME + ". A free, open-source home "
                 + "screen for Android TV and projectors. github.com/leioslauncher/leios-launcher"), null);
-        add(MenuView.Row.note(R.drawable.ic_search, "This application uses TMDB and the TMDB APIs but is not endorsed, "
+        // TMDB's logo with its required notice (smaller than Leios's own name above).
+        MenuView.Row tmdb = MenuView.Row.note(0, "This application uses TMDB and the TMDB APIs but is not endorsed, "
                 + "certified, or otherwise approved by TMDB. Where-to-watch information is provided by JustWatch. "
-                + "Streaming apps' title IDs come from Wikidata (CC0)."), null);
+                + "Streaming apps' title IDs come from Wikidata (CC0).").image(tk.dp(77), tk.dp(10));
+        tmdb.image = getDrawable(R.drawable.tmdb_logo);
+        add(tmdb, null);
         add(MenuView.Row.note(R.drawable.ic_info, "Fonts, icons and other parts made by others, with their licences, are "
                 + "listed in THIRD_PARTY_NOTICES.md in the project."), null);
         showSheet(focus, () -> openBackupMenu(5), null);
