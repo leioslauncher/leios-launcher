@@ -130,7 +130,8 @@ final class SearchOverlay extends FrameLayout {
 
         // One flat fill over Home: cheap on this GPU (no blur), and it keeps text readable on any photo.
         scrim = new View(c);
-        scrim.setBackgroundColor(Ui.alpha(th.bg | 0xFF000000, 0.94f));
+        // Nearly solid: at 94 % the clock and tiles still showed through in light mode, as clutter.
+        scrim.setBackgroundColor(Ui.alpha(th.bg | 0xFF000000, 0.98f));
         addView(scrim, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         content = new LinearLayout(c);
@@ -189,11 +190,14 @@ final class SearchOverlay extends FrameLayout {
         LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(tk.dp(77), tk.dp(10));
         llp.setMarginEnd(tk.space3);
         credit.addView(logo, llp);
-        credit.addView(Ui.text(c, "Movie and show details from TMDB. Where to watch from JustWatch.",
-                tk.textCaption, th.textTertiary, tk.regular));
+        TextView creditText = Ui.text(c, "Details from TMDB  ·  Where to watch from JustWatch",
+                tk.textCaption, th.textTertiary, tk.regular);
+        creditText.setSingleLine(false);
+        creditText.setMaxLines(2);
+        credit.addView(creditText, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         attribution = credit;
         attribution.setVisibility(GONE);
-        LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+        LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         alp.topMargin = tk.space3;
         alp.setMarginStart(tk.space4);
@@ -853,6 +857,14 @@ final class SearchOverlay extends FrameLayout {
                 // Same order as the list: titles on your apps, then the rest.
                 for (Found f : online) if (!f.offers.isEmpty()) shown.add(f.title.name);
                 for (Found f : online) if (f.offers.isEmpty()) shown.add(f.title.name);
+            }
+            // Already a whole title ("the boys"): nothing to complete, even if a longer one starts the same.
+            boolean whole = false;
+            for (String n : shown) whole |= n.equalsIgnoreCase(typed.trim());
+            if (whole) {
+                ghost.setText("");
+                hints();
+                return;
             }
             for (List<String> names : java.util.Arrays.asList(shown, catalogNames, learnedNames, popularNames)) {
                 for (String n : names) {
