@@ -399,24 +399,38 @@ final class MenuView extends LinearLayout {
             if (!glide || wasHidden) indicator.setTranslationY(target.getTop());
             else indicator.animate().translationY(target.getTop()).setDuration(slide)
                     .setInterpolator(Tokens.EASE_OUT).start();
-            // Quick steps scroll straight there: a smooth scroll would trail behind, like the bar did.
-            keepVisible(target, glide && !quick);
+            keepVisible(target, glide, quick ? slide : 0);
         };
         if (target.getHeight() == 0) target.post(place);
         else place.run();
     }
 
     /** Keep the focused row and one row beyond it in view, so you can see where the list goes. */
-    private void keepVisible(View it, boolean animate) {
+    private android.animation.ObjectAnimator scrolling;
+
+    /**
+     * {@code pace}: a held button's step time. The list then scrolls over exactly that long, in step
+     * with the focus bar (a normal smooth scroll takes 250 ms and would trail behind).
+     */
+    private void keepVisible(View it, boolean animate, int pace) {
         int ahead = it.getHeight();
         int top = it.getTop() - ahead, bottom = it.getBottom() + ahead;
+        if (scrolling != null) scrolling.cancel();
         int sy = scroll.getScrollY(), h = scroll.getHeight();
         int to = sy;
         if (top < sy) to = Math.max(0, top);
         else if (bottom > sy + h) to = bottom - h;
         if (to == sy) return;
-        if (animate) scroll.smoothScrollTo(0, to);
-        else scroll.scrollTo(0, to);
+        if (!animate) {
+            scroll.scrollTo(0, to);
+        } else if (pace > 0) {
+            scrolling = android.animation.ObjectAnimator.ofInt(scroll, "scrollY", sy, to);
+            scrolling.setDuration(pace);
+            scrolling.setInterpolator(Tokens.EASE_OUT);
+            scrolling.start();
+        } else {
+            scroll.smoothScrollTo(0, to);
+        }
     }
 
     private void updateFades() {

@@ -1948,9 +1948,11 @@ public class MainActivity extends Activity {
             menu.setVisibility(View.VISIBLE);
             sounds.play(Sounds.OPEN);
         }
-        menu.setRows(new ArrayList<>(pendingRows), focus);
-        // In Customization, while the section list has focus, this menu is only a preview.
-        menu.setActive(!(custMode == CUST_FULL && railActive));
+        // In Customization, while the section list has focus, this menu is only a preview: it swaps
+        // without the level-change fade (a fade of the whole panel on every step is heavy on this GPU).
+        boolean preview = custMode == CUST_FULL && railActive;
+        menu.setRows(new ArrayList<>(pendingRows), focus, !preview);
+        menu.setActive(!preview);
         area = MENU;
         if (entering) {
             menu.setAlpha(0f);
@@ -2662,8 +2664,11 @@ public class MainActivity extends Activity {
             fullScrim.setBackground(new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT,
                     new int[] {a, a, a, Ui.alpha(a, 0.55f), a & 0x00FFFFFF}));
             fullScrim.setVisibility(View.GONE);
+            // Only as wide as the panels and a short fade after them: the rest of Home shows as it
+            // is, and the GPU fills a quarter less of the screen every frame.
+            int scrimW = tk.safeH + railWidth() + tk.space5 + tk.sheetWidth + tk.space7 * 2;
             root.addView(fullScrim, root.indexOfChild(menu), new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                    scrimW, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.START));
             rail = new MenuView(this, theme);
             rail.setVisibility(View.GONE);
             FrameLayout.LayoutParams rlp = new FrameLayout.LayoutParams(railWidth(), ViewGroup.LayoutParams.WRAP_CONTENT,
