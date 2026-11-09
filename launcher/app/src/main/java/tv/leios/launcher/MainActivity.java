@@ -1360,9 +1360,11 @@ public class MainActivity extends Activity {
                     railNav(up, down, left, right, select, back);
                     return;
                 }
-                if ((back || left) && custMode == CUST_FULL && searchReturnMenu != null
-                        && searchReturnMenu.equals(menuCrumb + "|" + menuTitle)
-                        && (back || entries.isEmpty() || menu.focus() < 0 || entries.get(menu.focus()).adjust == null)) {
+                // Back from a setting opened from search goes straight back to search. Left keeps its
+                // usual meaning (up a level, then across to the section list), so the rest of
+                // Customization is still a press away; Back from the section list returns to search too.
+                if (back && custMode == CUST_FULL && searchReturnMenu != null
+                        && searchReturnMenu.equals(menuCrumb + "|" + menuTitle)) {
                     if (menuCancel != null) menuCancel.run();
                     sounds.play(Sounds.BACK);
                     backToSearch();
