@@ -1906,9 +1906,12 @@ public class MainActivity extends Activity {
             lp.rightMargin = 0;
             lp.bottomMargin = 0;
             menu.setMaxHeight(root.getHeight() - 2 * tk.safeV);
+            // No shadow over the backdrop: it barely shows there, and this GPU redraws it every frame.
+            menu.setElevation(0);
             present(lp, focus, back, cancel, new String[] {"OK", "Select", "BACK", "Back"});
             return;
         }
+        menu.setElevation(tk.elevationSheet);
         lp.width = tk.sheetWidth;
         lp.gravity = Gravity.TOP | Gravity.END;
         lp.topMargin = tk.safeV + tk.pillHeight + tk.space3;
@@ -1922,6 +1925,7 @@ public class MainActivity extends Activity {
     /** The quick actions: a small card beside the tile, above it when the tile is low on screen. */
     private void showPopover(Rect tile, int focus, Runnable back) {
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) menu.getLayoutParams();
+        menu.setElevation(tk.elevationSheet);
         lp.width = tk.popoverWidth;
         int w = root.getWidth(), h = root.getHeight();
         boolean right = tile.right + tk.space4 + lp.width <= w - tk.safeH;
@@ -2671,6 +2675,8 @@ public class MainActivity extends Activity {
                     scrimW, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.START));
             rail = new MenuView(this, theme);
             rail.setVisibility(View.GONE);
+            // No shadow over the backdrop (see showSheet).
+            rail.setElevation(0);
             FrameLayout.LayoutParams rlp = new FrameLayout.LayoutParams(railWidth(), ViewGroup.LayoutParams.WRAP_CONTENT,
                     Gravity.TOP | Gravity.START);
             rlp.leftMargin = tk.safeH;
@@ -2716,19 +2722,38 @@ public class MainActivity extends Activity {
         }
     }
 
+    private static final long PEEK_DELAY_MS = 150;
+    private boolean peekPending;
+    private final Runnable peekSection = () -> {
+        peekPending = false;
+        if (custMode == CUST_FULL && railActive && rail != null) openSection(rail.focus());
+    };
+
     /** Keys while the section list has focus. */
     private void railNav(boolean up, boolean down, boolean left, boolean right, boolean select, boolean back) {
         if (up || down) {
             if (rail.moveFocus(up ? -1 : 1)) {
                 sounds.tick(Sounds.FOCUS, navRepeat);
-                openSection(rail.focus());
+                // The section's menu is built once you stop on it: moving through the list only
+                // moves the highlight (building a whole menu per step was the slow part).
+                ui.removeCallbacks(peekSection);
+                peekPending = true;
+                ui.postDelayed(peekSection, PEEK_DELAY_MS);
             }
         } else if (right || select) {
+            // Going in before the preview caught up: build it now.
+            if (peekPending) {
+                ui.removeCallbacks(peekSection);
+                peekPending = false;
+                openSection(rail.focus());
+            }
             railActive = false;
             rail.setActive(false);
             menu.setActive(true);
             sounds.tick(Sounds.FOCUS, false);
         } else if (back || left) {
+            ui.removeCallbacks(peekSection);
+            peekPending = false;
             Runnable b = fullBack;
             hideFull(true);
             sounds.play(b == null ? Sounds.CLOSE : Sounds.BACK);
