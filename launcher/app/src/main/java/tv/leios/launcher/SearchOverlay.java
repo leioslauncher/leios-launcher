@@ -59,7 +59,8 @@ final class SearchOverlay extends FrameLayout {
 
         Map<String, Integer> uses();
 
-        void openTitle(AppLinks.App app, String title);
+        /** Opens a title in one of your apps: its own page where the app allows it, else its search, else the app. */
+        void openTitle(AppLinks.App app, Titles.Title title);
 
         void sound(int id, boolean repeat);
 
@@ -79,12 +80,14 @@ final class SearchOverlay extends FrameLayout {
     private final SharedPreferences prefs;
     private final View scrim;
     private final LinearLayout content;
-    private final TextView field, attribution;
+    private final TextView field, ghost, attribution;
     private final View caret;
     private final SearchKeyboard keyboard;
     private final MenuView results;
     private final Handler ui = new Handler(Looper.getMainLooper());
     private final ExecutorService net = Executors.newSingleThreadExecutor();
+    /** A few service lookups at once (TMDB allows far more; this keeps the TV's CPU calm). */
+    private final ExecutorService services = Executors.newFixedThreadPool(3);
 
     private final StringBuilder query = new StringBuilder();
     private int zone = KEYS;
@@ -103,15 +106,15 @@ final class SearchOverlay extends FrameLayout {
     private Found choosing;
     private int focusBeforeChooser;
 
-    /** A title and the apps of yours that have it. */
+    /** A title and the apps of yours that have it (to watch first, then to rent or buy). */
     private static final class Found {
         final Titles.Title title;
-        final List<AppLinks.App> apps;
+        final List<AppLinks.Offer> offers;
         Drawable poster;
 
-        Found(Titles.Title title, List<AppLinks.App> apps) {
+        Found(Titles.Title title, List<AppLinks.Offer> offers) {
             this.title = title;
-            this.apps = apps;
+            this.offers = offers;
         }
     }
 
@@ -150,6 +153,9 @@ final class SearchOverlay extends FrameLayout {
         LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(tk.dp(2), Math.round(tk.textHeadline * 1.1f));
         clp.setMarginStart(tk.dp(2));
         box.addView(caret, clp);
+        // The rest of a popular title that starts with what you've typed, in grey; Up takes it.
+        ghost = Ui.text(c, "", tk.textHeadline, th.textTertiary, tk.medium500);
+        box.addView(ghost);
         content.addView(box, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 tk.pillHeight + tk.space3));
 
@@ -216,6 +222,7 @@ final class SearchOverlay extends FrameLayout {
         results.setActive(false);
         refresh(true);
         enter();
+        loadPopular();
         host.sound(Sounds.OPEN, false);
     }
 
@@ -324,6 +331,7 @@ final class SearchOverlay extends FrameLayout {
 
     void destroy() {
         net.shutdownNow();
+        services.shutdownNow();
         ui.removeCallbacksAndMessages(null);
     }
 
@@ -402,6 +410,14 @@ final class SearchOverlay extends FrameLayout {
         boolean up = code == KeyEvent.KEYCODE_DPAD_UP, down = code == KeyEvent.KEYCODE_DPAD_DOWN;
         boolean left = code == KeyEvent.KEYCODE_DPAD_LEFT, right = code == KeyEvent.KEYCODE_DPAD_RIGHT;
         if (zone == KEYS) {
+            // Up from the keyboard's top row takes the grey completion, if there is one.
+            if (up && !repeat && keyboard.atTopRow() && suggestion != null) {
+                query.setLength(0);
+                query.append(suggestion);
+                host.sound(Sounds.SELECT, false);
+                refresh(true);
+                return;
+            }
             if (right && keyboard.atRightEdge()) {
                 if (results.hasChoices()) {
                     setZone(RESULTS);
@@ -494,6 +510,7 @@ final class SearchOverlay extends FrameLayout {
         field.setText(query.length() == 0 ? placeholder() : query);
         field.setTextColor(query.length() == 0 ? th.textTertiary : th.text);
         caret.setVisibility(open ? VISIBLE : GONE);
+        showSuggestion();
         if (typed) {
             ui.removeCallbacks(lookUp);
             if (!q.equalsIgnoreCase(onlineQuery)) {
@@ -615,6 +632,9 @@ final class SearchOverlay extends FrameLayout {
             }
         }
 
+        // Movies and shows come before settings (most searches are for something to watch).
+        any |= renderTitles(rows);
+
         // Leios's own settings (none in guest mode).
         if (host.settingsAllowed()) {
             List<SettingsIndex.Entry> settings = new ArrayList<>();
@@ -632,7 +652,6 @@ final class SearchOverlay extends FrameLayout {
             }
         }
 
-        any |= renderTitles(rows);
         if (!any) {
             row(rows, MenuView.Row.note(R.drawable.ic_info, "Nothing matches “" + q + "”."
                     + (onlineState() == SearchPrefs.OFF ? " Online title search is off (Customization › System › Search & privacy)." : "")),
@@ -649,13 +668,15 @@ final class SearchOverlay extends FrameLayout {
             if (q.length() < 2) return false;
             row(rows, MenuView.Row.header("Movies & TV"), "h:titles", null);
             row(rows, MenuView.Row.note(R.drawable.ic_info, "Find movies and shows too? Leios would send only what you type and your region ("
-                    + region() + ") to TMDB, a film database. Nothing about you or this TV. You can change this later in "
+                    + region() + ") to TMDB, a film database, and when you pick a title, its ID number to Wikidata to open it "
+                    + "in your app. Nothing about you or this TV. You can change this later in "
                     + "Customization › System › Search & privacy."), "ask", null);
             row(rows, MenuView.Row.action(R.drawable.ic_check, "Turn on online search"), "ask:on", () -> {
                 SearchPrefs.setOnline(prefs, true);
                 onlineQuery = "";
                 refresh(true);
                 setZone(KEYS);
+                loadPopular();
             });
             row(rows, MenuView.Row.action(R.drawable.ic_close, "Not now"), "ask:off", () -> {
                 SearchPrefs.setOnline(prefs, false);
@@ -677,7 +698,7 @@ final class SearchOverlay extends FrameLayout {
             return true;
         }
         List<Found> yours = new ArrayList<>(), elsewhere = new ArrayList<>();
-        for (Found f : online) (f.apps.isEmpty() ? elsewhere : yours).add(f);
+        for (Found f : online) (f.offers.isEmpty() ? elsewhere : yours).add(f);
         boolean showElsewhere = SearchPrefs.showElsewhere(prefs);
         if (yours.isEmpty() && (elsewhere.isEmpty() || !showElsewhere)) {
             row(rows, MenuView.Row.header("Movies & TV"), "h:titles", null);
@@ -691,7 +712,7 @@ final class SearchOverlay extends FrameLayout {
             for (int i = 0; i < Math.min(MAX_TITLES, yours.size()); i++) {
                 Found f = yours.get(i);
                 MenuView.Row r = MenuView.Row.action(0, f.title.name).image(posterW, posterH)
-                        .detail(describe(f.title)).value(appNames(f.apps));
+                        .detail(describe(f.title)).value(appNames(f.offers));
                 r.image = f.poster;
                 row(rows, r, "t:" + f.title.tv + f.title.id, () -> remember(() -> openTitle(f)));
             }
@@ -717,25 +738,29 @@ final class SearchOverlay extends FrameLayout {
         return t.year.isEmpty() ? kind : t.year + "  ·  " + kind;
     }
 
-    private static String appNames(List<AppLinks.App> apps) {
+    /** "Netflix  ·  Hulu", "YouTube (rent)": where you can watch it, at most two names. */
+    private static String appNames(List<AppLinks.Offer> offers) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < apps.size() && i < 2; i++) sb.append(i == 0 ? "" : "  ·  ").append(apps.get(i).name);
-        if (apps.size() > 2) sb.append("  +").append(apps.size() - 2);
+        for (int i = 0; i < offers.size() && i < 2; i++) {
+            AppLinks.Offer o = offers.get(i);
+            sb.append(i == 0 ? "" : "  ·  ").append(o.app.name).append(o.rent ? " (rent)" : "");
+        }
+        if (offers.size() > 2) sb.append("  +").append(offers.size() - 2);
         return sb.toString();
     }
 
     private void renderChooser(List<MenuView.Row> rows) {
         row(rows, MenuView.Row.header("Open " + choosing.title.name + " in"), "h:choose", null);
-        for (AppLinks.App a : choosing.apps) {
-            String name = choosing.title.name;
-            row(rows, MenuView.Row.action(0, a.name).value(a.how == AppLinks.OPEN ? "Opens the app" : "Searches the app"),
-                    "c:" + a.pkg, () -> host.openTitle(a, name));
+        for (AppLinks.Offer o : choosing.offers) {
+            Titles.Title t = choosing.title;
+            row(rows, MenuView.Row.action(0, o.app.name).value(o.rent ? "Rent or buy" : ""),
+                    "c:" + o.app.pkg, () -> host.openTitle(o.app, t));
         }
     }
 
     private void openTitle(Found f) {
-        if (f.apps.size() == 1) {
-            host.openTitle(f.apps.get(0), f.title.name);
+        if (f.offers.size() == 1) {
+            host.openTitle(f.offers.get(0).app, f.title);
             return;
         }
         focusBeforeChooser = results.focus();
@@ -750,8 +775,69 @@ final class SearchOverlay extends FrameLayout {
         then.run();
     }
 
+    // ---- completing what you type -------------------------------------------------------------
+
+    /** Popular titles this week (TMDB, cached a day), and titles from recent results, newest first. */
+    private final List<String> popularNames = new ArrayList<>(), learnedNames = new ArrayList<>();
+    private String suggestion;
+    private boolean popularAsked;
+
+    /** Once per opening, with online search on: this week's popular titles (one request a day at most). */
+    private void loadPopular() {
+        if (popularAsked || onlineState() != SearchPrefs.ON) return;
+        popularAsked = true;
+        Context c = getContext().getApplicationContext();
+        String language = Locale.getDefault().toLanguageTag();
+        net.execute(() -> {
+            List<String> names;
+            try {
+                names = Titles.popular(c, language);
+            } catch (java.io.IOException e) {
+                ui.post(() -> popularAsked = false);
+                return;
+            }
+            ui.post(() -> {
+                popularNames.clear();
+                popularNames.addAll(names);
+                showSuggestion();
+            });
+        });
+    }
+
+    /** Titles from the latest results become completions too (they matched what was typed). */
+    private void learnNames(List<Titles.Title> titles) {
+        for (int i = titles.size() - 1; i >= 0; i--) {
+            String n = titles.get(i).name;
+            learnedNames.remove(n);
+            learnedNames.add(0, n);
+        }
+        while (learnedNames.size() > 60) learnedNames.remove(learnedNames.size() - 1);
+        showSuggestion();
+    }
+
+    /** The first known title that starts with what's typed (two letters or more), shown in grey after the caret. */
+    private void showSuggestion() {
+        suggestion = null;
+        String typed = query.toString();
+        if (open && choosing == null && typed.trim().length() >= 2 && onlineState() == SearchPrefs.ON) {
+            for (List<String> names : java.util.Arrays.asList(learnedNames, popularNames)) {
+                for (String n : names) {
+                    if (n.length() > typed.length() && n.regionMatches(true, 0, typed, 0, typed.length())) {
+                        suggestion = n;
+                        break;
+                    }
+                }
+                if (suggestion != null) break;
+            }
+        }
+        ghost.setText(suggestion == null ? "" : suggestion.substring(typed.length()));
+        hints();
+    }
+
     private void hints() {
-        if (zone == KEYS) results.setHints("OK", "Type", "▶", "Results", "BACK", query.length() > 0 ? "Delete" : "Close");
+        if (zone == KEYS && suggestion != null && choosing == null) {
+            results.setHints("OK", "Type", "▲", "Complete", "▶", "Results", "BACK", "Delete");
+        } else if (zone == KEYS) results.setHints("OK", "Type", "▶", "Results", "BACK", query.length() > 0 ? "Delete" : "Close");
         else if (choosing != null) results.setHints("OK", "Open", "BACK", "Back");
         else results.setHints("OK", "Open", "◀", "Keyboard", "BACK", "Keyboard");
     }
@@ -795,17 +881,29 @@ final class SearchOverlay extends FrameLayout {
             List<Found> list = new ArrayList<>();
             String problem = null;
             try {
-                for (Titles.Title t : Titles.search(c, q, language, region, MAX_TITLES + MAX_ELSEWHERE + 2)) {
-                    if (seq != mine) return;
-                    List<String> services;
+                List<Titles.Title> titles = Titles.search(c, q, language, region, MAX_TITLES + MAX_ELSEWHERE + 2);
+                if (seq != mine) return;
+                // Where each one streams: asked side by side (a few at a time), not one after another.
+                List<java.util.concurrent.Future<List<Titles.Offer>>> asks = new ArrayList<>();
+                for (Titles.Title t : titles) asks.add(services.submit(() -> Titles.services(c, t, region)));
+                for (int i = 0; i < titles.size(); i++) {
+                    List<Titles.Offer> offers;
                     try {
-                        services = Titles.services(c, t, region);
-                    } catch (Titles.Unavailable u) {
-                        if (u.busy) throw u;
-                        services = new ArrayList<>();
+                        offers = asks.get(i).get(ONLINE_TIMEOUT_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+                    } catch (java.util.concurrent.ExecutionException e) {
+                        if (e.getCause() instanceof Titles.Unavailable && ((Titles.Unavailable) e.getCause()).busy) {
+                            throw (Titles.Unavailable) e.getCause();
+                        }
+                        offers = new ArrayList<>();
+                    } catch (java.util.concurrent.TimeoutException | InterruptedException e) {
+                        offers = new ArrayList<>();
                     }
-                    list.add(new Found(t, AppLinks.yourApps(services, openable, uses)));
+                    list.add(new Found(titles.get(i), AppLinks.yourOffers(offers, openable, uses)));
                 }
+                if (seq != mine) return;
+                ui.post(() -> {
+                    if (seq == mine) learnNames(titles);
+                });
             } catch (Titles.Unavailable u) {
                 problem = u.busy ? "TMDB is busy right now. Try again in a moment."
                         : "Movies and shows couldn't load. Apps and settings still work.";
@@ -840,7 +938,7 @@ final class SearchOverlay extends FrameLayout {
             ui.post(() -> {
                 if (seq != mine) return;
                 f.poster = d;
-                String key = (f.apps.isEmpty() ? "e:" : "t:") + f.title.tv + f.title.id;
+                String key = (f.offers.isEmpty() ? "e:" : "t:") + f.title.tv + f.title.id;
                 int i = rowKeys.indexOf(key);
                 if (i >= 0) results.setRowImage(i, d);
             });

@@ -96,18 +96,95 @@ final class Titles {
         return out;
     }
 
-    /** The streaming services (subscription, free, or free with ads) that have a title in {@code region}. */
-    static List<String> services(Context c, Title t, String region) throws IOException {
+    /** A service that has a title: in a subscription (or free), or only to rent or buy. */
+    static final class Offer {
+        final String service;
+        final boolean rent;
+
+        Offer(String service, boolean rent) {
+            this.service = service;
+            this.rent = rent;
+        }
+    }
+
+    /**
+     * The services that have a title in {@code region}: first those you watch it on with a
+     * subscription, free or with ads, then those that only rent or sell it (YouTube often does).
+     */
+    static List<Offer> services(Context c, Title t, String region) throws IOException {
         String path = (t.tv ? "tv/" : "movie/") + t.id + "/watch/providers";
-        List<String> out = new ArrayList<>();
+        List<Offer> out = new ArrayList<>();
+        List<String> seen = new ArrayList<>();
         try {
             JSONObject all = new JSONObject(getJson(c, path, SERVICES_TTL)).optJSONObject("results");
             JSONObject here = all == null ? null : all.optJSONObject(region.toUpperCase(Locale.ROOT));
             if (here == null) return out;
-            for (String kind : new String[] {"flatrate", "free", "ads"}) {
+            for (String kind : new String[] {"flatrate", "free", "ads", "rent", "buy"}) {
                 JSONArray list = here.optJSONArray(kind);
+                boolean rent = kind.equals("rent") || kind.equals("buy");
                 for (int i = 0; list != null && i < list.length(); i++) {
                     String name = list.getJSONObject(i).optString("provider_name", "");
+                    if (name.isEmpty() || seen.contains(name)) continue;
+                    seen.add(name);
+                    out.add(new Offer(name, rent));
+                }
+            }
+        } catch (JSONException e) {
+            throw new Unavailable("unexpected answer", false);
+        }
+        return out;
+    }
+
+    /** Wikidata properties that hold a streaming app's own ID for a title (see AppLinks). */
+    static final String[] LINK_PROPERTIES = {"P1874", "P9586", "P9751", "P8298", "P8055", "P6466", "P6467",
+            "P7595", "P7596"};
+    private static final long LINKS_TTL = 30 * DAY;
+    private static final String WIKIDATA = "https://www.wikidata.org/w/api.php?action=wbgetentities&props=claims&format=json&ids=";
+
+    /**
+     * Each app's own ID for a title (Netflix's, Apple TV's, Max's, Prime Video's…), from Wikidata,
+     * keyed by Wikidata property. Only asked when you pick a title, and only with the title's ID
+     * numbers: TMDB's ID goes to TMDB, the Wikidata ID it returns goes to Wikidata. Nothing you typed.
+     * Empty when Wikidata doesn't know the title.
+     */
+    static java.util.Map<String, String> appIds(Context c, Title t) throws IOException {
+        java.util.Map<String, String> out = new java.util.HashMap<>();
+        try {
+            JSONObject ext = new JSONObject(getJson(c, (t.tv ? "tv/" : "movie/") + t.id + "/external_ids", LINKS_TTL));
+            String q = ext.optString("wikidata_id", "");
+            if (!q.matches("Q\\d+")) return out;
+            JSONObject claims = new JSONObject(getOther(c, WIKIDATA + q, LINKS_TTL)).getJSONObject("entities")
+                    .getJSONObject(q).optJSONObject("claims");
+            if (claims == null) return out;
+            for (String p : LINK_PROPERTIES) {
+                JSONArray list = claims.optJSONArray(p);
+                if (list == null || list.length() == 0) continue;
+                JSONObject value = list.getJSONObject(0).optJSONObject("mainsnak");
+                value = value == null ? null : value.optJSONObject("datavalue");
+                String v = value == null ? "" : value.optString("value", "");
+                if (!v.isEmpty()) out.put(p, v);
+            }
+        } catch (JSONException e) {
+            throw new Unavailable("unexpected answer", false);
+        }
+        return out;
+    }
+
+    /**
+     * Popular movie and show names this week, most popular first, for completing what you type.
+     * One request a day (cached), only with online search on; nothing typed is sent.
+     */
+    static List<String> popular(Context c, String language) throws IOException {
+        List<String> out = new ArrayList<>();
+        try {
+            for (int page = 1; page <= 2; page++) {
+                JSONArray results = new JSONObject(getJson(c, "trending/all/week?page=" + page + "&language="
+                        + enc(language), DAY)).optJSONArray("results");
+                for (int i = 0; results != null && i < results.length(); i++) {
+                    JSONObject r = results.getJSONObject(i);
+                    String type = r.optString("media_type");
+                    if (!"tv".equals(type) && !"movie".equals(type)) continue;
+                    String name = r.optString("tv".equals(type) ? "name" : "title", "");
                     if (!name.isEmpty() && !out.contains(name)) out.add(name);
                 }
             }
@@ -169,6 +246,17 @@ final class Titles {
         return s;
     }
 
+    /** Like getJson, for a service other than TMDB (Wikidata): no key, cached on disk only. */
+    private static String getOther(Context c, String url, long ttl) throws IOException {
+        File f = cacheFile(c, url);
+        byte[] cached = readFresh(f, ttl);
+        if (cached == null) {
+            cached = fetch(url, false);
+            write(f, cached);
+        }
+        return new String(cached, StandardCharsets.UTF_8);
+    }
+
     private static byte[] fetch(String address, boolean api) throws IOException {
         synchronized (lock) {
             long now = System.currentTimeMillis();
@@ -193,9 +281,13 @@ final class Titles {
             conn = (HttpURLConnection) new URL(address).openConnection();
             conn.setConnectTimeout(6000);
             conn.setReadTimeout(8000);
-            // Neutral: the app's name only, nothing about this TV or you.
-            conn.setRequestProperty("User-Agent", "LeiosLauncher");
-            conn.setRequestProperty("Accept", api ? "application/json" : "image/*");
+            // Neutral: the app's name only, nothing about this TV or you. Wikimedia asks every client
+            // for a way to reach its makers, so Wikidata also gets the project's public address.
+            boolean wikidata = address.startsWith("https://www.wikidata.org/");
+            conn.setRequestProperty("User-Agent", wikidata
+                    ? "LeiosLauncher/" + BuildConfig.VERSION_NAME + " (+https://github.com/leioslauncher/leios-launcher)"
+                    : "LeiosLauncher");
+            conn.setRequestProperty("Accept", api || wikidata ? "application/json" : "image/*");
             if (api && token) conn.setRequestProperty("Authorization", "Bearer " + key);
             int code = conn.getResponseCode();
             if (code == 429) {

@@ -2529,13 +2529,13 @@ public class MainActivity extends Activity {
         }
 
         @Override
-        public void openTitle(AppLinks.App app, String title) {
+        public void openTitle(AppLinks.App app, Titles.Title title) {
             AppRepo.App installed = null;
             for (AppRepo.App a : allApps) if (a.pkg.equals(app.pkg)) installed = a;
             if (installed == null) return;
             AppRepo.App target = installed;
             requirePin(Lock.appLocked(MainActivity.this, target.pkg, categories.of(target.pkg).id),
-                    "Open " + target.label, () -> openTitleNow(app, target, title));
+                    "Open " + target.label, () -> findTitleLink(app, target, title));
         }
 
         @Override
@@ -2556,13 +2556,61 @@ public class MainActivity extends Activity {
     };
 
     /**
-     * Sends a title to an app: into the app's own search when it takes one, otherwise the app opens
-     * and a note says what to look for (no app gives other apps a way to open a title directly).
+     * For apps that open a title's own page (Netflix, Apple TV, Max, Prime Video): the app's ID for
+     * it, from Wikidata (a second or so, cached for a month). Search stays up meanwhile.
      */
-    private void openTitleNow(AppLinks.App app, AppRepo.App target, String title) {
+    private void findTitleLink(AppLinks.App app, AppRepo.App target, Titles.Title title) {
+        if (app.showLink == null && app.movieLink == null) {
+            openTitleNow(app, target, title, null);
+            return;
+        }
+        toast("Opening " + title.name + " in " + app.name + "…", false);
+        loader.execute(() -> {
+            String link = null;
+            try {
+                link = AppLinks.titleLink(app, title.tv, Titles.appIds(this, title));
+            } catch (IOException ignored) {
+                // No ID (offline, or Wikidata doesn't have it): the app's search, or the app, instead.
+            }
+            String found = link;
+            ui.post(() -> {
+                if (!isDestroyed()) openTitleNow(app, target, title, found);
+            });
+        });
+    }
+
+    /**
+     * Sends a title to an app: to its own page when there's a {@code link}, else into the app's own
+     * search when it takes one, else the app opens and a note says what to look for.
+     */
+    private void openTitleNow(AppLinks.App app, AppRepo.App target, Titles.Title title, String link) {
         search.hideNow();
         usage.edit().putInt(target.pkg, usage.getInt(target.pkg, 0) + 1)
                 .putLong("t:" + target.pkg, System.currentTimeMillis()).apply();
+        if (link != null) {
+            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(link)).setPackage(app.pkg)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    // Netflix's TV app reads this to treat the link as coming from a launcher.
+                    .putExtra("source", "30");
+            // An app already running in the background (Netflix on this projector) brings back its
+            // last screen and ignores the link. Closing it first (as "Close app" does; never a force
+            // stop) makes it start fresh, on the title.
+            ActivityManager am = getSystemService(ActivityManager.class);
+            if (am != null) am.killBackgroundProcesses(app.pkg);
+            ui.postDelayed(() -> {
+                try {
+                    startActivity(i);
+                    sounds.play(Sounds.LAUNCH);
+                } catch (RuntimeException e) {
+                    openTitleFallback(app, target, title.name);
+                }
+            }, 400);
+            return;
+        }
+        openTitleFallback(app, target, title.name);
+    }
+
+    private void openTitleFallback(AppLinks.App app, AppRepo.App target, String title) {
         Intent i = AppLinks.searchIntent(app, title);
         if (i != null) {
             try {
@@ -6042,7 +6090,8 @@ public class MainActivity extends Activity {
         });
         if (SearchPrefs.recent(prefs).isEmpty()) clear.disabled("Nothing to clear.");
         add(MenuView.Row.note(R.drawable.ic_info, "Apps and settings are always found on this TV. Recent searches stay "
-                + "on this TV too. Movie and show details come from TMDB, and where to watch from JustWatch."), null);
+                + "on this TV too. Movie and show details come from TMDB, where to watch from JustWatch, and apps' own "
+                + "IDs for titles from Wikidata (only the picked title's number is sent there)."), null);
         showSheet(focus, () -> openBackupMenu(0), null);
     }
 
@@ -6069,7 +6118,8 @@ public class MainActivity extends Activity {
         add(MenuView.Row.note(R.drawable.ic_info, "Leios " + BuildConfig.VERSION_NAME + ". A free, open-source home "
                 + "screen for Android TV and projectors. github.com/leioslauncher/leios-launcher"), null);
         add(MenuView.Row.note(R.drawable.ic_search, "This application uses TMDB and the TMDB APIs but is not endorsed, "
-                + "certified, or otherwise approved by TMDB. Where-to-watch information is provided by JustWatch."), null);
+                + "certified, or otherwise approved by TMDB. Where-to-watch information is provided by JustWatch. "
+                + "Streaming apps' title IDs come from Wikidata (CC0)."), null);
         add(MenuView.Row.note(R.drawable.ic_info, "Fonts, icons and other parts made by others, with their licences, are "
                 + "listed in THIRD_PARTY_NOTICES.md in the project."), null);
         showSheet(focus, () -> openBackupMenu(5), null);

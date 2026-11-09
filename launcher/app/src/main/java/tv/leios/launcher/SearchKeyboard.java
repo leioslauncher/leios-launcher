@@ -146,6 +146,11 @@ final class SearchKeyboard extends View {
         return row.indexOf(cur) == row.size() - 1;
     }
 
+    /** Focus is in the top row (Up from here leaves the keyboard). */
+    boolean atTopRow() {
+        return keys.get(focus).row == 0;
+    }
+
     String focusedValue() {
         return keys.get(focus).value;
     }

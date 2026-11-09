@@ -38,7 +38,8 @@ public class SettingsIndexTest {
             "openCategoryApps", "openIconPackMenu", "openHideMenu", "openPinMenu", "openLockWhat", "openLockWhen",
             "openHoldChoice", "openSavedTheme", "openThemeImport", "openPatternsMenu", "openTargetChoice",
             "openSleepMenu", "openBackupSave", "openRestoreList", "openResetMenu", "openRegionChoice",
-            "openSection", "openSettingMenu", "openSettingFromSearch", "openSearch", "openTitleNow"));
+            "openSection", "openSettingMenu", "openSettingFromSearch", "openSearch", "openTitleNow",
+            "openTitleFallback"));
 
     /** Rows that are part of a confirmation, not a setting. */
     private static final Set<String> NOT_ROWS = new HashSet<>(Arrays.asList("Cancel"));
