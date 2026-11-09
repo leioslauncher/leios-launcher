@@ -790,19 +790,31 @@ final class SearchOverlay extends FrameLayout {
         String language = Locale.getDefault().toLanguageTag();
         net.execute(() -> {
             List<String> names;
+            List<Titles.Title> known;
             try {
                 names = Titles.popular(c, language);
+                known = Titles.catalog(c, language);
             } catch (java.io.IOException e) {
                 ui.post(() -> popularAsked = false);
                 return;
             }
+            // Best known first, so completion offers the famous one ("the bo" → The Boys).
+            List<Titles.Title> byFame = new ArrayList<>(known);
+            byFame.sort((a, b) -> Double.compare(Titles.fame(b), Titles.fame(a)));
+            catalog = byFame;
             ui.post(() -> {
                 popularNames.clear();
                 popularNames.addAll(names);
+                catalogNames.clear();
+                for (Titles.Title t : byFame) catalogNames.add(t.name);
                 showSuggestion();
             });
         });
     }
+
+    /** Well-known titles (Titles.catalog), best known first; read by the lookup thread too. */
+    private volatile List<Titles.Title> catalog;
+    private final List<String> catalogNames = new ArrayList<>();
 
     /** Titles from the latest results become completions too (they matched what was typed). */
     private void learnNames(List<Titles.Title> titles) {
@@ -830,7 +842,7 @@ final class SearchOverlay extends FrameLayout {
                 for (Found f : online) if (!f.offers.isEmpty()) shown.add(f.title.name);
                 for (Found f : online) if (f.offers.isEmpty()) shown.add(f.title.name);
             }
-            for (List<String> names : java.util.Arrays.asList(shown, learnedNames, popularNames)) {
+            for (List<String> names : java.util.Arrays.asList(shown, catalogNames, learnedNames, popularNames)) {
                 for (String n : names) {
                     if (n.length() > typed.length() && n.regionMatches(true, 0, typed, 0, typed.length())) {
                         suggestion = n;
@@ -891,7 +903,9 @@ final class SearchOverlay extends FrameLayout {
             List<Found> list = new ArrayList<>();
             String problem = null;
             try {
-                List<Titles.Title> titles = Titles.search(c, q, language, region, MAX_TITLES + MAX_ELSEWHERE + 2);
+                // TMDB's results plus well-known titles with a word starting with what's typed.
+                List<Titles.Title> titles = Titles.merge(q, Titles.search(c, q, language, region, 20), catalog,
+                        MAX_TITLES + MAX_ELSEWHERE + 2);
                 if (seq != mine) return;
                 // Where each one streams: asked side by side (a few at a time), not one after another.
                 List<java.util.concurrent.Future<List<Titles.Offer>>> asks = new ArrayList<>();

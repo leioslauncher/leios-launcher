@@ -205,6 +205,75 @@ final class Titles {
         return out;
     }
 
+    private static final long CATALOG_TTL = 7 * DAY;
+
+    /**
+     * Well-known movies and shows, kept on the TV for a week: the 300 shows and 200 movies the most
+     * people have rated on TMDB (a steadier sign of "well known" than daily popularity, which
+     * missed The Boys and Stranger Things), plus what's popular now. About 500 titles from 29
+     * requests a week. TMDB's search only matches whole words ("the bo" never finds The Boys),
+     * so Leios also matches the start of any word against this list itself. Sends nothing typed.
+     */
+    static List<Title> catalog(Context c, String language) throws IOException {
+        List<Title> out = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        IOException failed = null;
+        String[] lists = {"discover/tv?sort_by=vote_count.desc&include_adult=false", "discover/movie?sort_by=vote_count.desc&include_adult=false",
+                "tv/popular?x=1", "movie/popular?x=1"};
+        int[] pages = {15, 10, 2, 2};
+        for (int l = 0; l < lists.length; l++) {
+            String list = lists[l];
+            boolean tv = list.contains("tv");
+            for (int page = 1; page <= pages[l]; page++) {
+                try {
+                    JSONArray results = new JSONObject(getJson(c, list + "&page=" + page + "&language=" + enc(language),
+                            CATALOG_TTL)).optJSONArray("results");
+                    for (int i = 0; results != null && i < results.length(); i++) {
+                        Title t = parse(results.getJSONObject(i), tv);
+                        if (t != null && seen.add((tv ? "t" : "m") + t.id)) out.add(t);
+                    }
+                } catch (JSONException e) {
+                    failed = new Unavailable("unexpected answer", false);
+                } catch (IOException e) {
+                    failed = e;
+                }
+            }
+        }
+        if (out.isEmpty() && failed != null) throw failed;
+        return out;
+    }
+
+    /** One result from a TMDB list (which says movie or show only in multi-search). */
+    private static Title parse(JSONObject r, boolean tv) {
+        String name = r.optString(tv ? "name" : "title", "");
+        if (name.isEmpty()) return null;
+        String date = r.optString(tv ? "first_air_date" : "release_date", "");
+        String poster = r.isNull("poster_path") ? "" : r.optString("poster_path", "");
+        Title t = new Title(r.optInt("id"), tv, name, date.length() >= 4 ? date.substring(0, 4) : "", poster);
+        t.popularity = r.optDouble("popularity", 0);
+        t.votes = r.optInt("vote_count", 0);
+        return t;
+    }
+
+    /**
+     * TMDB's search results together with the well-known titles whose name has a word starting with
+     * what's typed, no repeats, ranked by {@link #rank}.
+     */
+    static List<Title> merge(String query, List<Title> searched, List<Title> catalog, int max) {
+        List<Title> all = new ArrayList<>(searched);
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (Title t : searched) seen.add((t.tv ? "t" : "m") + t.id);
+        SearchRank.Prepared q = SearchRank.prepare(query);
+        if (catalog != null) {
+            for (Title t : catalog) {
+                if (seen.contains((t.tv ? "t" : "m") + t.id)) continue;
+                // Only good matches from the list: the name or one of its words starts with it.
+                if (SearchRank.score(q, SearchRank.prepare(t.name)) >= SearchRank.ALL_WORDS) all.add(t);
+            }
+        }
+        return rank(query, all, max);
+    }
+
     /**
      * Popular movie and show names this week, most popular first, for completing what you type.
      * One request a day (cached), only with online search on; nothing typed is sent.

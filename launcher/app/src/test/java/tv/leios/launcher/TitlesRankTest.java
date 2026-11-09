@@ -38,6 +38,23 @@ public class TitlesRankTest {
     }
 
     @Test
+    public void wellKnownListFillsInWhatTmdbSearchMisses() {
+        // TMDB's search for "the bo" never contains The Boys (it matches whole words only).
+        List<Titles.Title> searched = Arrays.asList(t("Bo! in the USA", 0.6, 0), t("The Love Boat", 128, 208));
+        List<Titles.Title> known = Arrays.asList(t("The Boys", 89, 13653), t("Breaking Bad", 300, 15000));
+        List<Titles.Title> merged = Titles.merge("the bo", searched, known, 10);
+        assertEquals("The Boys", merged.get(0).name);
+        // Breaking Bad doesn't match, so it isn't added.
+        for (Titles.Title x : merged) org.junit.Assert.assertNotEquals("Breaking Bad", x.name);
+    }
+
+    @Test
+    public void mergeWithoutAListIsJustTheSearch() {
+        List<Titles.Title> searched = Arrays.asList(t("Severance", 180, 2300));
+        assertEquals(1, Titles.merge("sev", searched, null, 10).size());
+    }
+
+    @Test
     public void keepsAtMostMax() {
         List<Titles.Title> tmdb = Arrays.asList(t("A", 1, 1), t("Ab", 2, 2), t("Abc", 3, 3));
         assertEquals(2, Titles.rank("a", tmdb, 2).size());
