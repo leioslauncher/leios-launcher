@@ -1680,8 +1680,6 @@ public class MainActivity extends Activity {
 
     private void onLongSelect() {
         if ((area == DOCK || area == GRID) && focusedApp() != null) openQuickActions();
-        // Holding OK on the top bar: search (on an app it's still the app's options).
-        else if (area == TOP) openSearch(false);
     }
 
     private void startMove() {

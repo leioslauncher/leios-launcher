@@ -44,6 +44,19 @@ final class SettingsIndex {
             this.synonyms = synonyms;
         }
 
+        /** Every name of this setting, made ready for matching once (search runs on each key press). */
+        private SearchRank.Prepared pLabel, pMenu, pDescription;
+        private SearchRank.Prepared[] pSynonyms;
+
+        private void prepare() {
+            if (pLabel != null) return;
+            pLabel = SearchRank.prepare(label);
+            pMenu = SearchRank.prepare(MENUS.get(menu).title);
+            pDescription = SearchRank.prepare(description);
+            pSynonyms = new SearchRank.Prepared[synonyms.length];
+            for (int i = 0; i < synonyms.length; i++) pSynonyms[i] = SearchRank.prepare(synonyms[i]);
+        }
+
         /** Where it is, e.g. "Look & sound › Sounds". */
         String crumb() {
             return SettingsIndex.crumb(menu);
@@ -250,10 +263,12 @@ final class SettingsIndex {
 
     /** Settings matching {@code query}, best first. */
     static List<Entry> search(String query, int limit) {
+        SearchRank.Prepared q = SearchRank.prepare(query);
         List<Entry> found = new ArrayList<>();
         List<Integer> scores = new ArrayList<>();
+        if (q.text.isEmpty()) return found;
         for (Entry e : ENTRIES) {
-            int s = score(query, e);
+            int s = score(q, e);
             if (s <= 0) continue;
             int at = 0;
             while (at < scores.size() && scores.get(at) >= s) at++;
@@ -263,12 +278,13 @@ final class SettingsIndex {
         return found.size() > limit ? new ArrayList<>(found.subList(0, limit)) : found;
     }
 
-    static int score(String query, Entry e) {
-        int best = SearchRank.score(query, e.label);
-        for (String s : e.synonyms) best = Math.max(best, SearchRank.score(query, s) * 9 / 10);
-        best = Math.max(best, SearchRank.score(query, MENUS.get(e.menu).title) * 6 / 10);
+    static int score(SearchRank.Prepared q, Entry e) {
+        e.prepare();
+        int best = SearchRank.score(q, e.pLabel);
+        for (SearchRank.Prepared s : e.pSynonyms) best = Math.max(best, SearchRank.score(q, s) * 9 / 10);
+        best = Math.max(best, SearchRank.score(q, e.pMenu) * 6 / 10);
         // A word in the description counts a little, only as a whole-word start (no "in" in "brightness").
-        int d = SearchRank.score(query, e.description);
+        int d = SearchRank.score(q, e.pDescription);
         if (d >= SearchRank.WORD_START) best = Math.max(best, d * 4 / 10);
         return best;
     }

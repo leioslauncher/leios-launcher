@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Added
-- **Search on Home.** Open it with the new **Search** button in the top bar, **Up** at the top of Home, holding **OK** on the top bar, or holding **Home** (with the ≡ helper on; it never delays a normal press). Hold ≡ and hold Settings can open it too. Inside other apps, nothing changes.
+- **Search on Home.** Open it with the new **Search** button in the top bar, **Up** at the top of Home, or holding **Home** (with the ≡ helper on; it never delays a normal press). Hold ≡ and hold Settings can open it too. Inside other apps, nothing changes.
   - A keyboard made for the D-pad, and recent searches when the field is empty (kept on the TV only).
   - Results update as you type: **Apps**, then **Settings** (every Leios setting, also by other words for it, such as "wallpaper" for Background), then **Movies & TV**.
   - **Movies & TV** comes from TMDB, with where to watch from JustWatch. It's off until you say yes, and is only in builds made with a TMDB key. Titles on your apps come first, with the app names; titles none of your apps has are shown quietly below, or hidden if you prefer. Picking a title opens that app's own search with the title filled in where the app allows it, otherwise the app with a note. If more than one of your apps has it, you choose, with your most-used app first.

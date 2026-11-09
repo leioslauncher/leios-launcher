@@ -35,7 +35,7 @@ The JMGO-only rows hide themselves on other devices, but that has never been tes
 ## Features
 
 - **Home:** a dock, an app grid, categories, and moving, hiding and renaming apps.
-- **Search on Home:** find apps and Leios settings as you type, with a keyboard made for the remote. Optionally also movies and shows on your streaming apps, from TMDB (off until you turn it on). Open it with the **Search** button, **Up** at the top of Home, holding **OK** on the top bar, or holding **Home**.
+- **Search on Home:** find apps and Leios settings as you type, with a keyboard made for the remote. Optionally also movies and shows on your streaming apps, from TMDB (off until you turn it on). Open it with the **Search** button, **Up** at the top of Home, or holding **Home**.
 - **Customize:** a quick sheet for background, appearance and the dock, and a full **Customization** screen with every setting.
 - **Quick settings on the ≡ button, in any app:** volume, brightness, inputs, Wi-Fi and sleep timer.
 - **Backgrounds:** colours, shapes, photos, GIFs, a slideshow, video, and an optional online photo of the day.

@@ -497,9 +497,17 @@ final class SearchOverlay extends FrameLayout {
                 onlineQuery = q;
                 if (onlineState() == SearchPrefs.ON && q.length() >= 2) ui.postDelayed(lookUp, DEBOUNCE_MS);
             }
+            // The letter shows at once; results follow a moment later, once for a quick run of
+            // letters (a held Delete, fast typing) instead of once per letter.
+            ui.removeCallbacks(renderSoon);
+            ui.postDelayed(renderSoon, RENDER_DELAY_MS);
+            return;
         }
         render();
     }
+
+    private static final long RENDER_DELAY_MS = 70;
+    private final Runnable renderSoon = this::render;
 
     private String placeholder() {
         return onlineState() == SearchPrefs.ON ? "Apps, settings, movies and shows" : "Apps and settings";
@@ -560,6 +568,9 @@ final class SearchOverlay extends FrameLayout {
         });
     }
 
+    /** App names made ready for matching, once each (apps rarely change names). */
+    private final Map<String, SearchRank.Prepared> preparedNames = new HashMap<>();
+
     private void renderResults(List<MenuView.Row> rows) {
         String q = q();
         boolean any = false;
@@ -568,8 +579,14 @@ final class SearchOverlay extends FrameLayout {
         List<AppRepo.App> apps = new ArrayList<>(host.searchableApps());
         List<Integer> scores = new ArrayList<>();
         List<AppRepo.App> found = new ArrayList<>();
+        SearchRank.Prepared pq = SearchRank.prepare(q);
         for (AppRepo.App a : apps) {
-            int s = SearchRank.score(q, a.label);
+            SearchRank.Prepared name = preparedNames.get(a.label);
+            if (name == null) {
+                name = SearchRank.prepare(a.label);
+                preparedNames.put(a.label, name);
+            }
+            int s = SearchRank.score(pq, name);
             if (s <= 0) continue;
             int at = 0;
             while (at < scores.size() && scores.get(at) >= s) at++;
