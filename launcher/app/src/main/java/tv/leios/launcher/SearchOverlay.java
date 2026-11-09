@@ -38,8 +38,11 @@ final class SearchOverlay extends FrameLayout {
 
     /** What search needs from Home. */
     interface Host {
-        /** Apps search may show: never hidden or locked ones (see SearchPrefs.appVisible). */
+        /** Apps search may show: not ones hidden from Home (see SearchPrefs.appVisible). */
         List<AppRepo.App> searchableApps();
+
+        /** Apps that are locked right now: they show with "Locked", and opening one asks for the PIN. */
+        Set<String> lockedPackages();
 
         void openApp(AppRepo.App app);
 
@@ -337,7 +340,10 @@ final class SearchOverlay extends FrameLayout {
         if (!down) return true;
         switch (code) {
             case KeyEvent.KEYCODE_BACK:
-                if (!repeat) back();
+                // On the keyboard with text typed, Back deletes a letter; held, it keeps deleting
+                // and stops at an empty field. Only a fresh press on an empty field closes search.
+                if (zone == KEYS && choosing == null && query.length() > 0) type(SearchKeyboard.DELETE, repeat);
+                else if (!repeat) back();
                 return true;
             case KeyEvent.KEYCODE_DPAD_UP:
             case KeyEvent.KEYCODE_DPAD_DOWN:
@@ -597,11 +603,13 @@ final class SearchOverlay extends FrameLayout {
             any = true;
             row(rows, MenuView.Row.header("Apps"), "h:apps", null);
             int iconSize = tk.dp(34);
+            Set<String> locked = host.lockedPackages();
             for (int i = 0; i < Math.min(MAX_APPS, found.size()); i++) {
                 AppRepo.App a = found.get(i);
                 boolean banner = a.icon == null;
                 MenuView.Row r = MenuView.Row.action(0, a.label)
-                        .image(banner ? tk.dp(60) : iconSize, banner ? tk.dp(34) : iconSize);
+                        .image(banner ? tk.dp(60) : iconSize, banner ? tk.dp(34) : iconSize)
+                        .value(locked.contains(a.pkg) ? "Locked" : "");
                 r.image = banner ? a.banner : a.icon;
                 row(rows, r, "a:" + a.pkg, () -> remember(() -> host.openApp(a)));
             }
@@ -743,7 +751,7 @@ final class SearchOverlay extends FrameLayout {
     }
 
     private void hints() {
-        if (zone == KEYS) results.setHints("OK", "Type", "▶", "Results", "BACK", "Close");
+        if (zone == KEYS) results.setHints("OK", "Type", "▶", "Results", "BACK", query.length() > 0 ? "Delete" : "Close");
         else if (choosing != null) results.setHints("OK", "Open", "BACK", "Back");
         else results.setHints("OK", "Open", "◀", "Keyboard", "BACK", "Keyboard");
     }

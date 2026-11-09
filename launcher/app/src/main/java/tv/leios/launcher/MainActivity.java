@@ -2454,19 +2454,31 @@ public class MainActivity extends Activity {
         public List<AppRepo.App> searchableApps() {
             List<AppRepo.App> out = new ArrayList<>();
             Set<String> hidden = hiddenApps();
-            Set<String> lockedApps = Lock.lockedApps(MainActivity.this), lockedCats = Lock.lockedCats(MainActivity.this);
+            for (AppRepo.App a : allApps) if (SearchPrefs.appVisible(a.pkg, hidden)) out.add(a);
+            return out;
+        }
+
+        @Override
+        public Set<String> lockedPackages() {
+            Set<String> out = new HashSet<>();
             boolean active = Lock.active(MainActivity.this);
+            if (!active) return out;
+            Set<String> lockedApps = Lock.lockedApps(MainActivity.this), lockedCats = Lock.lockedCats(MainActivity.this);
             for (AppRepo.App a : allApps) {
                 String cat = isInput(a) ? null : categories.of(a.pkg).id;
-                if (SearchPrefs.appVisible(a.pkg, cat, hidden, lockedApps, lockedCats, active)) out.add(a);
+                if (SearchPrefs.appLocked(a.pkg, cat, lockedApps, lockedCats, true)) out.add(a.pkg);
             }
             return out;
         }
 
         @Override
         public void openApp(AppRepo.App app) {
-            search.hideNow();
-            launch(app);
+            // The PIN first (for a locked app): cancelling it leaves search as it was.
+            requirePin(Lock.appLocked(MainActivity.this, app.pkg, isInput(app) ? null : categories.of(app.pkg).id),
+                    "Open " + app.label, () -> {
+                        search.hideNow();
+                        launchNow(app);
+                    });
         }
 
         @Override

@@ -79,16 +79,20 @@ final class SearchPrefs {
         p.edit().remove("search_recent").apply();
     }
 
+    /** May search show this app? Not one you've hidden from Home. Locked apps show (see {@link #appLocked}). */
+    static boolean appVisible(String pkg, Set<String> hidden) {
+        return !hidden.contains(pkg);
+    }
+
     /**
-     * May search show this app? Never one Home hides, nor a locked app or one in a locked category
-     * while the lock applies ({@code lockActive}: a PIN is set, not just unlocked, in its hours).
-     * Search must never be a way around a lock.
+     * Does this app show as locked in search? Yes for a locked app or one in a locked category while
+     * the lock applies ({@code lockActive}: a PIN is set, not just unlocked, in its hours). Opening
+     * it asks for the PIN, as on Home, so search is never a way around a lock.
      */
-    static boolean appVisible(String pkg, String categoryId, Set<String> hidden, Set<String> lockedApps,
-                              Set<String> lockedCats, boolean lockActive) {
-        if (hidden.contains(pkg)) return false;
-        if (!lockActive) return true;
-        return !lockedApps.contains(pkg) && (categoryId == null || !lockedCats.contains(categoryId));
+    static boolean appLocked(String pkg, String categoryId, Set<String> lockedApps, Set<String> lockedCats,
+                             boolean lockActive) {
+        if (!lockActive) return false;
+        return lockedApps.contains(pkg) || (categoryId != null && lockedCats.contains(categoryId));
     }
 
     /** Settings results: none in guest mode, which hides Customize itself. */

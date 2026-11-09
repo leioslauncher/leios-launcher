@@ -60,17 +60,19 @@ public class SearchPrefsTest {
     }
 
     @Test
-    public void lockedAndHiddenAppsNeverShow() {
+    public void hiddenAppsNeverShowLockedOnesShowAsLocked() {
         Set<String> hidden = new HashSet<>(Arrays.asList("hidden.app"));
         Set<String> lockedApps = new HashSet<>(Arrays.asList("locked.app"));
         Set<String> lockedCats = new HashSet<>(Arrays.asList("kids"));
-        assertFalse(SearchPrefs.appVisible("hidden.app", null, hidden, lockedApps, lockedCats, false));
-        assertFalse(SearchPrefs.appVisible("locked.app", null, hidden, lockedApps, lockedCats, true));
-        assertFalse(SearchPrefs.appVisible("game", "kids", hidden, lockedApps, lockedCats, true));
-        assertTrue(SearchPrefs.appVisible("free.app", "movies", hidden, lockedApps, lockedCats, true));
-        // After the right PIN (or outside the lock's hours) locked apps show again; hidden ones don't.
-        assertTrue(SearchPrefs.appVisible("locked.app", null, hidden, lockedApps, lockedCats, false));
-        assertTrue(SearchPrefs.appVisible("game", "kids", hidden, lockedApps, lockedCats, false));
+        assertFalse(SearchPrefs.appVisible("hidden.app", hidden));
+        assertTrue(SearchPrefs.appVisible("locked.app", hidden));
+        // Locked (by itself or its category) while the lock applies: shown, marked, PIN to open.
+        assertTrue(SearchPrefs.appLocked("locked.app", null, lockedApps, lockedCats, true));
+        assertTrue(SearchPrefs.appLocked("game", "kids", lockedApps, lockedCats, true));
+        assertFalse(SearchPrefs.appLocked("free.app", "movies", lockedApps, lockedCats, true));
+        // After the right PIN, or outside the lock's hours, nothing is marked.
+        assertFalse(SearchPrefs.appLocked("locked.app", null, lockedApps, lockedCats, false));
+        assertFalse(SearchPrefs.appLocked("game", "kids", lockedApps, lockedCats, false));
     }
 
     @Test

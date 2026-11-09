@@ -7,7 +7,8 @@
   - A keyboard made for the D-pad, and recent searches when the field is empty (kept on the TV only).
   - Results update as you type: **Apps**, then **Settings** (every Leios setting, also by other words for it, such as "wallpaper" for Background), then **Movies & TV**.
   - **Movies & TV** comes from TMDB, with where to watch from JustWatch. It's off until you say yes, and is only in builds made with a TMDB key. Titles on your apps come first, with the app names; titles none of your apps has are shown quietly below, or hidden if you prefer. Picking a title opens that app's own search with the title filled in where the app allows it, otherwise the app with a note. If more than one of your apps has it, you choose, with your most-used app first.
-  - Search never shows hidden or locked apps, and shows no settings in guest mode. A setting opens in Customization with its row highlighted, behind the PIN if Customize is locked; Back returns to search.
+  - Apps hidden from Home stay out of search. Locked apps show marked **Locked**, and opening one asks for the PIN, as on Home. Guest mode shows no settings.
+  - On the keyboard, **Back** deletes a letter; held, it deletes until the field is empty and stops there. A fresh Back on an empty field closes search. A setting opens in Customization with its row highlighted, behind the PIN if Customize is locked; Back returns to search.
 - **Customization:** a full screen with every setting in seven sections. **Customization › System › Search & privacy** controls online search, region, titles not on your apps and recent searches; **About** shows the version and the TMDB and JustWatch credits.
 
 ### Changed
