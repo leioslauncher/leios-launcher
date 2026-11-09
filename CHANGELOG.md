@@ -17,6 +17,8 @@
 - **Customize** on Home is now a quick sheet: Background, Appearance, Dock & arrange apps, and **All customization**.
 - **Look** is now **Look & sound**, and **Backup & reset** is now **System**. All saved settings keep working, and older backups and themes still restore.
 - **Top bar** has a **Search button** toggle. Themes carry it.
+- **Top-bar buttons are circles** with just their icon; the one you're on opens up to show its name, as before, and the focus ring follows it. The Wi-Fi name and the notification count show only while their button is focused, so the bar is calmer.
+- Opening Customize with a remote shortcut lights the Customize button, not whichever button was focused before.
 
 ### Fixed
 - Interface sounds were silent on TVs that mute Android's System sound channel at start, such as the JMGO N3 4K. Sounds now play at the TV's media volume when system sounds are muted. They never take audio focus, so other apps are never paused or turned down.

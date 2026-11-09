@@ -93,6 +93,24 @@ public class HighlightView extends View {
         anim.start();
     }
 
+    /**
+     * The element it's heading for changed size or place mid-way (a top-bar button opening up):
+     * the ring keeps gliding, now towards the new rectangle, or follows at once if it had arrived.
+     */
+    void retarget(RectF target, float targetRadius) {
+        if (!shown) return;
+        if (anim != null && anim.isRunning()) {
+            to.set(target);
+            toRadius = targetRadius;
+            fit(from, to);
+            return;
+        }
+        cur.set(target);
+        radius = targetRadius;
+        fit(cur, cur);
+        invalidate();
+    }
+
     void hide() {
         if (anim != null) anim.cancel();
         shown = false;

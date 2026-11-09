@@ -293,6 +293,12 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         pills = new View[] {findViewById(R.id.pillNotif), findViewById(R.id.pillSearch), findViewById(R.id.pillInputs),
                 findViewById(R.id.pillWifi), findViewById(R.id.pillCustomize), findViewById(R.id.pillSettings)};
+        // A button opening (or a neighbour making room) moves its edges: the focus ring follows.
+        for (View p : pills) {
+            p.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+                if (l != ol || r != or) followPill(v);
+            });
+        }
         notifLabel = findViewById(R.id.notifLabel);
         wifiIcon = findViewById(R.id.wifiIcon);
         prefs = SafePrefs.focus(this);
@@ -458,9 +464,12 @@ public class MainActivity extends Activity {
     private void paintPills() {
         int lit = area == TOP || (area == MENU && menuReturnArea == TOP) ? topIndex : -1;
         if (lit == litPill) return;
+        boolean first = litPill == -2;
         litPill = lit;
         for (int p = 0; p < pills.length; p++) {
             boolean on = p == lit;
+            // Circles with just the icon; the one you're on opens to show its name.
+            shapePill(p, on, !first);
             pills[p].setBackground(Ui.rounded(pillHeight() / 2f, on ? theme.accentFill : theme.surfaceSoft,
                     theme.stroke, on ? 0 : tk.stroke));
             ViewGroup g = (ViewGroup) pills[p];
@@ -471,6 +480,77 @@ public class MainActivity extends Activity {
                 else if (c instanceof ImageView) ((ImageView) c).setImageTintList(ColorStateList.valueOf(ink));
             }
         }
+    }
+
+    // ---- top-bar buttons: circles that open up when focused ------------------------------------
+
+    private final android.animation.ValueAnimator[] pillAnims = new android.animation.ValueAnimator[6];
+
+    /** Space before the icon: centres it in a circle as tall as the button. */
+    private int pillPadStart() {
+        return (pillHeight() - tk.iconSm) / 2;
+    }
+
+    /** A button's width when open: icon, then its text (if it shows one), as it always looked. */
+    private int pillOpenWidth(View pill) {
+        ViewGroup g = (ViewGroup) pill;
+        int w = pillPadStart() + tk.iconSm, text = 0;
+        for (int i = 0; i < g.getChildCount(); i++) {
+            View c = g.getChildAt(i);
+            if (!(c instanceof TextView) || c.getVisibility() == View.GONE) continue;
+            TextView t = (TextView) c;
+            int natural = (int) Math.ceil(t.getPaint().measureText(t.getText().toString()));
+            if (t.getMaxWidth() > 0 && t.getMaxWidth() < Integer.MAX_VALUE) natural = Math.min(natural, t.getMaxWidth());
+            // The text keeps its own width while the button opens, so it's revealed, not squeezed.
+            ViewGroup.LayoutParams lp = t.getLayoutParams();
+            if (lp.width != natural) {
+                lp.width = natural;
+                t.setLayoutParams(lp);
+            }
+            text = natural;
+        }
+        return text == 0 ? pillHeight() : w + tk.space2 + text + tk.space5 - tk.space1;
+    }
+
+    /** {@code open}: shows the button's text; otherwise a circle with the icon. */
+    private void shapePill(int p, boolean open, boolean animate) {
+        View pill = pills[p];
+        int to = open ? pillOpenWidth(pill) : pillHeight();
+        pill.setPaddingRelative(pillPadStart(), 0, 0, 0);
+        ViewGroup g = (ViewGroup) pill;
+        for (int i = 0; i < g.getChildCount(); i++) {
+            View c = g.getChildAt(i);
+            if (c instanceof TextView) c.animate().alpha(open ? 1f : 0f).setDuration(open ? tk.focus : tk.fast).start();
+        }
+        ViewGroup.LayoutParams lp = pill.getLayoutParams();
+        if (pillAnims[p] != null) pillAnims[p].cancel();
+        int fromW = lp.width > 0 ? lp.width : pill.getWidth();
+        if (!animate || fromW <= 0 || fromW == to || !isResumedNow) {
+            lp.width = to;
+            pill.setLayoutParams(lp);
+            return;
+        }
+        android.animation.ValueAnimator a = android.animation.ValueAnimator.ofInt(fromW, to);
+        a.setDuration(tk.focus);
+        a.setInterpolator(Tokens.EASE_OUT);
+        a.addUpdateListener(v -> {
+            lp.width = (int) v.getAnimatedValue();
+            pill.setLayoutParams(lp);
+        });
+        pillAnims[p] = a;
+        a.start();
+    }
+
+    /** While a button opens or closes, the focus ring follows its edges (see HighlightView.retarget). */
+    private void followPill(View pill) {
+        if (pill != currentTarget()) return;
+        int base = area == MENU ? menuReturnArea : area;
+        if (base != TOP) return;
+        float s = tk.scalePill;
+        Rect r = rectOf(pill, true);
+        RectF rf = new RectF(r);
+        rf.inset(-r.width() * (s - 1f) / 2f, -r.height() * (s - 1f) / 2f);
+        highlight.retarget(rf, rf.height() / 2f);
     }
 
     /** Each mode keeps its own background, so automatic mode looks right day and night. */
@@ -584,6 +664,8 @@ public class MainActivity extends Activity {
                     dismissMenu();
                 }
                 area = TOP;
+                // The sheet belongs to the Customize button, so that's the one lit (not wherever focus was).
+                if (pills[PILL_CUSTOMIZE].getVisibility() == View.VISIBLE) topIndex = PILL_CUSTOMIZE;
                 requirePin(Lock.hasPin(this) && (Lock.guest(this) || customizeLocked()), "Customize",
                         () -> openCustomize(0));
             } else if ("next_bg".equals(open)) {
@@ -5576,9 +5658,8 @@ public class MainActivity extends Activity {
         pills[PILL_INPUTS].setVisibility(hasInputs && prefs.getBoolean("bar_inputs", true) ? View.VISIBLE : View.GONE);
         pills[PILL_SEARCH].setVisibility(prefs.getBoolean("bar_search", true) ? View.VISIBLE : View.GONE);
         pills[PILL_WIFI].setVisibility(wifi == 2 ? View.GONE : View.VISIBLE);
+        // "Signal only": the Wi-Fi button stays a circle even when focused (shapePill sees no text).
         wifiLabel.setVisibility(wifi == 1 ? View.GONE : View.VISIBLE);
-        // Icon only: even padding, so the pill is a neat circle-ish chip.
-        pills[PILL_WIFI].setPaddingRelative(tk.space4, 0, wifi == 1 ? tk.space4 : tk.space5, 0);
         // Guest mode hides both ways into settings; ▲ ▲ ▼ ▼ ◀ ▶ ◀ ▶ on Home still opens Customize.
         boolean guest = Lock.guest(this);
         pills[PILL_CUSTOMIZE].setVisibility(guest ? View.GONE : View.VISIBLE);
