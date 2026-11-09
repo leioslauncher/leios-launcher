@@ -815,12 +815,22 @@ final class SearchOverlay extends FrameLayout {
         showSuggestion();
     }
 
-    /** The first known title that starts with what's typed (two letters or more), shown in grey after the caret. */
+    /**
+     * What's typed, completed in grey after the caret (two letters or more). It's the first title in
+     * the results as they're shown, so the grey text and the list agree; while results are loading,
+     * a recent result or a popular title stands in.
+     */
     private void showSuggestion() {
         suggestion = null;
         String typed = query.toString();
         if (open && choosing == null && typed.trim().length() >= 2 && onlineState() == SearchPrefs.ON) {
-            for (List<String> names : java.util.Arrays.asList(learnedNames, popularNames)) {
+            List<String> shown = new ArrayList<>();
+            if (online != null && typed.trim().equalsIgnoreCase(onlineQuery)) {
+                // Same order as the list: titles on your apps, then the rest.
+                for (Found f : online) if (!f.offers.isEmpty()) shown.add(f.title.name);
+                for (Found f : online) if (f.offers.isEmpty()) shown.add(f.title.name);
+            }
+            for (List<String> names : java.util.Arrays.asList(shown, learnedNames, popularNames)) {
                 for (String n : names) {
                     if (n.length() > typed.length() && n.regionMatches(true, 0, typed, 0, typed.length())) {
                         suggestion = n;
@@ -919,6 +929,7 @@ final class SearchOverlay extends FrameLayout {
                     onlineProblem = null;
                 }
                 render();
+                showSuggestion();
             });
             if (p == null) loadPosters(c, list, mine);
         });

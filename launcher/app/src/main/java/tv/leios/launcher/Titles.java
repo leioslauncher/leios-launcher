@@ -37,6 +37,9 @@ final class Titles {
         final int id;
         final boolean tv;
         final String name, year, poster;
+        /** TMDB's popularity score and vote count, for putting well-known titles first. */
+        double popularity;
+        int votes;
 
         Title(int id, boolean tv, String name, String year, String poster) {
             this.id = id;
@@ -45,6 +48,34 @@ final class Titles {
             this.year = year;
             this.poster = poster;
         }
+    }
+
+    /**
+     * TMDB orders search results mostly by how closely names match, so little-known titles with
+     * similar names come before famous ones ("Severa" found Severance only far down). Re-ordered
+     * here: first by how well the name matches what was typed (a match at the start beats one in
+     * the middle), then by how well known it is. Pure, so it's unit-tested.
+     */
+    static List<Title> rank(String query, List<Title> titles, int max) {
+        SearchRank.Prepared q = SearchRank.prepare(query);
+        List<Title> sorted = new ArrayList<>(titles);
+        java.util.Map<Title, Integer> tier = new java.util.HashMap<>();
+        for (Title t : titles) {
+            int s = SearchRank.score(q, SearchRank.prepare(t.name));
+            // Levels: the name starts with it (prefix scores fall a little with length, down to
+            // PREFIX - 99, all of them above WORD_START), a word in it does, it's in there somewhere.
+            tier.put(t, s > SearchRank.WORD_START ? 3 : s >= SearchRank.ALL_WORDS ? 2 : s > 0 ? 1 : 0);
+        }
+        sorted.sort((a, b) -> {
+            int byTier = Integer.compare(tier.get(b), tier.get(a));
+            return byTier != 0 ? byTier : Double.compare(fame(b), fame(a));
+        });
+        return sorted.size() > max ? new ArrayList<>(sorted.subList(0, max)) : sorted;
+    }
+
+    /** How well known: popularity, weighted up by how many people rated it. */
+    static double fame(Title t) {
+        return (t.popularity + 1) * Math.log10(10 + Math.max(0, t.votes));
     }
 
     /** TMDB said to slow down, or the network failed: the caller shows a calm message. */
@@ -79,7 +110,8 @@ final class Titles {
         List<Title> out = new ArrayList<>();
         try {
             JSONArray results = new JSONObject(getJson(c, path, SEARCH_TTL)).optJSONArray("results");
-            for (int i = 0; results != null && i < results.length() && out.size() < max; i++) {
+            // The whole first page (20), so ranking can lift a famous title from far down it.
+            for (int i = 0; results != null && i < results.length(); i++) {
                 JSONObject r = results.getJSONObject(i);
                 String type = r.optString("media_type");
                 boolean tv = "tv".equals(type);
@@ -88,12 +120,15 @@ final class Titles {
                 if (name.isEmpty()) continue;
                 String date = r.optString(tv ? "first_air_date" : "release_date", "");
                 String poster = r.isNull("poster_path") ? "" : r.optString("poster_path", "");
-                out.add(new Title(r.getInt("id"), tv, name, date.length() >= 4 ? date.substring(0, 4) : "", poster));
+                Title t = new Title(r.getInt("id"), tv, name, date.length() >= 4 ? date.substring(0, 4) : "", poster);
+                t.popularity = r.optDouble("popularity", 0);
+                t.votes = r.optInt("vote_count", 0);
+                out.add(t);
             }
         } catch (JSONException e) {
             throw new Unavailable("unexpected answer", false);
         }
-        return out;
+        return rank(query, out, max);
     }
 
     /** A service that has a title: in a subscription (or free), or only to rent or buy. */
