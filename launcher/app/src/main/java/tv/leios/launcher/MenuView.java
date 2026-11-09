@@ -465,15 +465,21 @@ final class MenuView extends LinearLayout {
 
         if (r.imageW > 0) {
             ImageView img = new ImageView(c);
-            img.setScaleType(ImageView.ScaleType.CENTER_CROP);
             img.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
-            img.setClipToOutline(true);
-            img.setOutlineProvider(new android.view.ViewOutlineProvider() {
-                @Override
-                public void getOutline(View view, android.graphics.Outline o) {
-                    o.setRoundRect(0, 0, view.getWidth(), view.getHeight(), tk.radiusSm / 2f);
-                }
-            });
+            if (r.kind == NOTE) {
+                // A logo beside a note (About): shown whole, never cropped or rounded off.
+                img.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            } else {
+                // Posters and app icons: filled, with softly rounded corners.
+                img.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                img.setClipToOutline(true);
+                img.setOutlineProvider(new android.view.ViewOutlineProvider() {
+                    @Override
+                    public void getOutline(View view, android.graphics.Outline o) {
+                        o.setRoundRect(0, 0, view.getWidth(), view.getHeight(), tk.radiusSm / 2f);
+                    }
+                });
+            }
             LayoutParams ilp = new LayoutParams(r.imageW, r.imageH);
             ilp.setMarginEnd(tk.space3);
             img.setTag(TAG_IMAGE);
