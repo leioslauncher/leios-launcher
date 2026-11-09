@@ -22,6 +22,8 @@ Leios Launcher is licensed under GPL-3.0. The items below keep their own license
 
 The Apache-2.0 license is at https://www.apache.org/licenses/LICENSE-2.0.
 
+Search's open and close motion (`SearchOverlay.java`) follows the timing and curves of "Curtain index" from the Subframe Motion Library (https://www.subframe.com/motion/curtain-index), MIT License, Copyright (c) 2026 Subframe. No code was copied; the motion was rebuilt with Android animators and shortened for a TV.
+
 ## Data used by online title search
 
 Only in builds made with a TMDB key, and only when you turn online title search on.

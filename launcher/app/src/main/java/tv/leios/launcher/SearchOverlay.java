@@ -177,7 +177,13 @@ final class SearchOverlay extends FrameLayout {
         alp.topMargin = tk.space3;
         alp.setMarginStart(tk.space4);
         right.addView(attribution, alp);
+        parts = new View[] {box, keyboard, right};
+        scrim.setPivotX(0f);
+        scrim.setPivotY(0f);
     }
+
+    /** Field, keyboard, results: they come in in this order, a moment apart. */
+    private final View[] parts;
 
     boolean isOpen() {
         return open;
@@ -194,8 +200,8 @@ final class SearchOverlay extends FrameLayout {
     // ---- open and close -----------------------------------------------------------------------
 
     /**
-     * Shows search. {@code pulled}: it came down from the top of Home (Up), so it slides down from
-     * above; otherwise it rises a little into place. Keys work at once, during the animation.
+     * Shows search. Keys work at once, during the animation. {@code pulled} (Up at the top of
+     * Home) and the other ways in look the same: search always drops from the top edge.
      */
     void show(boolean pulled) {
         open = true;
@@ -206,13 +212,7 @@ final class SearchOverlay extends FrameLayout {
         keyboard.setActive(true);
         results.setActive(false);
         refresh(true);
-        setVisibility(VISIBLE);
-        animate().cancel();
-        content.animate().cancel();
-        setAlpha(0f);
-        content.setTranslationY(pulled ? -tk.space7 : tk.space4);
-        animate().alpha(1f).setDuration(tk.medium).setInterpolator(Tokens.EASE_OUT).withLayer().start();
-        content.animate().translationY(0).setDuration(tk.medium).setInterpolator(Tokens.EASE_OUT).start();
+        enter();
         host.sound(Sounds.OPEN, false);
     }
 
@@ -222,27 +222,90 @@ final class SearchOverlay extends FrameLayout {
         open = false;
         seq++;
         ui.removeCallbacks(lookUp);
-        animate().cancel();
-        content.animate().cancel();
-        animate().alpha(0f).setDuration(tk.medium).setInterpolator(Tokens.EASE_IN_OUT).withLayer()
-                .withEndAction(() -> {
-                    if (!open) setVisibility(GONE);
-                }).start();
-        content.animate().translationY(pulled ? -tk.space7 : tk.space4).setDuration(tk.medium)
-                .setInterpolator(Tokens.EASE_IN_OUT).start();
+        exit();
         host.closed();
     }
 
     /** Coming back from a setting opened from search: as it was, with the same text. */
     void reshow() {
         open = true;
-        setVisibility(VISIBLE);
-        animate().cancel();
-        setAlpha(0f);
-        content.setTranslationY(tk.space4);
-        animate().alpha(1f).setDuration(tk.medium).setInterpolator(Tokens.EASE_OUT).withLayer().start();
-        content.animate().translationY(0).setDuration(tk.medium).setInterpolator(Tokens.EASE_OUT).start();
         refresh(false);
+        enter();
+    }
+
+    // Motion, adapted from Subframe's "Curtain index" (MIT; see THIRD_PARTY_NOTICES.md): a backdrop
+    // drops from the top edge on an ease-in-out, then the field, keyboard and results fade in and
+    // settle 12 dp downwards, 35 ms apart, on a strong ease-out. Leaving is quicker, with no stagger.
+    // Shortened for a TV remote (about 300 ms in all, 220 ms out), and only scale, translation and
+    // opacity move, so this GPU draws the backdrop once and moves layers.
+    private static final android.view.animation.Interpolator CURTAIN =
+            new android.view.animation.PathInterpolator(0.76f, 0f, 0.24f, 1f);
+    private static final android.view.animation.Interpolator SETTLE =
+            new android.view.animation.PathInterpolator(0.2f, 0.8f, 0.2f, 1f);
+    private static final int CURTAIN_IN = 260, CURTAIN_OUT = 200, PART_DELAY = 70, PART_STAGGER = 35,
+            PART_MOVE = 220, PART_FADE = 150, PART_OUT = 130;
+
+    /** Android's "Remove animations" (or animator scale 0): no movement, just appear. */
+    private static boolean motionOff() {
+        return !android.animation.ValueAnimator.areAnimatorsEnabled();
+    }
+
+    private void enter() {
+        setVisibility(VISIBLE);
+        setAlpha(1f);
+        scrim.animate().cancel();
+        int travel = tk.space3;
+        boolean still = motionOff();
+        scrim.setScaleY(still ? 1f : 0f);
+        if (!still) scrim.animate().scaleY(1f).setStartDelay(0).setDuration(CURTAIN_IN).setInterpolator(CURTAIN)
+                .withLayer().start();
+        cancelFades();
+        for (int i = 0; i < parts.length; i++) {
+            View p = parts[i];
+            p.animate().cancel();
+            if (still) {
+                p.setAlpha(1f);
+                p.setTranslationY(0);
+                continue;
+            }
+            p.setAlpha(0f);
+            p.setTranslationY(-travel);
+            long delay = PART_DELAY + (long) i * PART_STAGGER;
+            p.animate().translationY(0).setStartDelay(delay).setDuration(PART_MOVE).setInterpolator(SETTLE).start();
+            // The fade is shorter than the move, so the text is readable before it finishes settling.
+            android.animation.ObjectAnimator fade = android.animation.ObjectAnimator.ofFloat(p, View.ALPHA, 0f, 1f);
+            fade.setStartDelay(delay);
+            fade.setDuration(PART_FADE);
+            fade.setInterpolator(Tokens.EASE_OUT);
+            fade.start();
+            fades.add(fade);
+        }
+    }
+
+    private final List<android.animation.Animator> fades = new ArrayList<>();
+
+    private void cancelFades() {
+        for (android.animation.Animator a : fades) a.cancel();
+        fades.clear();
+    }
+
+    private void exit() {
+        cancelFades();
+        if (motionOff()) {
+            setVisibility(GONE);
+            return;
+        }
+        int travel = tk.space3;
+        for (View p : parts) {
+            p.animate().cancel();
+            p.animate().alpha(0f).translationY(-travel).setStartDelay(0).setDuration(PART_OUT)
+                    .setInterpolator(Tokens.EASE_IN_OUT).start();
+        }
+        scrim.animate().cancel();
+        scrim.animate().scaleY(0f).setStartDelay(PART_OUT / 2).setDuration(CURTAIN_OUT).setInterpolator(CURTAIN)
+                .withLayer().withEndAction(() -> {
+                    if (!open) setVisibility(GONE);
+                }).start();
     }
 
     /** Hidden at once (a setting from search opens in its place; Home was pressed). */
@@ -250,7 +313,9 @@ final class SearchOverlay extends FrameLayout {
         open = false;
         seq++;
         ui.removeCallbacks(lookUp);
-        animate().cancel();
+        cancelFades();
+        scrim.animate().cancel();
+        for (View p : parts) p.animate().cancel();
         setVisibility(GONE);
     }
 
