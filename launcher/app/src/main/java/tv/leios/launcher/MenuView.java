@@ -139,6 +139,8 @@ final class MenuView extends LinearLayout {
     private final List<Row> rows = new ArrayList<>();
     private final List<View> rowViews = new ArrayList<>();
     private int focus = -1, maxHeight;
+    /** When focus last moved, to tell a held button's quick steps from single presses. */
+    private long lastMove;
     private String[] hints = new String[0];
     private Runnable restoreFooter;
 
@@ -371,6 +373,16 @@ final class MenuView extends LinearLayout {
         if (old >= 0 && old < rowViews.size() && old != i) bind(rows.get(old), rowViews.get(old), false);
         bind(rows.get(i), rowViews.get(i), true);
         View target = rowViews.get(i);
+        // A held button steps every ~50 ms, faster than the focus slide: each slide then lasts only
+        // until the next step (or snaps, when there's no time to see it), so the bar keeps pace with
+        // the row instead of trailing behind it.
+        long now = android.os.SystemClock.uptimeMillis();
+        long gap = now - lastMove;
+        lastMove = now;
+        int slide = gap >= tk.focus ? tk.focus : (int) (gap * 0.8f);
+        boolean quick = animate && slide < tk.focus;
+        if (slide < 24) animate = false;
+        boolean glide = animate;
         Runnable place = () -> {
             Row r = rows.get(focus);
             if (!active) indicator.setBackground(Ui.rounded(tk.radiusMd, 0, th.textTertiary, tk.stroke));
@@ -384,10 +396,11 @@ final class MenuView extends LinearLayout {
             boolean wasHidden = indicator.getVisibility() != VISIBLE;
             indicator.setVisibility(VISIBLE);
             indicator.animate().cancel();
-            if (!animate || wasHidden) indicator.setTranslationY(target.getTop());
-            else indicator.animate().translationY(target.getTop()).setDuration(tk.focus)
+            if (!glide || wasHidden) indicator.setTranslationY(target.getTop());
+            else indicator.animate().translationY(target.getTop()).setDuration(slide)
                     .setInterpolator(Tokens.EASE_OUT).start();
-            keepVisible(target, animate);
+            // Quick steps scroll straight there: a smooth scroll would trail behind, like the bar did.
+            keepVisible(target, glide && !quick);
         };
         if (target.getHeight() == 0) target.post(place);
         else place.run();

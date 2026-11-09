@@ -43,6 +43,7 @@ final class SearchKeyboard extends View {
     private final RectF focusRect = new RectF(), from = new RectF();
     private final int keyH, gap;
     private int focus;
+    private long lastMove;
     private boolean active = true;
     private ValueAnimator slide;
     private final Drawable micIcon;
@@ -159,7 +160,13 @@ final class SearchKeyboard extends View {
         if (slide != null) slide.cancel();
         focus = i;
         RectF to = keys.get(i).rect;
-        if (!animate || getWidth() == 0) {
+        // Held arrows step faster than the slide: shorten it to the gap between steps (or snap), so
+        // the highlight stays on the key instead of trailing it.
+        long now = android.os.SystemClock.uptimeMillis();
+        long gap = now - lastMove;
+        lastMove = now;
+        int duration = gap >= tk.focus ? tk.focus : (int) (gap * 0.8f);
+        if (!animate || getWidth() == 0 || duration < 24) {
             focusRect.set(to);
             invalidate();
             return;
@@ -167,7 +174,7 @@ final class SearchKeyboard extends View {
         from.set(focusRect);
         RectF end = new RectF(to);
         slide = ValueAnimator.ofFloat(0f, 1f);
-        slide.setDuration(tk.focus);
+        slide.setDuration(duration);
         slide.setInterpolator(Tokens.EASE_OUT);
         slide.addUpdateListener(a -> {
             float f = (float) a.getAnimatedValue();
