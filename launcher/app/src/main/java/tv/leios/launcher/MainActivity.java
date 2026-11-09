@@ -6116,8 +6116,8 @@ public class MainActivity extends Activity {
     /** Customization › System › About: version, credits, and the attribution TMDB and JustWatch ask for. */
     private void openAboutMenu(int focus) {
         startMenu(crumb("System"), "About");
-        add(MenuView.Row.note(R.drawable.ic_info, "Leios " + BuildConfig.VERSION_NAME + ". A free, open-source home "
-                + "screen for Android TV and projectors. github.com/leioslauncher/leios-launcher"), null);
+        add(MenuView.Row.note(R.drawable.ic_info, "Leios " + BuildConfig.VERSION_NAME + ", free and open source. "
+                + "github.com/leioslauncher/leios-launcher"), null);
         // TMDB's logo with its required notice (smaller than Leios's own name above), then the other
         // sources, each in a note of its own so none is cut short.
         MenuView.Row tmdb = MenuView.Row.note(0, "This application uses TMDB and the TMDB APIs but is not endorsed, "
@@ -6126,8 +6126,8 @@ public class MainActivity extends Activity {
         add(tmdb, null);
         add(MenuView.Row.note(R.drawable.ic_search, "Where-to-watch information is provided by JustWatch. Streaming "
                 + "apps' own title IDs come from Wikidata (CC0)."), null);
-        add(MenuView.Row.note(R.drawable.ic_info, "Fonts, icons and other parts made by others, with their licences, are "
-                + "listed in THIRD_PARTY_NOTICES.md in the project."), null);
+        add(MenuView.Row.note(R.drawable.ic_info, "Licences for fonts, icons and other parts: THIRD_PARTY_NOTICES.md "
+                + "in the project."), null);
         showSheet(focus, () -> openBackupMenu(5), null);
         menu.setHints("BACK", "Back");
     }

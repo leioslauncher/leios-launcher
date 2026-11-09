@@ -270,6 +270,8 @@ final class MenuView extends LinearLayout {
         scroll.scrollTo(0, 0);
         int f = Math.max(0, Math.min(focusIndex, rows.size() - 1));
         while (f + 1 < rows.size() && rows.get(f).skipped()) f++;
+        // Only notes (About): stay at the top, so the first one is read, not scrolled past.
+        if (!rows.isEmpty() && rows.get(f).skipped()) f = Math.max(0, Math.min(focusIndex, rows.size() - 1));
         setFocus(f, false);
         post(this::updateFades);
         // Going into or out of a submenu: a quick fade, so the swap reads as a change of level.
