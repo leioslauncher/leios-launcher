@@ -670,7 +670,7 @@ public class MainActivity extends Activity {
                 area = TOP;
                 // The sheet belongs to the Customize button, so that's the one lit (not wherever focus was).
                 if (pills[PILL_CUSTOMIZE].getVisibility() == View.VISIBLE) topIndex = PILL_CUSTOMIZE;
-                requirePin(Lock.hasPin(this) && (Lock.guest(this) || customizeLocked()), "Customize",
+                requirePin(Lock.hasPin(this) && (Lock.guest(this) || customizeLocked()), tr(R.string.customize),
                         () -> openCustomize(0));
             } else if ("next_bg".equals(open)) {
                 nextBackground();
@@ -4744,8 +4744,8 @@ public class MainActivity extends Activity {
     // Lock & remote: the PIN, what it locks and when, guest mode, and hold shortcuts on the remote.
 
     private String lockSummary() {
-        if (Lock.guest(this)) return "Guest mode";
-        return Lock.hasPin(this) ? "PIN on" : "";
+        if (Lock.guest(this)) return tr(R.string.set_lock_guest_mode);
+        return Lock.hasPin(this) ? tr(R.string.lock_pin_on) : "";
     }
 
     private void openLockMenu(int focus) {
@@ -4753,31 +4753,28 @@ public class MainActivity extends Activity {
         String crumb = crumb(tr(R.string.menu_lock));
         startMenu(tr(R.string.customize), tr(R.string.menu_lock));
         boolean pin = Lock.hasPin(this);
-        add(MenuView.Row.nav(R.drawable.ic_lock, tr(R.string.set_lock_pin_lock), pin ? "On" : "Off"), this::openPinMenu);
+        add(MenuView.Row.nav(R.drawable.ic_lock, tr(R.string.set_lock_pin_lock), onOff(pin)), this::openPinMenu);
         MenuView.Row what = add(MenuView.Row.nav(0, tr(R.string.set_lock_what_it_locks), lockWhatSummary()), () -> openLockWhat(0));
         MenuView.Row when = add(MenuView.Row.nav(0, tr(R.string.set_lock_when), scheduleName()), this::openLockWhen);
         if (!pin) {
-            what.disabled("Set a PIN first.");
-            when.disabled("Set a PIN first.");
+            what.disabled(tr(R.string.lock_set_pin_first));
+            when.disabled(tr(R.string.lock_set_pin_first));
         }
         boolean guest = Lock.guest(this);
-        add(MenuView.Row.action(0, tr(R.string.set_lock_guest_mode)).value(guest ? "On" : "Off"), () -> {
+        add(MenuView.Row.action(0, tr(R.string.set_lock_guest_mode)).value(onOff(guest)), () -> {
             prefs.edit().putBoolean("guest", !guest).apply();
             menuSound = guest ? Sounds.OFF : Sounds.ON;
             applyBarLook();
-            toast(!guest ? "Guest mode on: Customize and Settings are hidden. ▲ ▲ ▼ ▼ ◀ ▶ ◀ ▶ on Home brings them back."
-                    : "Guest mode off", true);
+            toast(tr(!guest ? R.string.toast_guest_on : R.string.toast_guest_off), true);
             if (!guest) dismissMenuNow();
             else openLockMenu(3);
         });
         add(MenuView.Row.nav(R.drawable.ic_settings, tr(R.string.set_lock_remote_shortcuts), shortcutsSummary()), () -> openShortcutsMenu(0));
         if (!PanelService.isRunning()) {
             // Locked apps, the shortcuts and the PIN over Settings all live in the ≡ helper.
-            add(MenuView.Row.note(R.drawable.ic_info, "The ≡ helper is off, so locked apps and remote shortcuts "
-                    + "don't work outside Home. Turn on “Home quick settings” in Settings › System › Accessibility."), null);
+            add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.lock_helper_off)), null);
         }
-        add(MenuView.Row.note(R.drawable.ic_info, "Forgot the PIN? It can be removed from a computer with ADB; "
-                + "the README says how."), null);
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.lock_forgot_pin)), null);
         showSheet(focus, backTo(SEC_LOCK), null);
     }
 
@@ -4789,20 +4786,19 @@ public class MainActivity extends Activity {
 
     private void openPinMenu() {
         String crumb = crumb(tr(R.string.menu_lock));
-        startMenu(crumb, "PIN lock");
+        startMenu(crumb, tr(R.string.set_lock_pin_lock));
         boolean pin = Lock.hasPin(this);
-        add(MenuView.Row.action(R.drawable.ic_lock, pin ? "Change PIN" : "Set a PIN"), () -> setNewPin(null));
+        add(MenuView.Row.action(R.drawable.ic_lock, tr(pin ? R.string.lock_change_pin : R.string.lock_set_pin)), () -> setNewPin(null));
         if (pin) {
-            add(MenuView.Row.action(R.drawable.ic_trash, "Turn the lock off"), () -> {
+            add(MenuView.Row.action(R.drawable.ic_trash, tr(R.string.lock_turn_off)), () -> {
                 Lock.clear(this);
                 applyBarLook();
                 PanelService.locksChanged();
-                toast("PIN lock off", true);
+                toast(tr(R.string.toast_pin_off), true);
                 openLockMenu(0);
             });
         }
-        add(MenuView.Row.note(R.drawable.ic_info, "Four digits. Stored only as a scrambled code, never the "
-                + "digits. A family lock: it keeps kids and guests out, not someone with a computer."), null);
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.lock_pin_note)), null);
         showSheet(0, () -> openLockMenu(0), null);
     }
 
@@ -4810,8 +4806,9 @@ public class MainActivity extends Activity {
     private void setNewPin(String first) {
         Dialog dialog = new Dialog(this, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar);
         PinPad[] pad = new PinPad[1];
-        pad[0] = new PinPad(this, theme, crumb(tr(R.string.menu_lock)), first == null ? "New PIN" : "Same PIN again",
-                first == null ? "Pick four digits you'll remember" : "To make sure", new PinPad.Listener() {
+        pad[0] = new PinPad(this, theme, crumb(tr(R.string.menu_lock)),
+                tr(first == null ? R.string.pin_new : R.string.pin_again),
+                tr(first == null ? R.string.pin_new_hint : R.string.pin_again_hint), new PinPad.Listener() {
             @Override
             public void done(String pin) {
                 dialog.dismiss();
@@ -4820,10 +4817,10 @@ public class MainActivity extends Activity {
                 } else if (first.equals(pin)) {
                     Lock.setPin(MainActivity.this, pin);
                     PanelService.locksChanged();
-                    toast("PIN set. Customize and Settings now ask for it.", true);
+                    toast(tr(R.string.toast_pin_set), true);
                     openLockMenu(0);
                 } else {
-                    toast("The two PINs were different. Nothing was changed.", false);
+                    toast(tr(R.string.toast_pin_mismatch), false);
                     openPinMenu();
                 }
             }
@@ -4849,20 +4846,22 @@ public class MainActivity extends Activity {
         for (String s : Lock.lockedApps(this)) if (!s.isEmpty()) apps++;
         for (String s : Lock.lockedCats(this)) if (!s.isEmpty()) apps++;
         boolean settings = prefs.getBoolean("lock_settings", true);
-        return (settings ? "Settings" : "") + (apps > 0 ? (settings ? " + " : "") + apps + " more" : "");
+        String more = apps > 0 ? trn(R.plurals.lock_more, apps) : "";
+        if (settings && apps > 0) return tr(R.string.lock_what_and, tr(R.string.settings), more);
+        return settings ? tr(R.string.settings) : more;
     }
 
     private void openLockWhat(int focus) {
         String crumb = crumb(tr(R.string.menu_lock));
-        startMenu(crumb, "What it locks");
+        startMenu(crumb, tr(R.string.set_lock_what_it_locks));
         boolean settings = prefs.getBoolean("lock_settings", true);
-        add(MenuView.Row.choice("Customize and Settings", settings), () -> {
+        add(MenuView.Row.choice(tr(R.string.lock_customize_and_settings), settings), () -> {
             prefs.edit().putBoolean("lock_settings", !settings).apply();
             openLockWhat(0);
         });
         Set<String> cats = Lock.lockedCats(this);
         for (Categories.Cat c : categories.list) {
-            add(MenuView.Row.choice(catName(c), cats.contains(c.id)).value("Category"), () -> {
+            add(MenuView.Row.choice(catName(c), cats.contains(c.id)).value(tr(R.string.qa_category)), () -> {
                 Lock.toggle(this, "locked_cats", c.id);
                 PanelService.locksChanged();
                 openLockWhat(menu.focus());
@@ -4877,25 +4876,38 @@ public class MainActivity extends Activity {
             });
         }
         showSheet(focus, () -> openLockMenu(1), null);
-        menu.setHints("OK", "Lock / unlock", "BACK", "Back");
+        menu.setHints(tr(R.string.key_ok), tr(R.string.hint_lock_unlock), tr(R.string.key_back), tr(R.string.hint_back));
     }
 
     // Minutes after midnight, from-to (it may wrap past midnight).
     private static final String[] SCHEDULES = {"", "1260-420", "1200-480"};
-    private static final String[] SCHEDULE_NAMES = {"Always", "21:00 to 7:00", "20:00 to 8:00"};
+
+    /** "21:00 to 7:00" for a schedule, in the language's digits (always 24-hour, as the lock works). */
+    private String scheduleName(int i) {
+        if (i <= 0 || i >= SCHEDULES.length) return tr(R.string.lock_always);
+        String[] range = SCHEDULES[i].split("-");
+        return tr(R.string.lock_time_range, minutesText(Integer.parseInt(range[0])), minutesText(Integer.parseInt(range[1])));
+    }
+
+    /** Minutes after midnight as "7:00" or "21:00". */
+    private static String minutesText(int minutes) {
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.HOUR_OF_DAY, minutes / 60);
+        c.set(Calendar.MINUTE, minutes % 60);
+        return new SimpleDateFormat("H:mm", Locale.getDefault()).format(c.getTime());
+    }
 
     private String scheduleName() {
-        int i = Arrays.asList(SCHEDULES).indexOf(prefs.getString("lock_sched", ""));
-        return i < 0 || i >= SCHEDULE_NAMES.length ? "Always" : SCHEDULE_NAMES[i];
+        return scheduleName(Arrays.asList(SCHEDULES).indexOf(prefs.getString("lock_sched", "")));
     }
 
     private void openLockWhen() {
         int cur = Math.max(0, Arrays.asList(SCHEDULES).indexOf(prefs.getString("lock_sched", "")));
-        openChoice(crumb(tr(R.string.menu_lock)), "When the lock applies", new String[] {"Always",
-                "Bedtime: 21:00 to 7:00", "Bedtime: 20:00 to 8:00"}, Math.min(cur, 2), i -> {
+        openChoice(crumb(tr(R.string.menu_lock)), tr(R.string.lock_when_title), new String[] {tr(R.string.lock_always),
+                tr(R.string.lock_bedtime, scheduleName(1)), tr(R.string.lock_bedtime, scheduleName(2))}, Math.min(cur, 2), i -> {
                     prefs.edit().putString("lock_sched", SCHEDULES[i]).apply();
                     PanelService.locksChanged();
-                    toast(i == 0 ? "The lock always applies" : "The lock applies from " + SCHEDULE_NAMES[i], true);
+                    toast(i == 0 ? tr(R.string.toast_lock_always) : tr(R.string.toast_lock_from, scheduleName(i)), true);
                     openLockMenu(2);
                 }, null, () -> openLockMenu(2));
     }
@@ -4903,41 +4915,45 @@ public class MainActivity extends Activity {
     // Remote shortcuts: what holding ≡ or the Settings (gear) button does. Off by default.
 
     static final String[] HOLD_ACTIONS = {"", "home", "customize", "search", "next_bg", "sleep30"};
-    private static final String[] HOLD_NAMES = {"Nothing", "Go to Home", "Open Customize", "Open search",
-            "Next background", "Sleep in 30 minutes"};
+    private static final int[] HOLD_NAMES = {R.string.hold_nothing, R.string.hold_home, R.string.hold_customize,
+            R.string.hold_search, R.string.hold_next_bg, R.string.hold_sleep30};
+    /** After picking one, in the same order: "Hold ≡: go to home". */
+    private static final int[] HOLD_TOASTS = {R.string.toast_hold_nothing, R.string.toast_hold_home,
+            R.string.toast_hold_customize, R.string.toast_hold_search, R.string.toast_hold_next_bg,
+            R.string.toast_hold_sleep30};
 
     private String holdName(String key) {
         int i = Arrays.asList(HOLD_ACTIONS).indexOf(prefs.getString(key, ""));
-        return HOLD_NAMES[Math.max(0, i)];
+        return tr(HOLD_NAMES[Math.max(0, i)]);
     }
 
     private String shortcutsSummary() {
-        return prefs.getString("hold_menu", "").isEmpty() && prefs.getString("hold_gear", "").isEmpty() ? "Off" : "On";
+        return onOff(!(prefs.getString("hold_menu", "").isEmpty() && prefs.getString("hold_gear", "").isEmpty()));
     }
 
     private void openShortcutsMenu(int focus) {
         String crumb = crumb(tr(R.string.menu_lock));
         startMenu(crumb, tr(R.string.menu_lock_shortcuts));
-        add(MenuView.Row.nav(0, tr(R.string.set_lock_shortcuts_hold), holdName("hold_menu")), () -> openHoldChoice("hold_menu", "Hold ≡", 0));
+        add(MenuView.Row.nav(0, tr(R.string.set_lock_shortcuts_hold), holdName("hold_menu")),
+                () -> openHoldChoice("hold_menu", tr(R.string.set_lock_shortcuts_hold), 0));
         add(MenuView.Row.nav(0, tr(R.string.set_lock_shortcuts_hold_the_settings_button), holdName("hold_gear")),
-                () -> openHoldChoice("hold_gear", "Hold the Settings button", 1));
+                () -> openHoldChoice("hold_gear", tr(R.string.set_lock_shortcuts_hold_the_settings_button), 1));
         boolean homeHold = prefs.getBoolean("hold_home_search", true);
-        MenuView.Row home = add(MenuView.Row.action(0, tr(R.string.set_lock_shortcuts_hold_home_for_search)).value(homeHold ? "On" : "Off"), () -> {
+        MenuView.Row home = add(MenuView.Row.action(0, tr(R.string.set_lock_shortcuts_hold_home_for_search)).value(onOff(homeHold)), () -> {
             prefs.edit().putBoolean("hold_home_search", !homeHold).apply();
             menuSound = homeHold ? Sounds.OFF : Sounds.ON;
             openShortcutsMenu(2);
         });
-        if (!PanelService.isRunning()) home.disabled("Needs the ≡ helper (Leios quick settings) on in Accessibility.");
-        add(MenuView.Row.note(R.drawable.ic_info, "A short press still does what it always did. ≡ and Settings work in "
-                + "any app while the ≡ helper is on; holding Home opens search only on Home."), null);
+        if (!PanelService.isRunning()) home.disabled(tr(R.string.shortcuts_needs_helper));
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.shortcuts_note)), null);
         showSheet(focus, () -> openLockMenu(4), null);
     }
 
     private void openHoldChoice(String key, String title, int row) {
         int cur = Math.max(0, Arrays.asList(HOLD_ACTIONS).indexOf(prefs.getString(key, "")));
-        openChoice(crumb(tr(R.string.menu_lock), tr(R.string.menu_lock_shortcuts)), title, HOLD_NAMES, cur, i -> {
+        openChoice(crumb(tr(R.string.menu_lock), tr(R.string.menu_lock_shortcuts)), title, trAll(HOLD_NAMES), cur, i -> {
             prefs.edit().putString(key, HOLD_ACTIONS[i]).apply();
-            toast(title + ": " + HOLD_NAMES[i].toLowerCase(Locale.getDefault()), true);
+            toast(tr(HOLD_TOASTS[i], title), true);
             openShortcutsMenu(row);
         }, null, () -> openShortcutsMenu(row));
     }
@@ -4955,7 +4971,7 @@ public class MainActivity extends Activity {
             int cur = bg.isEmpty() ? from : Integer.parseInt(bg.substring(7));
             applyBackground("preset:" + (cur + 1 >= to ? from : cur + 1), true);
         } else {
-            toast("Next background works with slideshows, shapes and colours", false);
+            toast(tr(R.string.toast_next_bg_unsupported), false);
         }
     }
 
@@ -4972,11 +4988,11 @@ public class MainActivity extends Activity {
         }
         Dialog dialog = new Dialog(this, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar);
         PinPad[] pad = new PinPad[1];
-        pad[0] = new PinPad(this, theme, null, title, "Enter your PIN", new PinPad.Listener() {
+        pad[0] = new PinPad(this, theme, null, title, tr(R.string.pin_enter), new PinPad.Listener() {
             @Override
             public void done(String pin) {
                 if (System.currentTimeMillis() < pinWaitUntil) {
-                    pad[0].error("Too many tries. Wait half a minute.");
+                    pad[0].error(tr(R.string.pin_too_many));
                     return;
                 }
                 if (Lock.check(MainActivity.this, pin)) {
@@ -4989,7 +5005,7 @@ public class MainActivity extends Activity {
                         wrongPins = 0;
                         pinWaitUntil = System.currentTimeMillis() + 30_000;
                     }
-                    pad[0].error("That's not the PIN. Try again.");
+                    pad[0].error(tr(R.string.pin_wrong));
                 }
             }
 
@@ -5852,7 +5868,7 @@ public class MainActivity extends Activity {
             }
             area = TOP;
             menuAnchorPill = PILL_CUSTOMIZE;
-            requirePin(Lock.hasPin(this) && (Lock.guest(this) || customizeLocked()), "Customize",
+            requirePin(Lock.hasPin(this) && (Lock.guest(this) || customizeLocked()), tr(R.string.customize),
                     () -> openFull(SEC_LOCK, null));
         }
     }

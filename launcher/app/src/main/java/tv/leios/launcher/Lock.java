@@ -146,7 +146,7 @@ final class Lock {
         @Override
         public void onReceive(Context c, android.content.Intent i) {
             clear(c);
-            android.widget.Toast.makeText(c, "Leios's PIN lock was removed", android.widget.Toast.LENGTH_LONG).show();
+            android.widget.Toast.makeText(c, R.string.toast_pin_removed, android.widget.Toast.LENGTH_LONG).show();
         }
     }
 }

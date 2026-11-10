@@ -6,4 +6,6 @@
     <string name="projector_picture_summary">Mode, colour, HDR</string>
     <string name="projector_brightness_summary">Laser brightness</string>
     <string name="projector_keystone_summary">Straighten the image</string>
+    <!-- Shown by Android over any app, a minute before the sleep timer ends. -->
+    <string name="toast_sleep_one_minute">Going to sleep in 1 minute</string>
 </resources>

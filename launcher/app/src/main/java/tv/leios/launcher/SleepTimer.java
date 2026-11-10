@@ -28,7 +28,7 @@ final class SleepTimer {
         @Override
         public void onReceive(Context c, Intent i) {
             if (ACTION_WARN.equals(i.getAction())) {
-                Toast.makeText(c, "Going to sleep in 1 minute", Toast.LENGTH_LONG).show();
+                Toast.makeText(c, R.string.toast_sleep_one_minute, Toast.LENGTH_LONG).show();
             } else if (ACTION_SLEEP.equals(i.getAction())) {
                 c.getSharedPreferences("focus", Context.MODE_PRIVATE).edit().remove("sleep_at").apply();
                 if (isReady(c)) c.getSystemService(DevicePolicyManager.class).lockNow();

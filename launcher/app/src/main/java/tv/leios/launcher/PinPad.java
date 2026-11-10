@@ -69,7 +69,8 @@ final class PinPad extends LinearLayout {
         addView(message, mlp);
         LayoutParams hlp = new LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         hlp.topMargin = tk.space4;
-        addView(Ui.hints(c, th, tk, "▲ ▼", "Digit", "▶ OK", "Next", "BACK", "Cancel"), hlp);
+        addView(Ui.hints(c, th, tk, "▲ ▼", c.getString(R.string.hint_digit), "▶ " + c.getString(R.string.key_ok),
+                c.getString(R.string.hint_next), c.getString(R.string.key_back), c.getString(R.string.hint_cancel)), hlp);
         refresh();
     }
 

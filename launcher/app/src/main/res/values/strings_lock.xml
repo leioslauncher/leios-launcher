@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Customize › Lock & remote: the PIN, what it locks and when, guest mode, remote shortcuts, and the
+     PIN screen. Setting names are in strings_settings.xml. "≡" is the menu button on the remote. -->
+<resources>
+    <string name="lock_pin_on">PIN on</string>
+    <string name="lock_set_pin_first">Set a PIN first.</string>
+    <!-- ▲ ▲ ▼ ▼ ◀ ▶ ◀ ▶ are D-pad presses on the remote; keep the arrows as they are. -->
+    <string name="toast_guest_on">Guest mode on: Customize and Settings are hidden. ▲ ▲ ▼ ▼ ◀ ▶ ◀ ▶ on Home brings them back.</string>
+    <string name="toast_guest_off">Guest mode off</string>
+    <!-- "Home quick settings" and "Settings › System › Accessibility" are where Android shows this; use
+         the names Android uses in your language. -->
+    <string name="lock_helper_off">The ≡ helper is off, so locked apps and remote shortcuts don\'t work outside Home. Turn on “Home quick settings” in Settings › System › Accessibility.</string>
+    <!-- ADB: a tool on a computer that talks to the TV. README: the instructions on the project page. -->
+    <string name="lock_forgot_pin">Forgot the PIN? It can be removed from a computer with ADB; the README says how.</string>
+    <string name="lock_set_pin">Set a PIN</string>
+    <string name="lock_change_pin">Change PIN</string>
+    <string name="lock_turn_off">Turn the lock off</string>
+    <string name="toast_pin_off">PIN lock off</string>
+    <string name="lock_pin_note">Four digits. Stored only as a scrambled code, never the digits. A family lock: it keeps kids and guests out, not someone with a computer.</string>
+    <string name="toast_pin_set">PIN set. Customize and Settings now ask for it.</string>
+    <string name="toast_pin_mismatch">The two PINs were different. Nothing was changed.</string>
+    <!-- Shown by Android when the PIN is removed from a computer. -->
+    <string name="toast_pin_removed">Leios\'s PIN lock was removed</string>
+
+    <!-- What it locks. -->
+    <string name="lock_customize_and_settings">Customize and Settings</string>
+    <!-- How many apps and categories are locked, beyond Settings. -->
+    <plurals name="lock_more">
+        <item quantity="one">%d more</item>
+        <item quantity="other">%d more</item>
+    </plurals>
+    <!-- "Settings + 3 more". %1$s: Settings; %2$s: the count above. -->
+    <string name="lock_what_and">%1$s + %2$s</string>
+    <string name="hint_lock_unlock">Lock / unlock</string>
+
+    <!-- When the lock applies. -->
+    <string name="lock_when_title">When the lock applies</string>
+    <string name="lock_always">Always</string>
+    <!-- %1$s: when it starts; %2$s: when it ends (times of day, e.g. 21:00 and 7:00). -->
+    <string name="lock_time_range">%1$s to %2$s</string>
+    <!-- %1$s: the hours, e.g. "21:00 to 7:00". -->
+    <string name="lock_bedtime">Bedtime: %1$s</string>
+    <string name="toast_lock_always">The lock always applies</string>
+    <!-- %1$s: the hours, e.g. "21:00 to 7:00". -->
+    <string name="toast_lock_from">The lock applies from %1$s</string>
+
+    <!-- Remote shortcuts: what holding a button does. -->
+    <string name="hold_nothing">Nothing</string>
+    <string name="hold_home">Go to Home</string>
+    <string name="hold_customize">Open Customize</string>
+    <string name="hold_search">Open search</string>
+    <string name="hold_next_bg">Next background</string>
+    <string name="hold_sleep30">Sleep in 30 minutes</string>
+    <!-- After picking one. %1$s: the button, e.g. "Hold ≡". -->
+    <string name="toast_hold_nothing">%1$s: nothing</string>
+    <string name="toast_hold_home">%1$s: go to home</string>
+    <string name="toast_hold_customize">%1$s: open customize</string>
+    <string name="toast_hold_search">%1$s: open search</string>
+    <string name="toast_hold_next_bg">%1$s: next background</string>
+    <string name="toast_hold_sleep30">%1$s: sleep in 30 minutes</string>
+    <string name="shortcuts_needs_helper">Needs the ≡ helper (Leios quick settings) on in Accessibility.</string>
+    <string name="shortcuts_note">A short press still does what it always did. ≡ and Settings work in any app while the ≡ helper is on; holding Home opens search only on Home.</string>
+    <string name="toast_next_bg_unsupported">Next background works with slideshows, shapes and colours</string>
+
+    <!-- The PIN screen. -->
+    <string name="pin_enter">Enter your PIN</string>
+    <string name="pin_too_many">Too many tries. Wait half a minute.</string>
+    <string name="pin_wrong">That\'s not the PIN. Try again.</string>
+    <string name="pin_new">New PIN</string>
+    <string name="pin_new_hint">Pick four digits you\'ll remember</string>
+    <string name="pin_again">Same PIN again</string>
+    <string name="pin_again_hint">To make sure</string>
+</resources>
