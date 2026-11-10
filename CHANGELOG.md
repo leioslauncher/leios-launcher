@@ -20,15 +20,14 @@
 - **Top bar** has a **Search button** toggle. Themes carry it.
 - **Top-bar buttons are circles** with just their icon; the one you're on opens up to show its name, as before, and the focus ring follows it. The Wi-Fi name and the notification count show only while their button is focused, so the bar is calmer.
 - Opening Customize with a remote shortcut lights the Customize button, not whichever button was focused before.
+- Customization › Look & sound › Sounds has one **Volume** slider, from Off to 10, in place of Off / Subtle / Normal and a level of 1–5. Earlier settings carry over at the same loudness.
+- New **Sounds › Output**: Automatic (the default), System sounds or Media volume, with a note that says when sounds can't be heard and why. **Silent on Bluetooth or ARC** moved here.
+- New permissions: **microphone** (asked the first time you press search's mic key) and use of **Close app** to restart a streaming app on the title you picked.
 
 ### Fixed
 - Interface sounds were silent on TVs that mute Android's System sound channel at start, such as the JMGO N3 4K. Sounds now play at the TV's media volume when system sounds are muted. They never take audio focus, so other apps are never paused or turned down.
 - Holding left or right at either end of the sounds Volume slider replayed the sound until the button was released.
 - The first sound after turning sounds on, or changing their output, could be lost while the sounds were still loading.
-
-### Changed
-- Customization › Look & sound › Sounds has one **Volume** slider, from Off to 10, in place of Off / Subtle / Normal and a level of 1–5. Earlier settings carry over at the same loudness.
-- New **Sounds › Output**: Automatic (the default), System sounds or Media volume, with a note that says when sounds can't be heard and why. **Silent on Bluetooth or ARC** moved here.
 
 ## 1.2.1 (versionCode 4)
 
