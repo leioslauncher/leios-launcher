@@ -68,6 +68,9 @@ final class SearchOverlay extends FrameLayout {
 
         /** Search finished closing; Home takes the keys back. */
         void closed();
+
+        /** Runs {@code then} once the microphone may be used (asks Android the first time). */
+        void withMic(Runnable then);
     }
 
     private static final int KEYS = 0, RESULTS = 1;
@@ -167,7 +170,10 @@ final class SearchOverlay extends FrameLayout {
         blp.topMargin = tk.space5;
         content.addView(body, blp);
 
-        keyboard = new SearchKeyboard(c, th, tk, false);
+        // A mic key only where the TV has speech recognition (the remote's own mic button goes to
+        // Google's remote service, which no other app can receive).
+        voice = android.speech.SpeechRecognizer.isRecognitionAvailable(c);
+        keyboard = new SearchKeyboard(c, th, tk, voice);
         body.addView(keyboard, new LinearLayout.LayoutParams(tk.dp(336), ViewGroup.LayoutParams.WRAP_CONTENT));
 
         LinearLayout right = new LinearLayout(c);
@@ -245,6 +251,7 @@ final class SearchOverlay extends FrameLayout {
     /** The reverse of {@link #show}; Home gets the keys back straight away. */
     void hide(boolean pulled) {
         if (!open) return;
+        cancelListening();
         open = false;
         seq++;
         ui.removeCallbacks(lookUp);
@@ -336,6 +343,7 @@ final class SearchOverlay extends FrameLayout {
 
     /** Hidden at once (a setting from search opens in its place; Home was pressed). */
     void hideNow() {
+        cancelListening();
         open = false;
         seq++;
         ui.removeCallbacks(lookUp);
@@ -346,6 +354,10 @@ final class SearchOverlay extends FrameLayout {
     }
 
     void destroy() {
+        if (recognizer != null) {
+            recognizer.destroy();
+            recognizer = null;
+        }
         net.shutdownNow();
         services.shutdownNow();
         ui.removeCallbacksAndMessages(null);
@@ -364,6 +376,11 @@ final class SearchOverlay extends FrameLayout {
         if (!down) return true;
         switch (code) {
             case KeyEvent.KEYCODE_BACK:
+                // Listening: Back just stops listening.
+                if (listening) {
+                    if (!repeat) stopListening(null);
+                    return true;
+                }
                 // On the keyboard with text typed, Back deletes a letter; held, it keeps deleting
                 // and stops at an empty field. Only a fresh press on an empty field closes search.
                 if (zone == KEYS && choosing == null && query.length() > 0) type(SearchKeyboard.DELETE, repeat);
@@ -482,6 +499,12 @@ final class SearchOverlay extends FrameLayout {
     }
 
     private void type(String v, boolean repeat) {
+        // Typing while it listens: stop listening and type instead.
+        if (listening) stopListening(null);
+        if (SearchKeyboard.MIC.equals(v)) {
+            if (!repeat) host.withMic(this::listen);
+            return;
+        }
         int before = query.length();
         if (SearchKeyboard.DELETE.equals(v)) {
             if (before > 0) query.setLength(before - 1);
@@ -728,7 +751,8 @@ final class SearchOverlay extends FrameLayout {
             for (int i = 0; i < Math.min(MAX_TITLES, yours.size()); i++) {
                 Found f = yours.get(i);
                 MenuView.Row r = MenuView.Row.action(0, f.title.name).image(posterW, posterH)
-                        .detail(describe(f.title)).value(appNames(f.offers));
+                        // Your apps on the second line, so the title gets the row's full width.
+                        .detail(describe(f.title) + "  ·  " + appNames(f.offers));
                 r.image = f.poster;
                 row(rows, r, "t:" + f.title.tv + f.title.id, () -> remember(() -> openTitle(f)));
             }
@@ -790,6 +814,150 @@ final class SearchOverlay extends FrameLayout {
         SearchPrefs.addRecent(prefs, q());
         then.run();
     }
+
+    // ---- voice: the mic key --------------------------------------------------------------------
+
+    private final boolean voice;
+    private android.speech.SpeechRecognizer recognizer;
+    private boolean listening;
+
+    /**
+     * Listens once through the TV's speech recognition; what's heard fills the field as it comes
+     * and becomes the search when you stop talking. Leios records and keeps nothing itself.
+     */
+    private void listen() {
+        if (!open || !voice) return;
+        try {
+            if (recognizer == null) {
+                recognizer = android.speech.SpeechRecognizer.createSpeechRecognizer(getContext());
+                recognizer.setRecognitionListener(heard);
+            }
+            android.content.Intent i = new android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                    .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                            android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    .putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                    .putExtra(android.speech.RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                    .putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                    .putExtra(android.speech.RecognizerIntent.EXTRA_CALLING_PACKAGE, getContext().getPackageName());
+            listening = true;
+            showListening("Listening…");
+            host.sound(Sounds.OPEN, false);
+            recognizer.startListening(i);
+        } catch (RuntimeException e) {
+            stopListening("Voice search isn't working on this TV.");
+        }
+    }
+
+    /** Search is closing: the mic stops at once, quietly. */
+    private void cancelListening() {
+        if (!listening) return;
+        listening = false;
+        if (recognizer != null) {
+            try {
+                recognizer.cancel();
+            } catch (RuntimeException ignored) {
+            }
+        }
+    }
+
+    private void showListening(String text) {
+        field.setText(text);
+        field.setTextColor(th.accent);
+        ghost.setText("");
+        results.setHints("BACK", "Stop listening");
+    }
+
+    /** Back to typing; {@code problem} is said in a toast, if any. */
+    private void stopListening(String problem) {
+        if (recognizer != null) {
+            try {
+                recognizer.cancel();
+            } catch (RuntimeException ignored) {
+            }
+        }
+        listening = false;
+        refresh(false);
+        if (problem != null) {
+            host.toast(problem);
+            host.sound(Sounds.ERROR, false);
+        }
+    }
+
+    private final android.speech.RecognitionListener heard = new android.speech.RecognitionListener() {
+        @Override
+        public void onReadyForSpeech(android.os.Bundle b) {
+            if (listening) showListening("Listening… say a name");
+        }
+
+        @Override
+        public void onBeginningOfSpeech() {
+        }
+
+        @Override
+        public void onRmsChanged(float rms) {
+        }
+
+        @Override
+        public void onBufferReceived(byte[] buffer) {
+        }
+
+        @Override
+        public void onEndOfSpeech() {
+        }
+
+        @Override
+        public void onError(int error) {
+            if (!listening) return;
+            android.util.Log.i("LeiosVoice", "recognizer error " + error);
+            String why;
+            switch (error) {
+                case android.speech.SpeechRecognizer.ERROR_NO_MATCH:
+                case android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                    why = "Didn't catch that. Press the mic key and try again.";
+                    break;
+                case android.speech.SpeechRecognizer.ERROR_AUDIO:
+                case android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                    why = "The microphone isn't available. The keyboard still works.";
+                    break;
+                case android.speech.SpeechRecognizer.ERROR_NETWORK:
+                case android.speech.SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                    why = "Voice search needs the internet right now.";
+                    break;
+                default:
+                    why = "Voice search isn't working right now. The keyboard still works.";
+                    break;
+            }
+            stopListening(why);
+        }
+
+        @Override
+        public void onResults(android.os.Bundle b) {
+            if (!listening) return;
+            listening = false;
+            java.util.ArrayList<String> said = b == null ? null
+                    : b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);
+            String text = said == null || said.isEmpty() ? "" : said.get(0).trim();
+            if (text.isEmpty()) {
+                stopListening("Didn't catch that. Press the mic key and try again.");
+                return;
+            }
+            query.setLength(0);
+            query.append(text.length() > 60 ? text.substring(0, 60) : text);
+            host.sound(Sounds.SELECT, false);
+            refresh(true);
+        }
+
+        @Override
+        public void onPartialResults(android.os.Bundle b) {
+            if (!listening || b == null) return;
+            java.util.ArrayList<String> said = b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);
+            if (said != null && !said.isEmpty() && !said.get(0).trim().isEmpty()) showListening(said.get(0));
+        }
+
+        @Override
+        public void onEvent(int type, android.os.Bundle b) {
+        }
+    };
 
     // ---- completing what you type -------------------------------------------------------------
 

@@ -26,6 +26,9 @@
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <!-- The ≡ panel's keys count as using the TV, so the screen doesn't time out under them. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Search's mic key only: asked the first time you press it; nothing is recorded or kept. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 
     <!-- Android 11+ package visibility: without these the grid comes up empty. -->
     <queries>
@@ -35,6 +38,10 @@
         </intent>
         <intent>
             <action android:name="android.media.tv.TvInputService" />
+        </intent>
+        <!-- Search's mic key: the TV's speech recognition (on the JMGO, Google's speech services). -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
         </intent>
         <!-- Icon packs (Customize › Apps › Icon pack). -->
         <intent>

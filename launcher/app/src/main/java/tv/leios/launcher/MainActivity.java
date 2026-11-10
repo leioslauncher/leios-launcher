@@ -107,7 +107,10 @@ public class MainActivity extends Activity {
     // Top-bar buttons, left to right.
     private static final int PILL_NOTIF = 0, PILL_SEARCH = 1, PILL_INPUTS = 2, PILL_WIFI = 3, PILL_CUSTOMIZE = 4,
             PILL_SETTINGS = 5;
-    private static final int REQ_PHOTOS = 1, REQ_ADMIN = 2, REQ_SLIDES = 3, REQ_VIDEOS = 4;
+    private static final int REQ_PHOTOS = 1, REQ_ADMIN = 2, REQ_SLIDES = 3, REQ_VIDEOS = 4, REQ_MIC = 5;
+    /** What to do once the mic is allowed (search's mic key asked for it). */
+    private Runnable afterMic;
+    private boolean askingMic;
 
     // Customize sections, in menu order (also used to return to the right row on Back).
     private static final int SEC_BACKGROUND = 0, SEC_HOME = 1, SEC_APPS = 2, SEC_LOOK = 3,
@@ -607,7 +610,7 @@ public class MainActivity extends Activity {
         // Nothing decodes, fades or plays while an app is on screen.
         isResumedNow = false;
         // Search never stays open behind an app; Home comes back without it.
-        if (search.isOpen()) search.hideNow();
+        if (search.isOpen() && !askingMic) search.hideNow();
         sounds.stop();
         resumed = new java.lang.ref.WeakReference<>(null);
         ui.removeCallbacks(idleTick);
@@ -2621,6 +2624,18 @@ public class MainActivity extends Activity {
         }
 
         @Override
+        public void withMic(Runnable then) {
+            if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                then.run();
+                return;
+            }
+            afterMic = then;
+            // Android's question pauses Home; search stays open under it (see onPause).
+            askingMic = true;
+            requestPermissions(new String[] {android.Manifest.permission.RECORD_AUDIO}, REQ_MIC);
+        }
+
+        @Override
         public void sound(int id, boolean repeat) {
             if (repeat) sounds.tick(id, true);
             else sounds.play(id);
@@ -3533,6 +3548,13 @@ public class MainActivity extends Activity {
             toast("Leios needs permission to see your photos for this", false);
         }
         if (!ok && requestCode == REQ_VIDEOS) toast("Leios needs permission to see your videos for this", false);
+        if (requestCode == REQ_MIC) {
+            askingMic = false;
+            Runnable then = afterMic;
+            afterMic = null;
+            if (ok && then != null && search.isOpen()) then.run();
+            if (!ok) toast("Voice search needs the microphone. The keyboard still works.", false);
+        }
     }
 
     // Slideshow: random order through the USB drive's photos, one decoded bitmap at a time.

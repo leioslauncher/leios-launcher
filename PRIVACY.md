@@ -29,6 +29,7 @@ Nothing else leaves the device through the app. If you never choose a city or th
 | Close other apps | The "Close app" action | |
 | Request to uninstall | The "Uninstall" action | Android asks you to confirm |
 | Keep the screen awake | Buttons the ≡ panel takes count as using the TV | Held for about a second per press |
+| Microphone | Search's mic key | Asked the first time you press it. Only while you're using it: the TV's speech recognition (on the tested projector, Google's speech services) listens once and gives Leios the words. Leios records nothing, keeps no audio, and sends none anywhere itself. What the speech service does with the audio is covered by its own maker's policy |
 
 ## Special access you turn on yourself
 
