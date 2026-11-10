@@ -173,10 +173,11 @@ public class MainActivity extends Activity {
         String id() {
             return cat != null ? cat.id : special;
         }
+    }
 
-        String name() {
-            return cat != null ? cat.name : INPUTS.equals(special) ? "Inputs" : "All apps";
-        }
+    /** A row's name over its tiles: the category's, or "Inputs" / "All apps". */
+    private String sectionName(Section s) {
+        return s.cat != null ? catName(s.cat) : tr(Section.INPUTS.equals(s.special) ? R.string.row_inputs : R.string.row_all_apps);
     }
 
     private final List<Section> sections = new ArrayList<>();
@@ -977,7 +978,7 @@ public class MainActivity extends Activity {
         sections.clear();
         sections.addAll(next);
         for (Section s : sections) {
-            if (s.header != null) s.header.setText(s.apps.isEmpty() ? s.name() + "  ·  No apps yet" : s.name());
+            if (s.header != null) s.header.setText(s.apps.isEmpty() ? tr(R.string.row_empty, sectionName(s)) : sectionName(s));
             s.adapter.submit(s.apps);
             if (s.single()) ((LinearLayoutManager) s.list.getLayoutManager()).scrollToPositionWithOffset(s.first, 0);
         }
@@ -985,7 +986,7 @@ public class MainActivity extends Activity {
 
     private void buildSection(Section s, boolean header, boolean firstSection) {
         if (header) {
-            s.header = Ui.text(this, s.name(), tk.textLabel, theme.textSecondary, tk.medium500);
+            s.header = Ui.text(this, sectionName(s), tk.textLabel, theme.textSecondary, tk.medium500);
             s.header.setLetterSpacing(0.02f);
             LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -1126,7 +1127,7 @@ public class MainActivity extends Activity {
         boolean switched = !Categories.SORT_CUSTOM.equals(s.cat.sort);
         s.cat.sort = Categories.SORT_CUSTOM;
         categories.save(prefs);
-        if (switched && announce) toast(s.name() + " is now in your own order. Customize › Home layout changes it back.", true);
+        if (switched && announce) toast(tr(R.string.toast_row_own_order, sectionName(s)), true);
     }
 
     private Set<String> hiddenApps() {
@@ -1172,7 +1173,7 @@ public class MainActivity extends Activity {
 
     private void launch(AppRepo.App app) {
         requirePin(Lock.appLocked(this, app.pkg, isInput(app) ? null : categories.of(app.pkg).id),
-                "Open " + app.label, () -> launchNow(app));
+                tr(R.string.pin_title_open_app, app.label), () -> launchNow(app));
     }
 
     private void launchNow(AppRepo.App app) {
@@ -1200,7 +1201,7 @@ public class MainActivity extends Activity {
             sounds.play(what == null ? Sounds.SELECT : Sounds.LAUNCH);
         } catch (Exception e) {
             sounds.play(Sounds.ERROR);
-            toast(what == null ? "That screen isn't available on this projector" : "Couldn't open " + what, false);
+            toast(what == null ? tr(R.string.toast_screen_unavailable) : tr(R.string.toast_couldnt_open, what), false);
         }
     }
 
@@ -1209,6 +1210,35 @@ public class MainActivity extends Activity {
         // In Customization the left side is the section list, so messages stay centred.
         toaster.besideSheet = (area == MENU || menu.getVisibility() == View.VISIBLE) && custMode != CUST_FULL;
         toaster.show(s, done ? R.drawable.ic_check : R.drawable.ic_info);
+    }
+
+    // ---- text: every word on screen comes from res/values/strings*.xml -------------------------
+
+    /** A string resource; with {@code args}, its %1$s… placeholders filled in. */
+    private String tr(int id, Object... args) {
+        return args.length == 0 ? getString(id) : getString(id, args);
+    }
+
+    /** A count in words ("1 app", "6 apps"), the right plural form for the language. */
+    private String trn(int id, int n, Object... args) {
+        return args.length == 0 ? getResources().getQuantityString(id, n, n)
+                : getResources().getQuantityString(id, n, args);
+    }
+
+    /** The strings for a list of options, in the same order. */
+    private String[] trAll(int... ids) {
+        String[] out = new String[ids.length];
+        for (int i = 0; i < ids.length; i++) out[i] = tr(ids[i]);
+        return out;
+    }
+
+    private String[] sortNames() {
+        return trAll(Categories.SORT_NAMES);
+    }
+
+    /** A category's name: yours, or "Apps" in the TV's language. */
+    private String catName(Categories.Cat c) {
+        return c.name(tr(R.string.category_apps));
     }
 
     // ---- layout and focus -------------------------------------------------------------------
@@ -1251,11 +1281,11 @@ public class MainActivity extends Activity {
         card.setPadding(tk.space6, tk.space5, tk.space6, tk.space5);
         card.setBackground(Ui.rounded(tk.radiusLg, theme.surface, theme.stroke, tk.stroke));
         card.setElevation(tk.elevationSheet);
-        card.addView(Ui.text(this, "Welcome to Leios", tk.textHeadline, theme.text, tk.semibold));
+        card.addView(Ui.text(this, tr(R.string.tip_title), tk.textHeadline, theme.text, tk.semibold));
         String[][] tips = {
-                {"OK", "Hold OK on an app to move, rename or hide it"},
-                {"≡", "The ≡ button opens quick settings, in any app"},
-                {"▲", "Customize, at the top, changes the background, layout and look"}};
+                {tr(R.string.key_ok), tr(R.string.tip_hold_ok)},
+                {"≡", tr(R.string.tip_menu_button)},
+                {"▲", tr(R.string.tip_customize)}};
         for (String[] t : tips) {
             LinearLayout row = Ui.hints(this, theme, tk, t[0], t[1]);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -1267,7 +1297,7 @@ public class MainActivity extends Activity {
             label.setTextColor(theme.textSecondary);
             card.addView(row, lp);
         }
-        TextView any = Ui.text(this, "Press any button to start", tk.textCaption, theme.textTertiary, tk.regular);
+        TextView any = Ui.text(this, tr(R.string.tip_any_button), tk.textCaption, theme.textTertiary, tk.regular);
         LinearLayout.LayoutParams alp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         alp.topMargin = tk.space5;
@@ -1771,8 +1801,8 @@ public class MainActivity extends Activity {
 
     private void startMove() {
         if (area == GRID && sec() != null && sec().cat == null) {
-            toast(Section.INPUTS.equals(sec().special) ? "Inputs stay in the order the projector lists them."
-                    : "All apps is always A–Z. Move apps in their own category.", false);
+            toast(tr(Section.INPUTS.equals(sec().special) ? R.string.toast_inputs_fixed_order
+                    : R.string.toast_all_apps_fixed_order), false);
             return;
         }
         if ((area == DOCK || area == GRID) && focusedApp() != null) {
@@ -1902,8 +1932,9 @@ public class MainActivity extends Activity {
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) moveHint.getLayoutParams();
         if (area == DOCK) {
             moveHint.addView(dockApps.size() > 1
-                    ? Ui.hints(this, theme, tk, "◀ ▶", "Move", "▼", "Remove from dock", "OK", "Done")
-                    : Ui.hints(this, theme, tk, "◀ ▶", "Move", "OK", "Done"));
+                    ? Ui.hints(this, theme, tk, "◀ ▶", tr(R.string.hint_move), "▼", tr(R.string.move_remove_from_dock),
+                            tr(R.string.key_ok), tr(R.string.hint_done))
+                    : Ui.hints(this, theme, tk, "◀ ▶", tr(R.string.hint_move), tr(R.string.key_ok), tr(R.string.hint_done)));
             // Under the top bar, clear of the pills and the clock.
             lp.gravity = Gravity.TOP | Gravity.END;
             lp.topMargin = tk.safeV + tk.pillHeight + tk.space5;
@@ -1916,18 +1947,18 @@ public class MainActivity extends Activity {
             boolean topRow = s.single() || gridIndex < columns;
             boolean lastRow = s.single() || (gridIndex / columns + 1) * columns >= n;
             int prev = nextSection(gridSec, -1, true), next = nextSection(gridSec, 1, true);
-            List<String> h = new ArrayList<>(Arrays.asList("◀ ▶ ▲ ▼", "Move"));
+            List<String> h = new ArrayList<>(Arrays.asList("◀ ▶ ▲ ▼", tr(R.string.hint_move)));
             if (topRow) {
                 h.add("▲");
-                h.add(prev >= 0 ? "To " + sections.get(prev).name()
-                        : dockApps.size() >= columns ? "Swap into dock" : "Add to dock");
+                h.add(prev >= 0 ? tr(R.string.move_to_row, sectionName(sections.get(prev)))
+                        : tr(dockApps.size() >= columns ? R.string.move_swap_into_dock : R.string.move_add_to_dock));
             }
             if (lastRow && next >= 0) {
                 h.add("▼");
-                h.add("To " + sections.get(next).name());
+                h.add(tr(R.string.move_to_row, sectionName(sections.get(next))));
             }
-            h.add("OK");
-            h.add("Done");
+            h.add(tr(R.string.key_ok));
+            h.add(tr(R.string.hint_done));
             moveHint.addView(Ui.hints(this, theme, tk, h.toArray(new String[0])));
             lp.topMargin = 0;
             lp.rightMargin = 0;
@@ -1993,7 +2024,7 @@ public class MainActivity extends Activity {
             menu.setMaxHeight(root.getHeight() - 2 * tk.safeV);
             // No shadow over the backdrop: it barely shows there, and this GPU redraws it every frame.
             menu.setElevation(0);
-            present(lp, focus, back, cancel, new String[] {"OK", "Select", "BACK", "Back"});
+            present(lp, focus, back, cancel, menuHints(false));
             return;
         }
         menu.setElevation(tk.elevationSheet);
@@ -2004,7 +2035,13 @@ public class MainActivity extends Activity {
         lp.leftMargin = 0;
         lp.bottomMargin = 0;
         menu.setMaxHeight(root.getHeight() - lp.topMargin - tk.safeV);
-        present(lp, focus, back, cancel, new String[] {"OK", "Select", "BACK", back == null ? "Close" : "Back"});
+        present(lp, focus, back, cancel, menuHints(back == null));
+    }
+
+    /** "OK Select  BACK Back" (or Close, at the top level) under a menu. */
+    private String[] menuHints(boolean closes) {
+        return new String[] {tr(R.string.key_ok), tr(R.string.hint_select), tr(R.string.key_back),
+                tr(closes ? R.string.hint_close : R.string.hint_back)};
     }
 
     /** The quick actions: a small card beside the tile, above it when the tile is low on screen. */
@@ -2021,7 +2058,7 @@ public class MainActivity extends Activity {
         lp.topMargin = low ? 0 : Math.max(tk.safeV, tile.top);
         lp.bottomMargin = low ? Math.max(tk.safeV, h - tile.bottom) : 0;
         menu.setMaxHeight(h - 2 * tk.safeV);
-        present(lp, focus, back, null, new String[] {"OK", "Select", "BACK", back == null ? "Close" : "Back"});
+        present(lp, focus, back, null, menuHints(back == null));
     }
 
     private void present(FrameLayout.LayoutParams lp, int focus, Runnable back, Runnable cancel, String[] hints) {
@@ -2088,31 +2125,31 @@ public class MainActivity extends Activity {
         menuAnchorPill = index;
         if (index == PILL_SEARCH) openSearch(false);
         else if (index == PILL_INPUTS) openInputsMenu();
-        else if (index == PILL_CUSTOMIZE) requirePin(customizeLocked(), "Customize", () -> openCustomize(0));
+        else if (index == PILL_CUSTOMIZE) requirePin(customizeLocked(), tr(R.string.customize), () -> openCustomize(0));
         else if (index == PILL_NOTIF) openNotifications();
-        else requirePin(customizeLocked(), index == PILL_WIFI ? "Wi-Fi settings" : "Settings", () -> startSafely(
+        else requirePin(customizeLocked(), tr(index == PILL_WIFI ? R.string.pin_title_wifi_settings : R.string.settings), () -> startSafely(
                 new Intent(index == PILL_WIFI ? Settings.ACTION_WIFI_SETTINGS : Settings.ACTION_SETTINGS)
                         .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)));
     }
 
     /** The notifications the bell counts: OK opens one, the last row clears them all. */
     private void openNotifications() {
-        startMenu(null, "Notifications");
+        startMenu(null, tr(R.string.notifications));
         for (Notifs.Item n : Notifs.items()) {
             add(MenuView.Row.action(0, n.title).value(n.app), () -> {
-                if (!Notifs.open(n)) toast("That notification can't be opened from here", false);
+                if (!Notifs.open(n)) toast(tr(R.string.toast_notification_cant_open), false);
             });
         }
-        if (pendingRows.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, "No notifications"), null);
-        else add(MenuView.Row.action(R.drawable.ic_close, "Clear all"), () -> {
+        if (pendingRows.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.notifications_none)), null);
+        else add(MenuView.Row.action(R.drawable.ic_close, tr(R.string.notifications_clear_all)), () -> {
             Notifs.clearAll();
-            toast("Notifications cleared", true);
+            toast(tr(R.string.toast_notifications_cleared), true);
         });
         showSheet(0, null, null);
     }
 
     private void openInputsMenu() {
-        startMenu(null, "Inputs");
+        startMenu(null, tr(R.string.inputs));
         TvInputManager tim = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
         List<TvInputInfo> inputs = new ArrayList<>();
         if (tim != null) {
@@ -2131,9 +2168,10 @@ public class MainActivity extends Activity {
             String label = inputLabel(info);
             add(MenuView.Row.action(R.drawable.ic_hdmi, label), () -> startSafely(new Intent(Intent.ACTION_VIEW, uri), label));
         }
-        if (tuner) add(MenuView.Row.action(R.drawable.ic_live, "Live TV"),
-                () -> startSafely(new Intent(Intent.ACTION_VIEW, TvContract.Channels.CONTENT_URI), "Live TV"));
-        if (pendingRows.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, "No inputs found"), null);
+        String live = tr(R.string.inputs_live_tv);
+        if (tuner) add(MenuView.Row.action(R.drawable.ic_live, live),
+                () -> startSafely(new Intent(Intent.ACTION_VIEW, TvContract.Channels.CONTENT_URI), live));
+        if (pendingRows.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.inputs_none)), null);
         showSheet(0, null, null);
     }
 
@@ -2193,8 +2231,8 @@ public class MainActivity extends Activity {
         String pattern = datePattern(locale);
         if (pattern != null) date.setText(new SimpleDateFormat(pattern, locale).format(now));
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        greeting.setText(hour < 5 ? "Good night" : hour < 12 ? "Good morning"
-                : hour < 18 ? "Good afternoon" : "Good evening");
+        greeting.setText(hour < 5 ? R.string.greeting_night : hour < 12 ? R.string.greeting_morning
+                : hour < 18 ? R.string.greeting_afternoon : R.string.greeting_evening);
     }
 
     // ---- quick actions: hold OK on a tile ---------------------------------------------------
@@ -2220,45 +2258,48 @@ public class MainActivity extends Activity {
         startMenu(null, app.label);
         if (layoutLocked()) {
             // Guest mode, or Customize locked: Home can be used but not changed.
-            add(MenuView.Row.action(R.drawable.ic_open, "Open"), () -> launch(app));
-            add(MenuView.Row.note(R.drawable.ic_info, Lock.guest(this) ? "Guest mode: Home can't be changed."
-                    : "Locked: Home can't be changed without the PIN."), null);
+            add(MenuView.Row.action(R.drawable.ic_open, tr(R.string.qa_open)), () -> launch(app));
+            add(MenuView.Row.note(R.drawable.ic_info, tr(Lock.guest(this) ? R.string.qa_guest_note
+                    : R.string.qa_locked_note)), null);
             showPopover(quickAnchor, 0, null);
             return;
         }
         if (isInput(app)) {
             // An input: open it, give it your own name (HDMI 1 → Game console), or hide it.
-            add(MenuView.Row.action(R.drawable.ic_open, "Open"), () -> launch(app));
+            add(MenuView.Row.action(R.drawable.ic_open, tr(R.string.qa_open)), () -> launch(app));
             boolean renamed = !app.label.equals(app.original);
-            add(renamed ? MenuView.Row.nav(R.drawable.ic_rename, "Name", "") : MenuView.Row.action(R.drawable.ic_rename, "Rename…"),
+            add(renamed ? MenuView.Row.nav(R.drawable.ic_rename, tr(R.string.qa_name), "")
+                            : MenuView.Row.action(R.drawable.ic_rename, tr(R.string.qa_rename)),
                     () -> {
                         if (renamed) openNameMenu(app);
                         else askAppName(app);
                     });
-            add(MenuView.Row.action(R.drawable.ic_hide, "Hide from Home"), () -> {
+            add(MenuView.Row.action(R.drawable.ic_hide, tr(R.string.qa_hide)), () -> {
                 setHidden(app.pkg, true);
-                toast(app.label + " hidden. Customize › Apps brings it back.", true);
+                toast(tr(R.string.toast_app_hidden, app.label), true);
             });
             showPopover(quickAnchor, focus, null);
             return;
         }
-        add(MenuView.Row.action(R.drawable.ic_open, "Open"), () -> launch(app));
-        add(MenuView.Row.action(R.drawable.ic_move, "Move"), this::startMove);
-        add(MenuView.Row.nav(R.drawable.ic_rows, "Category", categories.of(app.pkg).name),
+        add(MenuView.Row.action(R.drawable.ic_open, tr(R.string.qa_open)), () -> launch(app));
+        add(MenuView.Row.action(R.drawable.ic_move, tr(R.string.qa_move)), this::startMove);
+        add(MenuView.Row.nav(R.drawable.ic_rows, tr(R.string.qa_category), catName(categories.of(app.pkg))),
                 () -> openMoveToCategory(app));
         boolean renamed = !app.label.equals(app.original);
-        add(renamed ? MenuView.Row.nav(R.drawable.ic_rename, "Name", "") : MenuView.Row.action(R.drawable.ic_rename, "Rename…"),
+        add(renamed ? MenuView.Row.nav(R.drawable.ic_rename, tr(R.string.qa_name), "")
+                        : MenuView.Row.action(R.drawable.ic_rename, tr(R.string.qa_rename)),
                 () -> {
                     if (renamed) openNameMenu(app);
                     else askAppName(app);
                 });
-        add(MenuView.Row.nav(R.drawable.ic_apps, "Tile", app.iconTile ? "Icon" : app.banner != null ? "Banner" : "Icon"),
+        add(MenuView.Row.nav(R.drawable.ic_apps, tr(R.string.qa_tile),
+                        tr(app.iconTile || app.banner == null ? R.string.tile_icon : R.string.tile_banner)),
                 () -> openTileMenu(app));
-        add(MenuView.Row.action(R.drawable.ic_hide, "Hide from Home"), () -> {
+        add(MenuView.Row.action(R.drawable.ic_hide, tr(R.string.qa_hide)), () -> {
             setHidden(app.pkg, true);
-            toast(app.label + " hidden. Customize › Apps brings it back.", true);
+            toast(tr(R.string.toast_app_hidden, app.label), true);
         });
-        add(MenuView.Row.nav(R.drawable.ic_info, "More", ""), () -> openMoreMenu(app));
+        add(MenuView.Row.nav(R.drawable.ic_info, tr(R.string.qa_more), ""), () -> openMoreMenu(app));
         showPopover(quickAnchor, focus, null);
     }
 
@@ -2268,37 +2309,38 @@ public class MainActivity extends Activity {
 
     /** App info, close and uninstall: needed now and then, so one level down. */
     private void openMoreMenu(AppRepo.App app) {
-        startMenu(app.label, "More");
-        add(MenuView.Row.action(R.drawable.ic_info, "App info"), () -> startSafely(new Intent(
+        startMenu(app.label, tr(R.string.qa_more));
+        add(MenuView.Row.action(R.drawable.ic_info, tr(R.string.qa_app_info)), () -> startSafely(new Intent(
                 Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", app.pkg, null))));
-        add(MenuView.Row.action(R.drawable.ic_close, "Close app"), () -> {
+        add(MenuView.Row.action(R.drawable.ic_close, tr(R.string.qa_close_app)), () -> {
             // A launcher can't force-stop apps; this ends the app now that it is in the background.
             getSystemService(ActivityManager.class).killBackgroundProcesses(app.pkg);
-            toast(app.label + " closed", true);
+            toast(tr(R.string.toast_app_closed, app.label), true);
         });
         if (isUserApp(app.pkg)) {
             // Android asks to confirm before anything is removed.
-            add(MenuView.Row.action(R.drawable.ic_trash, "Uninstall…"), () -> startSafely(new Intent(
+            add(MenuView.Row.action(R.drawable.ic_trash, tr(R.string.qa_uninstall)), () -> startSafely(new Intent(
                     Intent.ACTION_DELETE, Uri.fromParts("package", app.pkg, null))));
         }
         showPopover(quickAnchor, 0, backToQuick(app, QA_MORE));
     }
 
     private void askAppName(AppRepo.App app) {
-        askText(app.original, "Rename", "Name shown on Home", app.label, InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
+        askText(app.original, tr(R.string.rename_title), tr(R.string.rename_app_hint), app.label,
+                InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
             putJson("app_names", app.pkg, name.equals(app.original) ? null : name);
             refreshAppLooks();
-            toast("Renamed to " + name, true);
+            toast(tr(R.string.toast_renamed, name), true);
         }, null);
     }
 
     private void openNameMenu(AppRepo.App app) {
-        startMenu(app.label, "Name");
-        add(MenuView.Row.action(R.drawable.ic_rename, "Rename…"), () -> askAppName(app));
-        add(MenuView.Row.action(R.drawable.ic_reset, "Original name").value(app.original), () -> {
+        startMenu(app.label, tr(R.string.qa_name));
+        add(MenuView.Row.action(R.drawable.ic_rename, tr(R.string.qa_rename)), () -> askAppName(app));
+        add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.qa_original_name)).value(app.original), () -> {
             putJson("app_names", app.pkg, null);
             refreshAppLooks();
-            toast("Back to " + app.original, true);
+            toast(tr(R.string.toast_name_back_to, app.original), true);
         });
         showPopover(quickAnchor, 0, backToQuick(app, QA_RENAME));
     }
@@ -2307,31 +2349,34 @@ public class MainActivity extends Activity {
     private void openTileMenu(AppRepo.App app) {
         String own = json("app_tiles").optString(app.pkg, "");
         boolean icons = "icon".equals(prefs.getString("tile_style", "banner"));
-        startMenu(app.label, "Tile");
+        startMenu(app.label, tr(R.string.qa_tile));
         String[] keys = {"", "banner", "icon"};
-        String[] names = {"Default (" + (icons ? "icon" : "banner") + ")", "Banner", "Icon"};
+        String[] names = {tr(icons ? R.string.tile_default_icon : R.string.tile_default_banner),
+                tr(R.string.tile_banner), tr(R.string.tile_icon)};
+        int[] toasts = {R.string.toast_tile_default, R.string.toast_tile_banner, R.string.toast_tile_icon};
         int cur = Math.max(0, Arrays.asList(keys).indexOf(own));
         for (int i = 0; i < keys.length; i++) {
             String k = keys[i];
+            int done = toasts[i];
             MenuView.Row row = add(MenuView.Row.choice(names[i], i == cur), () -> {
                 putJson("app_tiles", app.pkg, k.isEmpty() ? null : k);
                 refreshAppLooks();
-                toast(app.label + ": " + (k.isEmpty() ? "default tile" : k + " tile"), true);
+                toast(tr(done, app.label), true);
             });
-            if ("banner".equals(k) && app.banner == null) row.disabled("This app has no banner.");
+            if ("banner".equals(k) && app.banner == null) row.disabled(tr(R.string.tile_no_banner));
         }
-        add(MenuView.Row.nav(R.drawable.ic_background, "Picture from this TV", ""), () -> openIconPicture(app));
+        add(MenuView.Row.nav(R.drawable.ic_background, tr(R.string.tile_picture), ""), () -> openIconPicture(app));
         List<IconPacks.Pack> packs = IconPacks.installed(this);
-        MenuView.Row fromPack = add(MenuView.Row.nav(R.drawable.ic_apps, "From an icon pack", ""),
+        MenuView.Row fromPack = add(MenuView.Row.nav(R.drawable.ic_apps, tr(R.string.tile_from_pack), ""),
                 () -> openIconPackFor(app, packs));
-        if (packs.isEmpty()) fromPack.disabled("No icon packs installed.");
+        if (packs.isEmpty()) fromPack.disabled(tr(R.string.tile_no_packs));
         if (json("app_icons").has(app.pkg)) {
-            add(MenuView.Row.action(R.drawable.ic_reset, "Remove custom icon"), () -> {
+            add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.tile_remove_icon)), () -> {
                 putJson("app_icons", app.pkg, null);
                 //noinspection ResultOfMethodCallIgnored
                 new File(getFilesDir(), "icons/" + app.pkg + ".png").delete();
                 reloadApps();
-                toast(app.label + " has its own icon again", true);
+                toast(tr(R.string.toast_icon_removed, app.label), true);
             });
         }
         showPopover(quickAnchor, cur, backToQuick(app, QA_TILE));
@@ -2344,8 +2389,8 @@ public class MainActivity extends Activity {
             requestPermissions(new String[] {imagePermission()}, REQ_PHOTOS);
             return;
         }
-        startMenu(app.label, "Picture");
-        add(MenuView.Row.loading("Looking for pictures…"), null);
+        startMenu(app.label, tr(R.string.picture_title));
+        add(MenuView.Row.loading(tr(R.string.picture_looking)), null);
         showPopover(quickAnchor, 0, () -> openTileMenu(app));
         loader.execute(() -> {
             Uri collection = Media.images();
@@ -2361,13 +2406,13 @@ public class MainActivity extends Activity {
             }
             ui.post(() -> {
                 if (isDestroyed() || area != MENU) return;
-                startMenu(app.label, "Picture");
+                startMenu(app.label, tr(R.string.picture_title));
                 for (int i = 0; i < uris.size(); i++) {
                     Uri uri = uris.get(i);
-                    add(MenuView.Row.action(0, names.get(i) == null ? "Picture" : names.get(i)), () -> useIconPicture(app, uri));
+                    add(MenuView.Row.action(0, names.get(i) == null ? tr(R.string.picture_title) : names.get(i)),
+                            () -> useIconPicture(app, uri));
                 }
-                if (uris.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info,
-                        "No pictures found. Square pictures become icons, wide ones banners."), null);
+                if (uris.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.picture_none_for_icon)), null);
                 showPopover(quickAnchor, 0, () -> openTileMenu(app));
             });
         });
@@ -2394,12 +2439,12 @@ public class MainActivity extends Activity {
             boolean saved = ok;
             ui.post(() -> {
                 if (!saved) {
-                    toast("Couldn't use that picture. Try another one.", false);
+                    toast(tr(R.string.toast_picture_unusable), false);
                     return;
                 }
                 putJson("app_icons", app.pkg, "file:");
                 reloadApps();
-                toast(app.label + " has a new icon", true);
+                toast(tr(R.string.toast_new_icon, app.label), true);
             });
         });
     }
@@ -2409,7 +2454,7 @@ public class MainActivity extends Activity {
             openPackIcons(app, packs.get(0), null);
             return;
         }
-        startMenu(app.label, "Icon pack");
+        startMenu(app.label, tr(R.string.icon_pack));
         for (IconPacks.Pack p : packs) add(MenuView.Row.nav(0, p.label, ""), () -> openPackIcons(app, p, null));
         showPopover(quickAnchor, 0, () -> openTileMenu(app));
     }
@@ -2420,7 +2465,7 @@ public class MainActivity extends Activity {
      */
     private void openPackIcons(AppRepo.App app, IconPacks.Pack pack, String query) {
         startMenu(app.label, pack.label);
-        add(MenuView.Row.loading("Reading the icon pack…"), null);
+        add(MenuView.Row.loading(tr(R.string.icon_pack_reading)), null);
         showPopover(quickAnchor, 0, () -> openTileMenu(app));
         loader.execute(() -> {
             List<String> names = new ArrayList<>();
@@ -2441,17 +2486,18 @@ public class MainActivity extends Activity {
                 startMenu(app.label, pack.label);
                 for (String n : names) {
                     String label = n.replace('_', ' ');
-                    add(MenuView.Row.action(0, n.equals(suggested) && query == null ? label + " (made for this app)" : label), () -> {
+                    add(MenuView.Row.action(0, n.equals(suggested) && query == null
+                            ? tr(R.string.icon_pack_made_for_app, label) : label), () -> {
                         putJson("app_icons", app.pkg, "pack:" + pack.pkg + ":" + n);
                         reloadApps();
-                        toast(app.label + " has a new icon", true);
+                        toast(tr(R.string.toast_new_icon, app.label), true);
                     }, () -> previewIcon(app, pack.pkg, n));
                 }
                 if (names.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, query == null
-                        ? "This pack has no icon made for " + app.label + ". Search it by name."
-                        : "No icons called “" + query + "”."), null);
-                add(MenuView.Row.action(R.drawable.ic_rename, "Search this pack…"), () -> askText(pack.label,
-                        "Search icons", "Part of a name, e.g. netflix", app.original, 0, IME_SEARCH,
+                        ? tr(R.string.icon_pack_no_match, app.label)
+                        : tr(R.string.icon_pack_none_called, query)), null);
+                add(MenuView.Row.action(R.drawable.ic_rename, tr(R.string.icon_pack_search)), () -> askText(pack.label,
+                        tr(R.string.icon_pack_search_title), tr(R.string.icon_pack_search_hint), app.original, 0, IME_SEARCH,
                         q -> openPackIcons(app, pack, q.trim()), null));
                 showPopover(quickAnchor, 0, () -> openTileMenu(app));
                 // Back from here, or picking nothing, puts the app's own look back.
@@ -2476,26 +2522,26 @@ public class MainActivity extends Activity {
     /** Which category an app is in: pick one, or make a new one for it. */
     private void openMoveToCategory(AppRepo.App app) {
         Categories.Cat current = categories.of(app.pkg);
-        startMenu(app.label, "Category");
+        startMenu(app.label, tr(R.string.qa_category));
         int focus = 0;
         for (Categories.Cat c : categories.list) {
             if (c == current) focus = pendingRows.size();
-            add(MenuView.Row.choice(c.isApps() ? c.name + " (no category)" : c.name, c == current), () -> {
+            add(MenuView.Row.choice(c.isApps() ? tr(R.string.category_apps_none, catName(c)) : catName(c), c == current), () -> {
                 if (c != current) {
                     categories.moveApp(app.pkg, c, -1);
                     categories.save(prefs);
                     rebuildLists();
-                    toast(app.label + " moved to " + c.name, true);
+                    toast(tr(R.string.toast_app_moved_to, app.label, catName(c)), true);
                 }
             });
         }
-        add(MenuView.Row.action(R.drawable.ic_add, "New category…"), () -> askText(crumb("Categories"),
-                "New category", "Name, e.g. Movies", "", InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
+        add(MenuView.Row.action(R.drawable.ic_add, tr(R.string.category_new)), () -> askText(crumb(tr(R.string.menu_categories)),
+                tr(R.string.category_new_title), tr(R.string.category_new_hint), "", InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
                     Categories.Cat c = categories.create(name);
                     categories.moveApp(app.pkg, c, -1);
                     categories.save(prefs);
                     rebuildLists();
-                    toast(app.label + " moved to " + c.name, true);
+                    toast(tr(R.string.toast_app_moved_to, app.label, catName(c)), true);
                 }, null));
         showPopover(quickAnchor, focus, backToQuick(app, QA_CATEGORY));
     }
@@ -2560,7 +2606,7 @@ public class MainActivity extends Activity {
         public void openApp(AppRepo.App app) {
             // The PIN first (for a locked app): cancelling it leaves search as it was.
             requirePin(Lock.appLocked(MainActivity.this, app.pkg, isInput(app) ? null : categories.of(app.pkg).id),
-                    "Open " + app.label, () -> {
+                    tr(R.string.pin_title_open_app, app.label), () -> {
                         search.hideNow();
                         launchNow(app);
                     });
@@ -2588,7 +2634,7 @@ public class MainActivity extends Activity {
         @Override
         public void openSearchSettings() {
             search.hideNow();
-            requirePin(customizeLocked(), "Customize", () -> {
+            requirePin(customizeLocked(), tr(R.string.customize), () -> {
                 fullBack = MainActivity.this::backToSearch;
                 showFullViews();
                 rail.setFocus(SEC_RESET, false);
@@ -2620,7 +2666,7 @@ public class MainActivity extends Activity {
             if (installed == null) return;
             AppRepo.App target = installed;
             requirePin(Lock.appLocked(MainActivity.this, target.pkg, categories.of(target.pkg).id),
-                    "Open " + target.label, () -> findTitleLink(app, target, title));
+                    tr(R.string.pin_title_open_app, target.label), () -> findTitleLink(app, target, title));
         }
 
         @Override
@@ -2661,7 +2707,7 @@ public class MainActivity extends Activity {
             openTitleNow(app, target, title, null);
             return;
         }
-        toast("Opening " + title.name + " in " + app.name + "…", false);
+        toast(tr(R.string.toast_opening_title, title.name, app.name), false);
         loader.execute(() -> {
             String link = null;
             try {
@@ -2720,7 +2766,7 @@ public class MainActivity extends Activity {
         }
         launchNow(target);
         // Home's own toasts can't show over another app; Android's can.
-        android.widget.Toast.makeText(this, "Search for “" + title + "” in " + app.name,
+        android.widget.Toast.makeText(this, tr(R.string.toast_search_title_in_app, title, app.name),
                 android.widget.Toast.LENGTH_LONG).show();
     }
 
@@ -4243,7 +4289,7 @@ public class MainActivity extends Activity {
 
     private String startOnName() {
         Categories.Cat c = categories.find(categories.startOn);
-        return c == null ? "Dock" : c.name;
+        return c == null ? "Dock" : catName(c);
     }
 
     private void openHomeMenu(int focus) {
@@ -4305,7 +4351,7 @@ public class MainActivity extends Activity {
         List<String> names = new ArrayList<>(Collections.singletonList("Dock"));
         List<String> ids = new ArrayList<>(Collections.singletonList(Categories.DOCK));
         for (Categories.Cat c : categories.list) {
-            names.add(c.name);
+            names.add(catName(c));
             ids.add(c.id);
         }
         openChoice(crumb("Home layout"), "Home button goes to", names.toArray(new String[0]),
@@ -4324,7 +4370,7 @@ public class MainActivity extends Activity {
         for (Categories.Cat c : categories.list) {
             int n = 0;
             for (Section s : sections) if (s.cat == c) n = s.apps.size();
-            add(MenuView.Row.nav(0, c.name, n == 1 ? "1 app" : n + " apps"), () -> openCategoryMenu(c, 0));
+            add(MenuView.Row.nav(0, catName(c), n == 1 ? "1 app" : n + " apps"), () -> openCategoryMenu(c, 0));
         }
         add(MenuView.Row.action(R.drawable.ic_add, "New category…"), () -> askText(CATEGORIES, "New category",
                 "Name, e.g. Movies", "", InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
@@ -4379,25 +4425,25 @@ public class MainActivity extends Activity {
 
     private void openCategoryMenu(Categories.Cat c, int focus) {
         String crumb = CATEGORIES + "  ›  Categories";
-        startMenu(crumb, c.name);
+        startMenu(crumb, catName(c));
         Section shown = null;
         for (Section s : sections) if (s.cat == c) shown = s;
         int count = shown == null ? 0 : shown.apps.size();
         MenuView.Row apps = add(MenuView.Row.nav(R.drawable.ic_apps, "Apps in it", String.valueOf(count)),
                 () -> openCategoryApps(c, 0));
         if (c.isApps()) apps.disabled("Every app that isn't in another category shows here.");
-        add(MenuView.Row.nav(R.drawable.ic_check, "Sort", c.sortName()), () -> {
+        add(MenuView.Row.nav(R.drawable.ic_check, "Sort", tr(c.sortName())), () -> {
             int cur = Arrays.asList(Categories.SORTS).indexOf(c.sort);
-            openChoice(crumb, "Sort " + c.name, Categories.SORT_NAMES, cur, i -> {
+            openChoice(crumb, "Sort " + catName(c), sortNames(), cur, i -> {
                 c.sort = Categories.SORTS[i];
                 categories.save(prefs);
                 rebuildLists();
-                toast(c.name + " sorted " + Categories.SORT_NAMES[i].toLowerCase(Locale.getDefault()), true);
+                toast(catName(c) + " sorted " + tr(Categories.SORT_NAMES[i]).toLowerCase(Locale.getDefault()), true);
                 openCategoryMenu(c, 1);
             }, null, () -> openCategoryMenu(c, 1));
         });
         add(MenuView.Row.nav(R.drawable.ic_rows, "Layout", c.singleRow ? "One row" : "Grid"), () ->
-                openChoice(crumb, c.name + " layout", new String[] {"Grid (shows every app)", "One row (scrolls sideways)"},
+                openChoice(crumb, catName(c) + " layout", new String[] {"Grid (shows every app)", "One row (scrolls sideways)"},
                         c.singleRow ? 1 : 0, i -> {
                             c.singleRow = i == 1;
                             categories.save(prefs);
@@ -4413,8 +4459,8 @@ public class MainActivity extends Activity {
             startMove();
         });
         if (count == 0) arrange.disabled("No apps in it yet.");
-        add(MenuView.Row.nav(R.drawable.ic_rename, "Rename", ""), () -> askText(crumb, "Rename " + c.name,
-                "Name", c.name, InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
+        add(MenuView.Row.nav(R.drawable.ic_rename, "Rename", ""), () -> askText(crumb, "Rename " + catName(c),
+                "Name", catName(c), InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
                     c.name = name;
                     categories.save(prefs);
                     rebuildLists();
@@ -4425,7 +4471,7 @@ public class MainActivity extends Activity {
         add(MenuView.Row.nav(R.drawable.ic_order, "Position", (pos + 1) + " of " + categories.list.size()), () -> {
             String[] options = new String[categories.list.size()];
             for (int i = 0; i < options.length; i++) options[i] = i == 0 ? "1 (top)" : String.valueOf(i + 1);
-            openChoice(crumb, "Position of " + c.name, options, pos, i -> {
+            openChoice(crumb, "Position of " + catName(c), options, pos, i -> {
                 categories.list.remove(c);
                 categories.list.add(i, c);
                 categories.save(prefs);
@@ -4435,14 +4481,14 @@ public class MainActivity extends Activity {
         });
         if (!c.isApps()) {
             add(MenuView.Row.nav(R.drawable.ic_trash, "Delete", ""), () -> {
-                startMenu(crumb, "Delete " + c.name + "?");
+                startMenu(crumb, "Delete " + catName(c) + "?");
                 add(MenuView.Row.note(R.drawable.ic_info, "Its apps go back to Apps. Nothing is uninstalled."), null);
                 add(MenuView.Row.action(R.drawable.ic_close, "Cancel"), () -> openCategoryMenu(c, 6));
-                add(MenuView.Row.action(R.drawable.ic_trash, "Delete " + c.name), () -> {
+                add(MenuView.Row.action(R.drawable.ic_trash, "Delete " + catName(c)), () -> {
                     categories.delete(c);
                     categories.save(prefs);
                     rebuildLists();
-                    toast(c.name + " deleted", true);
+                    toast(catName(c) + " deleted", true);
                     openCategoriesMenu(0);
                 });
                 // Cancel is preselected.
@@ -4454,7 +4500,7 @@ public class MainActivity extends Activity {
 
     /** Ticked apps are in the category; OK adds or takes one out (back to Apps). */
     private void openCategoryApps(Categories.Cat c, int focus) {
-        startMenu(CATEGORIES + "  ›  " + c.name, "Apps in " + c.name);
+        startMenu(CATEGORIES + "  ›  " + catName(c), "Apps in " + catName(c));
         Set<String> hidden = hiddenApps();
         for (int i = 0; i < allApps.size(); i++) {
             AppRepo.App a = allApps.get(i);
@@ -4463,7 +4509,7 @@ public class MainActivity extends Activity {
             int n = i;
             // Docked apps can be added too; they show in the category once they leave the dock.
             String where = hidden.contains(a.pkg) ? "Hidden" : dockApps.contains(a) ? "In dock"
-                    : !mine && !in.isApps() ? in.name : "";
+                    : !mine && !in.isApps() ? catName(in) : "";
             add(MenuView.Row.choice(a.label, mine).value(where), () -> {
                 categories.moveApp(a.pkg, mine ? categories.find(Categories.APPS) : c, -1);
                 categories.save(prefs);
@@ -4748,7 +4794,7 @@ public class MainActivity extends Activity {
         });
         Set<String> cats = Lock.lockedCats(this);
         for (Categories.Cat c : categories.list) {
-            add(MenuView.Row.choice(c.name, cats.contains(c.id)).value("Category"), () -> {
+            add(MenuView.Row.choice(catName(c), cats.contains(c.id)).value("Category"), () -> {
                 Lock.toggle(this, "locked_cats", c.id);
                 PanelService.locksChanged();
                 openLockWhat(menu.focus());

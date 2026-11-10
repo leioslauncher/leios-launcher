@@ -23,10 +23,15 @@ final class Categories {
     static final String DOCK = "dock";
     static final String SORT_CUSTOM = "custom", SORT_AZ = "az", SORT_RECENT = "recent", SORT_USED = "used";
     static final String[] SORTS = {SORT_CUSTOM, SORT_AZ, SORT_RECENT, SORT_USED};
-    static final String[] SORT_NAMES = {"Your order", "A–Z", "Recently used", "Most used"};
+    /** The names of {@link #SORTS}, in the same order. */
+    static final int[] SORT_NAMES = {R.string.sort_custom, R.string.sort_az, R.string.sort_recent, R.string.sort_used};
+    /** What "Apps" was saved as before its name became a key; such a name is the default, not yours. */
+    static final String LEGACY_APPS_NAME = "Apps";
 
     static final class Cat {
-        String id, name, sort = SORT_AZ;
+        String id, sort = SORT_AZ;
+        /** Your name for the row; null for "Apps" until you rename it (it then shows in your language). */
+        String name;
         boolean singleRow;
         final List<String> apps = new ArrayList<>();
 
@@ -34,7 +39,12 @@ final class Categories {
             return APPS.equals(id);
         }
 
-        String sortName() {
+        /** {@code name}, or {@code defaultName} (the translated "Apps") while it has none of its own. */
+        String name(String defaultName) {
+            return name != null ? name : defaultName;
+        }
+
+        int sortName() {
             return SORT_NAMES[Math.max(0, Arrays.asList(SORTS).indexOf(sort))];
         }
     }
@@ -63,7 +73,9 @@ final class Categories {
                     JSONObject j = arr.getJSONObject(i);
                     Cat cat = new Cat();
                     cat.id = j.getString("id");
-                    cat.name = j.optString("name", "Apps");
+                    cat.name = j.isNull("name") ? null : j.optString("name", null);
+                    // Saved before the name became a key: the English default is the default.
+                    if (cat.isApps() && LEGACY_APPS_NAME.equals(cat.name)) cat.name = null;
                     cat.sort = j.optString("sort", SORT_AZ);
                     cat.singleRow = j.optBoolean("single", false);
                     JSONArray apps = j.optJSONArray("apps");
@@ -78,7 +90,6 @@ final class Categories {
             // First run, or Home from before categories: the old sort and custom order become "Apps".
             Cat a = new Cat();
             a.id = APPS;
-            a.name = "Apps";
             String old = p.getString("sort", SORT_AZ);
             a.sort = "used".equals(old) ? SORT_USED : "custom".equals(old) ? SORT_CUSTOM : SORT_AZ;
             for (String pkg : p.getString("grid_order", "").split(",")) if (!pkg.isEmpty()) a.apps.add(pkg);
@@ -99,7 +110,8 @@ final class Categories {
             for (Cat cat : list) {
                 JSONObject j = new JSONObject();
                 j.put("id", cat.id);
-                j.put("name", cat.name);
+                // No name: "Apps" in whatever language Leios shows (older versions read that as "Apps").
+                if (cat.name != null) j.put("name", cat.name);
                 j.put("sort", cat.sort);
                 j.put("single", cat.singleRow);
                 j.put("apps", new JSONArray(cat.apps));
@@ -175,10 +187,10 @@ final class Categories {
         if (c.id.equals(startOn)) startOn = DOCK;
     }
 
-    /** "Movies, Games" for a toast or a summary. */
-    String names() {
+    /** "Movies, Games" for a toast or a summary; {@code appsName} is the translated "Apps". */
+    String names(String appsName, String separator) {
         List<String> n = new ArrayList<>();
-        for (Cat c : list) n.add(c.name);
-        return TextUtils.join(", ", n);
+        for (Cat c : list) n.add(c.name(appsName));
+        return TextUtils.join(separator, n);
     }
 }

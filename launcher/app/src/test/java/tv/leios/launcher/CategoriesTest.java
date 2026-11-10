@@ -3,6 +3,7 @@ package tv.leios.launcher;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -52,6 +53,36 @@ public class CategoriesTest {
         FakePrefs p = new FakePrefs();
         p.values.put("categories", "{\"startOn\":\"gone\",\"list\":[{\"id\":\"apps\",\"name\":\"Apps\"}]}");
         assertEquals(Categories.DOCK, Categories.load(p).startOn);
+    }
+
+    @Test
+    public void appsHasNoNameOfItsOwnUntilRenamed() {
+        FakePrefs p = new FakePrefs();
+        Categories c = Categories.load(p);
+        Categories.Cat apps = c.find(Categories.APPS);
+        assertNull("the default name is a key, shown in the TV's language", apps.name);
+        assertEquals("Aplicaciones", apps.name("Aplicaciones"));
+        c.save(p);
+        assertFalse("nothing English is stored for it", p.values.get("categories").toString().contains("\"name\""));
+        assertNull(Categories.load(p).find(Categories.APPS).name);
+
+        apps.name = "My apps";
+        c.save(p);
+        assertEquals("My apps", Categories.load(p).find(Categories.APPS).name("Aplicaciones"));
+    }
+
+    @Test
+    public void theOldEnglishDefaultBecomesTheDefault() {
+        // Saved by 1.3 and earlier: "Apps" was stored as text.
+        FakePrefs p = new FakePrefs();
+        p.values.put("categories", "{\"list\":[{\"id\":\"c1\",\"name\":\"Apps\"},{\"id\":\"apps\",\"name\":\"Apps\"}]}");
+        Categories c = Categories.load(p);
+        assertNull(c.find(Categories.APPS).name);
+        assertEquals("Only the catch-all row's default migrates; a row you named stays yours",
+                "Apps", c.find("c1").name);
+        // A renamed "Apps" keeps your text.
+        p.values.put("categories", "{\"list\":[{\"id\":\"apps\",\"name\":\"Everything\"}]}");
+        assertEquals("Everything", Categories.load(p).find(Categories.APPS).name);
     }
 
     @Test

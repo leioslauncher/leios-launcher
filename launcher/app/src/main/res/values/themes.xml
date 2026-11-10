@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Leios</string>
-
     <!-- Explicitly opaque: some firmware makes DeviceDefault translucent and the TV app keeps playing under Home.
          The window starts in the dark background colour, so there's never a white flash. -->
     <style name="Theme.Home" parent="@android:style/Theme.Material.NoActionBar.Fullscreen">

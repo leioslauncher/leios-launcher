@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home: the greeting, rows of apps, moving tiles, the top bar's menus, and the actions on a tile
+     (hold OK on an app). Text in "quotes" keeps its spaces exactly. -->
+<resources>
+    <!-- The greeting over the clock, by time of day. -->
+    <string name="greeting_night">Good night</string>
+    <string name="greeting_morning">Good morning</string>
+    <string name="greeting_afternoon">Good afternoon</string>
+    <string name="greeting_evening">Good evening</string>
+
+    <!-- Rows of apps on Home that aren't categories. -->
+    <string name="row_inputs">Inputs</string>
+    <string name="row_all_apps">All apps</string>
+    <!-- A row's name when it has no apps. %1$s: the row's name. -->
+    <string name="row_empty">"%1$s  ·  No apps yet"</string>
+
+    <!-- First run: a card with three tips; any button closes it. -->
+    <string name="tip_title">Welcome to Leios</string>
+    <!-- Next to the OK button's label. -->
+    <string name="tip_hold_ok">Hold OK on an app to move, rename or hide it</string>
+    <!-- ≡ is the menu button on the remote, drawn like that; keep the symbol. -->
+    <string name="tip_menu_button">The ≡ button opens quick settings, in any app</string>
+    <string name="tip_customize">Customize, at the top, changes the background, layout and look</string>
+    <string name="tip_any_button">Press any button to start</string>
+
+    <!-- Moving a tile (hold OK › Move): the hints say what each arrow does. -->
+    <string name="move_remove_from_dock">Remove from dock</string>
+    <!-- %1$s: the name of the row the app goes to. -->
+    <string name="move_to_row">To %1$s</string>
+    <string name="move_swap_into_dock">Swap into dock</string>
+    <string name="move_add_to_dock">Add to dock</string>
+    <string name="toast_inputs_fixed_order">Inputs stay in the order the projector lists them.</string>
+    <string name="toast_all_apps_fixed_order">All apps is always A–Z. Move apps in their own category.</string>
+    <!-- %1$s: a row's name. "Customize › Home layout" is where the setting is: use those menus' names. -->
+    <string name="toast_row_own_order">%1$s is now in your own order. Customize › Home layout changes it back.</string>
+
+    <!-- Title of the PIN screen when a locked app is opened. %1$s: the app's name. -->
+    <string name="pin_title_open_app">Open %1$s</string>
+    <!-- Title of the PIN screen before Android's Wi-Fi settings open. -->
+    <string name="pin_title_wifi_settings">Wi-Fi settings</string>
+    <string name="toast_screen_unavailable">That screen isn\'t available on this projector</string>
+    <!-- %1$s: an app's or input's name. -->
+    <string name="toast_couldnt_open">Couldn\'t open %1$s</string>
+
+    <!-- The bell on the top bar: the notifications it counts. -->
+    <string name="notifications">Notifications</string>
+    <string name="notifications_none">No notifications</string>
+    <string name="notifications_clear_all">Clear all</string>
+    <string name="toast_notifications_cleared">Notifications cleared</string>
+    <string name="toast_notification_cant_open">That notification can\'t be opened from here</string>
+
+    <!-- The Inputs button's menu. -->
+    <string name="inputs_live_tv">Live TV</string>
+    <string name="inputs_none">No inputs found</string>
+
+    <!-- Hold OK on an app: what you can do with it. -->
+    <string name="qa_open">Open</string>
+    <string name="qa_move">Move</string>
+    <string name="qa_category">Category</string>
+    <string name="qa_name">Name</string>
+    <string name="qa_rename">Rename…</string>
+    <string name="qa_tile">Tile</string>
+    <string name="qa_hide">Hide from Home</string>
+    <string name="qa_more">More</string>
+    <string name="qa_app_info">App info</string>
+    <string name="qa_close_app">Close app</string>
+    <string name="qa_uninstall">Uninstall…</string>
+    <string name="qa_original_name">Original name</string>
+    <string name="qa_guest_note">Guest mode: Home can\'t be changed.</string>
+    <string name="qa_locked_note">Locked: Home can\'t be changed without the PIN.</string>
+    <!-- %1$s: the app's name. "Customize › Apps" is where to show it again. -->
+    <string name="toast_app_hidden">%1$s hidden. Customize › Apps brings it back.</string>
+    <!-- %1$s: the app's name. -->
+    <string name="toast_app_closed">%1$s closed</string>
+
+    <!-- Renaming an app (or a category). -->
+    <string name="rename_title">Rename</string>
+    <string name="rename_app_hint">Name shown on Home</string>
+    <!-- %1$s: the new name. -->
+    <string name="toast_renamed">Renamed to %1$s</string>
+    <!-- %1$s: the app's own name. -->
+    <string name="toast_name_back_to">Back to %1$s</string>
+
+    <!-- An app's tile: its banner (16:9 artwork) or its icon. -->
+    <string name="tile_banner">Banner</string>
+    <string name="tile_icon">Icon</string>
+    <!-- The first option follows Customize › Look & sound › Tiles; it says which that is now. -->
+    <string name="tile_default_banner">Default (banner)</string>
+    <string name="tile_default_icon">Default (icon)</string>
+    <!-- %1$s: the app's name. -->
+    <string name="toast_tile_default">%1$s: default tile</string>
+    <string name="toast_tile_banner">%1$s: banner tile</string>
+    <string name="toast_tile_icon">%1$s: icon tile</string>
+    <string name="tile_no_banner">This app has no banner.</string>
+    <string name="tile_picture">Picture from this TV</string>
+    <string name="tile_from_pack">From an icon pack</string>
+    <string name="tile_no_packs">No icon packs installed.</string>
+    <string name="tile_remove_icon">Remove custom icon</string>
+    <!-- %1$s: the app's name. -->
+    <string name="toast_icon_removed">%1$s has its own icon again</string>
+    <string name="toast_new_icon">%1$s has a new icon</string>
+
+    <!-- Picking a picture from the TV or a USB drive. -->
+    <string name="picture_title">Picture</string>
+    <string name="picture_looking">Looking for pictures…</string>
+    <string name="picture_none_for_icon">No pictures found. Square pictures become icons, wide ones banners.</string>
+    <string name="toast_picture_unusable">Couldn\'t use that picture. Try another one.</string>
+
+    <!-- Icon packs: apps with sets of icons. -->
+    <string name="icon_pack">Icon pack</string>
+    <string name="icon_pack_reading">Reading the icon pack…</string>
+    <!-- %1$s: an icon's name in the pack. -->
+    <string name="icon_pack_made_for_app">%1$s (made for this app)</string>
+    <!-- %1$s: the app's name. -->
+    <string name="icon_pack_no_match">This pack has no icon made for %1$s. Search it by name.</string>
+    <!-- %1$s: what you searched for. -->
+    <string name="icon_pack_none_called">No icons called “%1$s”.</string>
+    <string name="icon_pack_search">Search this pack…</string>
+    <string name="icon_pack_search_title">Search icons</string>
+    <!-- "netflix" is an example of an icon's name; any well-known app works. -->
+    <string name="icon_pack_search_hint">Part of a name, e.g. netflix</string>
+
+    <!-- Categories: rows of apps you make yourself. -->
+    <string name="menu_categories">Categories</string>
+    <!-- The "Apps" row in the list of categories. %1$s: its name. -->
+    <string name="category_apps_none">%1$s (no category)</string>
+    <string name="category_new">New category…</string>
+    <string name="category_new_title">New category</string>
+    <!-- "Movies" is an example of a category's name. -->
+    <string name="category_new_hint">Name, e.g. Movies</string>
+    <!-- %1$s: the app's name; %2$s: the category's name. -->
+    <string name="toast_app_moved_to">%1$s moved to %2$s</string>
+
+    <!-- Search sends a movie or show to an app. %1$s: the title; %2$s: the app (Netflix, Max…). -->
+    <string name="toast_opening_title">Opening %1$s in %2$s…</string>
+    <!-- Shown over the app when it can't open the title itself. %1$s: the title; %2$s: the app. -->
+    <string name="toast_search_title_in_app">Search for “%1$s” in %2$s</string>
+</resources>

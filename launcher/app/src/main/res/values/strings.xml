@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Text shared across Leios. Each area has its own file (strings_home.xml, strings_menus.xml, …);
+    Android reads them all as one. CONTRIBUTING.md › Translating Leios explains how to translate.
+    Placeholders: %1$s is text (a name), %1$d a number. Keep them, in any order the sentence needs.
+-->
+<resources>
+    <!-- The app's name: a name, never translated. -->
+    <string name="app_name" translatable="false">Leios</string>
+
+    <!-- Top bar buttons (also the names of the screens they open). -->
+    <string name="inputs">Inputs</string>
+    <string name="wifi">Wi-Fi</string>
+    <string name="settings">Settings</string>
+    <string name="customize">Customize</string>
+    <string name="search">Search</string>
+
+    <!-- Android's accessibility settings: the name and description of Leios's ≡ helper. -->
+    <string name="panel_label">Leios quick settings (≡ button)</string>
+    <string name="panel_description">Opens the quick settings panel when you press the ≡ button on the remote, in any app. It only listens for that button, the Settings button (and the D-pad while the panel or a PIN screen is open); it does not read the screen. If you lock apps with Leios\'s PIN, it also notices which app comes to the front (its name only) to ask for the PIN.</string>
+    <!-- Android's device admin screen: why the sleep timer asks for this. -->
+    <string name="sleep_admin">Lets the sleep timer put the projector to sleep. It can do nothing else.</string>
+
+    <!--
+        Remote buttons shown in the hints at the bottom of menus and screens ("OK  Select").
+        These name physical buttons on the remote. "OK" is printed on remotes everywhere, so it isn't
+        translated; "BACK" is, in capitals if your language uses them, like a label on a button.
+    -->
+    <string name="key_ok" translatable="false">OK</string>
+    <string name="key_back">BACK</string>
+    <!-- What a remote button does, shown next to it in the hints. -->
+    <string name="hint_select">Select</string>
+    <string name="hint_back">Back</string>
+    <string name="hint_close">Close</string>
+    <string name="hint_done">Done</string>
+    <string name="hint_move">Move</string>
+    <string name="hint_open">Open</string>
+    <string name="hint_cancel">Cancel</string>
+    <string name="hint_next">Next</string>
+    <string name="hint_type">Type</string>
+    <string name="hint_delete">Delete</string>
+    <string name="hint_adjust">Adjust</string>
+    <string name="hint_digit">Digit</string>
+    <string name="hint_results">Results</string>
+    <string name="hint_complete">Complete</string>
+
+    <!-- A setting's state, shown at the end of its row. -->
+    <string name="on">On</string>
+    <string name="off">Off</string>
+
+    <!-- Joins a list of names: "Movies, Games". -->
+    <string name="list_separator">, </string>
+    <!-- Between parts of one line: "Cloudy  ·  76°". -->
+    <string name="dot_separator">  ·  </string>
+    <!-- Where a menu sits: "Customize  ›  Look & sound". -->
+    <string name="crumb_separator">  ›  </string>
+
+    <!-- The catch-all row of apps on Home, until you rename it. -->
+    <string name="category_apps">Apps</string>
+    <!-- How a row of apps is sorted. -->
+    <string name="sort_custom">Your order</string>
+    <string name="sort_az">A–Z</string>
+    <string name="sort_recent">Recently used</string>
+    <string name="sort_used">Most used</string>
+</resources>
