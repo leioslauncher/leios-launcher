@@ -20,20 +20,20 @@ import java.util.TimeZone;
  */
 interface OnlineSource {
 
+    /** A picture and who to credit: the author (may be empty) and licence, as the source gives them. */
     final class Picture {
         final byte[] bytes;
-        final String credit;
+        final String artist, license;
 
-        Picture(byte[] bytes, String credit) {
+        Picture(byte[] bytes, String artist, String license) {
             this.bytes = bytes;
-            this.credit = credit;
+            this.artist = artist;
+            this.license = license;
         }
     }
 
-    String name();
-
-    /** One line for the menu: where the pictures come from. */
-    String about();
+    /** String resource: one line for the menu, where the pictures come from. */
+    int about();
 
     /** Today's picture. Call off the main thread. */
     Picture fetch() throws IOException;
@@ -45,13 +45,8 @@ interface OnlineSource {
     final class WikimediaToday implements OnlineSource {
 
         @Override
-        public String name() {
-            return "Wikimedia picture of the day";
-        }
-
-        @Override
-        public String about() {
-            return "A freely licensed photo from Wikimedia Commons, new each day.";
+        public int about() {
+            return R.string.online_about;
         }
 
         @Override
@@ -69,9 +64,7 @@ interface OnlineSource {
                 if (width > 0 && width < 1920) url = image.getJSONObject("image").getString("source").replaceFirst("\\?.*$", "");
                 String artist = image.optJSONObject("artist") != null ? image.getJSONObject("artist").optString("text", "") : "";
                 String license = image.optJSONObject("license") != null ? image.getJSONObject("license").optString("type", "") : "";
-                String credit = "Photo: " + (artist.isEmpty() ? "Wikimedia Commons" : artist.trim() + ", Wikimedia Commons")
-                        + (license.isEmpty() ? "" : " (" + license + ")");
-                return new Picture(get(url), credit);
+                return new Picture(get(url), artist.trim(), license.trim());
             } catch (org.json.JSONException e) {
                 throw new IOException("unexpected feed", e);
             }

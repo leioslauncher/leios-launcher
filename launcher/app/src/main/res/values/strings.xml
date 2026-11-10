@@ -55,6 +55,16 @@
     <!-- Where a menu sits: "Customize  ›  Look & sound". -->
     <string name="crumb_separator">"  ›  "</string>
 
+    <!-- Short lengths of time, at the end of a row ("15 sec", "5 min"). -->
+    <plurals name="duration_sec_short">
+        <item quantity="one">%d sec</item>
+        <item quantity="other">%d sec</item>
+    </plurals>
+    <plurals name="duration_min_short">
+        <item quantity="one">%d min</item>
+        <item quantity="other">%d min</item>
+    </plurals>
+
     <!-- The catch-all row of apps on Home, until you rename it. -->
     <string name="category_apps">Apps</string>
     <!-- How a row of apps is sorted. -->

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Customize: the quick sheet on Home and the full Customization screen around the menus.
+     Setting names are in strings_settings.xml. -->
+<resources>
+    <!-- The full screen with every setting, in seven sections. -->
+    <string name="cust_title">Customization</string>
+    <!-- Quick Customize (the sheet on Home): its last row opens Customization. -->
+    <string name="cust_all">All customization</string>
+    <string name="cust_dock_arrange">Dock &amp; arrange apps</string>
+    <string name="cust_rearrange_dock">Rearrange the dock</string>
+    <string name="cust_nothing_to_arrange">No apps under the dock to arrange.</string>
+    <string name="dock_empty">The dock is empty. Hold OK on an app in the grid to add it.</string>
+    <string name="toast_dock_reset">Dock reset to the default apps</string>
+
+    <!-- How many apps are hidden from Home, at the end of a row. -->
+    <plurals name="apps_hidden">
+        <item quantity="one">%d hidden</item>
+        <item quantity="other">%d hidden</item>
+    </plurals>
+
+    <!-- Parts of a menu's place shown above its title (Customize › Background › Slideshow). -->
+    <string name="crumb_restore">Restore</string>
+    <string name="crumb_idle">Idle</string>
+</resources>

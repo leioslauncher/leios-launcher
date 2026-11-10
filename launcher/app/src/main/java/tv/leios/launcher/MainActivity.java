@@ -1236,6 +1236,11 @@ public class MainActivity extends Activity {
         return trAll(Categories.SORT_NAMES);
     }
 
+    /** A count or number as the language writes it (1,234 / 1 234 / ١٬٢٣٤). */
+    private static String number(long n) {
+        return java.text.NumberFormat.getIntegerInstance().format(n);
+    }
+
     /** A category's name: yours, or "Apps" in the TV's language. */
     private String catName(Categories.Cat c) {
         return c.name(tr(R.string.category_apps));
@@ -2776,8 +2781,6 @@ public class MainActivity extends Activity {
 
     // ---- Customize --------------------------------------------------------------------------
 
-    private static final String CUSTOMIZE = "Customize";
-
     /**
      * Quick Customize, the sheet on Home: the three things people change most, and the way into
      * everything else. The same settings as Customization, so both stay in step.
@@ -2787,23 +2790,24 @@ public class MainActivity extends Activity {
         custMode = CUST_QUICK;
         // In guest mode the Customize button is hidden; the menu then belongs to no button.
         menuAnchorPill = pills[PILL_CUSTOMIZE].getVisibility() == View.VISIBLE ? PILL_CUSTOMIZE : -1;
-        startMenu(null, CUSTOMIZE);
-        add(MenuView.Row.nav(R.drawable.ic_background, "Background", backgroundName()), () -> openBackgroundMenu());
-        add(MenuView.Row.nav(R.drawable.ic_look, "Appearance", APPEARANCE[appearanceIndex()]), () -> openAppearanceMenu(0));
-        add(MenuView.Row.nav(R.drawable.ic_dock, "Dock & arrange apps", ""), () -> openDockArrangeMenu(0));
-        add(MenuView.Row.nav(R.drawable.ic_palette, "All customization", ""), () -> openFull(lastSection, () -> openCustomize(3)));
+        startMenu(null, tr(R.string.customize));
+        add(MenuView.Row.nav(R.drawable.ic_background, tr(R.string.menu_background), backgroundName()), () -> openBackgroundMenu());
+        add(MenuView.Row.nav(R.drawable.ic_look, tr(R.string.set_look_appearance), appearanceName()), () -> openAppearanceMenu(0));
+        add(MenuView.Row.nav(R.drawable.ic_dock, tr(R.string.cust_dock_arrange), ""), () -> openDockArrangeMenu(0));
+        add(MenuView.Row.nav(R.drawable.ic_palette, tr(R.string.cust_all), ""), () -> openFull(lastSection, () -> openCustomize(3)));
         showSheet(focus, null, null);
     }
 
     /** Quick Customize › Dock & arrange apps. */
     private void openDockArrangeMenu(int focus) {
-        startMenu(CUSTOMIZE, "Dock & arrange apps");
-        MenuView.Row rearrange = add(MenuView.Row.action(R.drawable.ic_dock, "Rearrange the dock"), this::rearrangeDock);
-        if (dockApps.isEmpty()) rearrange.disabled("The dock is empty. Hold OK on an app in the grid to add it.");
-        MenuView.Row arrange = add(MenuView.Row.action(R.drawable.ic_move, "Arrange apps"), this::arrangeApps);
-        if (!hasGrid()) arrange.disabled("No apps under the dock to arrange.");
-        add(MenuView.Row.nav(R.drawable.ic_hide, "Show or hide apps", hiddenCount() + " hidden"), () -> openHideMenu(0));
-        add(MenuView.Row.action(R.drawable.ic_reset, "Reset dock to default"), this::resetDock);
+        startMenu(tr(R.string.customize), tr(R.string.cust_dock_arrange));
+        MenuView.Row rearrange = add(MenuView.Row.action(R.drawable.ic_dock, tr(R.string.cust_rearrange_dock)), this::rearrangeDock);
+        if (dockApps.isEmpty()) rearrange.disabled(tr(R.string.dock_empty));
+        MenuView.Row arrange = add(MenuView.Row.action(R.drawable.ic_move, tr(R.string.set_apps_arrange_apps)), this::arrangeApps);
+        if (!hasGrid()) arrange.disabled(tr(R.string.cust_nothing_to_arrange));
+        add(MenuView.Row.nav(R.drawable.ic_hide, tr(R.string.set_apps_show_or_hide_apps), trn(R.plurals.apps_hidden, hiddenCount())),
+                () -> openHideMenu(0));
+        add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.set_home_dock_reset_dock_to_default)), this::resetDock);
         showSheet(focus, () -> openCustomize(2), null);
     }
 
@@ -2822,7 +2826,7 @@ public class MainActivity extends Activity {
     private void resetDock() {
         prefs.edit().remove("dock_order").remove("dock_config").apply();
         rebuildLists();
-        toast("Dock reset to the default apps", true);
+        toast(tr(R.string.toast_dock_reset), true);
     }
 
     /** Back from a section's own menu: the section list in Customization, or the quick sheet. */
@@ -2836,8 +2840,8 @@ public class MainActivity extends Activity {
     // ---- Customization: the full screen ------------------------------------------------------
 
     private static final int CUST_NONE = 0, CUST_QUICK = 1, CUST_FULL = 2;
-    private static final String[] SECTION_NAMES = {"Background", "Home layout", "Apps", "Look & sound",
-            "Projector & tools", "Lock & remote", "System"};
+    private static final int[] SECTION_NAMES = {R.string.menu_background, R.string.menu_home, R.string.menu_apps,
+            R.string.menu_look, R.string.menu_projector, R.string.menu_lock, R.string.menu_system};
     private static final int[] SECTION_ICONS = {R.drawable.ic_background, R.drawable.ic_dock, R.drawable.ic_apps,
             R.drawable.ic_look, R.drawable.ic_projector, R.drawable.ic_lock, R.drawable.ic_settings};
     /** Which Customize is showing, so Back from a section knows where "up" is. */
@@ -2893,8 +2897,8 @@ public class MainActivity extends Activity {
         }
         rail.setMaxHeight(root.getHeight() - 2 * tk.safeV);
         List<MenuView.Row> rows = new ArrayList<>();
-        for (int i = 0; i < SECTION_NAMES.length; i++) rows.add(MenuView.Row.nav(SECTION_ICONS[i], SECTION_NAMES[i], ""));
-        rail.setHeader(null, "Customization");
+        for (int i = 0; i < SECTION_NAMES.length; i++) rows.add(MenuView.Row.nav(SECTION_ICONS[i], tr(SECTION_NAMES[i]), ""));
+        rail.setHeader(null, tr(R.string.cust_title));
         rail.setRows(rows, lastSection, false);
         if (rail.getVisibility() != View.VISIBLE) {
             for (View v : new View[] {fullScrim, rail}) {
@@ -2914,8 +2918,14 @@ public class MainActivity extends Activity {
         railActive = true;
         rail.setActive(true);
         rail.setFocus(section, false);
-        rail.setHints("OK", "Open", "BACK", fullBack == null ? "Close" : "Back");
+        rail.setHints(railHints(fullBack == null));
         openSection(section);
+    }
+
+    /** "OK Open  BACK Back" (or Close) under Customization's section list. */
+    private String[] railHints(boolean closes) {
+        return new String[] {tr(R.string.key_ok), tr(R.string.hint_open), tr(R.string.key_back),
+                tr(closes ? R.string.hint_close : R.string.hint_back)};
     }
 
     private void openSection(int s) {
@@ -3030,7 +3040,7 @@ public class MainActivity extends Activity {
 
     /** A setting picked in search: its menu in Customization, on its row, which pulses once. */
     private void openSettingFromSearch(SettingsIndex.Entry e) {
-        requirePin(customizeLocked(), "Customize", () -> {
+        requirePin(customizeLocked(), tr(R.string.customize), () -> {
             search.hideNow();
             int section = SettingsIndex.section(e.menu);
             lastSection = section;
@@ -3039,7 +3049,7 @@ public class MainActivity extends Activity {
             rail.setFocus(section, false);
             railActive = false;
             rail.setActive(false);
-            rail.setHints("OK", "Open", "BACK", "Back");
+            rail.setHints(railHints(false));
             openSettingMenu(e.menu);
             menu.setActive(true);
             // The row shows the same string resource as the entry, so this holds in every language.
@@ -3065,15 +3075,28 @@ public class MainActivity extends Activity {
         search.reshow();
     }
 
-    private static String crumb(String section) {
-        return CUSTOMIZE + "  ›  " + section;
+    /** Where a menu sits: "Customize  ›  Look & sound", then any further parts. */
+    private String crumb(String... parts) {
+        String[] all = new String[parts.length + 1];
+        all[0] = tr(R.string.customize);
+        System.arraycopy(parts, 0, all, 1, parts.length);
+        return crumbOf(all);
+    }
+
+    /** Parts of a menu's place joined with " › " (the separator is translatable). */
+    private String crumbOf(String... parts) {
+        return TextUtils.join(tr(R.string.crumb_separator), parts);
+    }
+
+    private String categoriesCrumb() {
+        return crumb(tr(R.string.menu_home));
     }
 
     // Background
 
     // 0–5 are dark backgrounds, 6–8 light ones; each mode lists only its own.
-    private static final String[] PRESETS = {"Black", "Midnight", "Graphite", "Aurora", "Ember", "Dusk",
-            "Pearl", "Mist", "Sand"};
+    private static final int[] PRESETS = {R.string.bg_black, R.string.bg_midnight, R.string.bg_graphite,
+            R.string.bg_aurora, R.string.bg_ember, R.string.bg_dusk, R.string.bg_pearl, R.string.bg_mist, R.string.bg_sand};
     private static final int FIRST_LIGHT_PRESET = 6;
     // The menu scrolls, so list everything a normal drive holds.
     private static final int MAX_PHOTOS = 1000;
@@ -3081,14 +3104,14 @@ public class MainActivity extends Activity {
 
     private String backgroundName() {
         String bg = currentBg();
-        if (bg.startsWith("preset:")) return PRESETS[Integer.parseInt(bg.substring(7))];
-        if (bg.startsWith("shape:")) return Backdrops.NAMES[Integer.parseInt(bg.substring(6))];
-        if (bg.equals("photo")) return "Photo";
-        if (bg.equals("anim")) return "Animated photo";
-        if (bg.equals("slideshow")) return "Slideshow";
-        if (bg.equals("video")) return "Video";
-        if (bg.equals("online")) return "Photo of the day";
-        return getResources().getIdentifier("wallpaper", "drawable", getPackageName()) != 0 ? "Custom" : "Black";
+        if (bg.startsWith("preset:")) return tr(PRESETS[Integer.parseInt(bg.substring(7))]);
+        if (bg.startsWith("shape:")) return tr(Backdrops.NAMES[Integer.parseInt(bg.substring(6))]);
+        if (bg.equals("photo")) return tr(R.string.set_background_photo);
+        if (bg.equals("anim")) return tr(R.string.bg_animated_photo);
+        if (bg.equals("slideshow")) return tr(R.string.set_background_slideshow);
+        if (bg.equals("video")) return tr(R.string.set_background_video);
+        if (bg.equals("online")) return tr(R.string.set_background_photo_of_the_day);
+        return tr(getResources().getIdentifier("wallpaper", "drawable", getPackageName()) != 0 ? R.string.bg_custom : R.string.bg_black);
     }
 
     private void openBackgroundMenu() {
@@ -3099,19 +3122,19 @@ public class MainActivity extends Activity {
         boolean shape = current.startsWith("shape:");
         boolean photo = current.equals("photo") || current.equals("anim"), slides = current.equals("slideshow");
         boolean video = current.equals("video");
-        startMenu(CUSTOMIZE, tr(R.string.menu_background));
+        startMenu(tr(R.string.customize), tr(R.string.menu_background));
         add(MenuView.Row.nav(R.drawable.ic_look, tr(R.string.set_background_colours), colour ? backgroundName() : ""), this::openColoursMenu);
         add(MenuView.Row.nav(R.drawable.ic_shapes, tr(R.string.set_background_shapes), shape ? backgroundName() : ""), this::openShapesMenu);
         add(MenuView.Row.nav(R.drawable.ic_background, tr(R.string.set_background_photo), photo ? backgroundName() : ""), this::openPhotoMenu);
         add(MenuView.Row.nav(R.drawable.ic_picture, tr(R.string.set_background_slideshow),
-                slides ? "Every " + SLIDE_SHORT[slideIndex()] : ""), this::openSlideshowMenu);
-        add(MenuView.Row.nav(R.drawable.ic_video, tr(R.string.set_background_video), video ? "In use" : ""), this::openVideoMenu);
+                slides ? tr(R.string.slide_every_short, slideShort(slideIndex())) : ""), this::openSlideshowMenu);
+        add(MenuView.Row.nav(R.drawable.ic_video, tr(R.string.set_background_video), video ? tr(R.string.bg_in_use) : ""), this::openVideoMenu);
         boolean online = current.equals("online");
-        add(MenuView.Row.nav(R.drawable.ic_weather, tr(R.string.set_background_photo_of_the_day), online ? "In use" : "Uses the internet"),
+        add(MenuView.Row.nav(R.drawable.ic_weather, tr(R.string.set_background_photo_of_the_day), tr(online ? R.string.bg_in_use : R.string.bg_uses_internet)),
                 this::openOnlineMenu);
         MenuView.Row adjust = add(MenuView.Row.nav(R.drawable.ic_brightness, tr(R.string.set_background_adjust),
-                Wallpaper.Adjust.from(prefs).none() ? "Off" : "On"), () -> openAdjustMenu(0));
-        if (!(photo || slides || video || online)) adjust.disabled("For photos, slideshows and videos.");
+                tr(Wallpaper.Adjust.from(prefs).none() ? R.string.off : R.string.on)), () -> openAdjustMenu(0));
+        if (!(photo || slides || video || online)) adjust.disabled(tr(R.string.adjust_for_what));
         showSheet(shape ? 1 : photo ? 2 : slides ? 3 : video ? 4 : online ? 5 : 0, backTo(SEC_BACKGROUND), null);
     }
 
@@ -3130,17 +3153,16 @@ public class MainActivity extends Activity {
     }
 
     private void openOnlineMenu() {
-        String crumb = crumb("Background");
-        startMenu(crumb, "Photo of the day");
+        String crumb = crumb(tr(R.string.menu_background));
+        startMenu(crumb, tr(R.string.set_background_photo_of_the_day));
         boolean on = "online".equals(currentBg());
-        add(MenuView.Row.note(R.drawable.ic_info, online.about() + " Uses the internet: Home asks Wikimedia "
-                + "for one picture a day, only while it's your background. The photographer is credited on screen."), null);
-        add(MenuView.Row.action(R.drawable.ic_check, on ? "Get today's again" : "Use as background"), () -> {
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.online_note, tr(online.about()))), null);
+        add(MenuView.Row.action(R.drawable.ic_check, tr(on ? R.string.online_again : R.string.bg_use_as_background)), () -> {
             if (on) prefs.edit().remove("online_day").apply();
             applyBackground("online", true);
             openBackgroundMenu();
         });
-        String credit = prefs.getString("online_credit", "");
+        String credit = onlineCredit();
         if (on && !credit.isEmpty()) add(MenuView.Row.note(R.drawable.ic_picture, credit), null);
         showSheet(1, this::openBackgroundMenu, null);
     }
@@ -3161,7 +3183,7 @@ public class MainActivity extends Activity {
         });
         if (fresh || onlineLoading) return;
         onlineLoading = true;
-        if (!f.exists()) toast("Getting today's photo…", false);
+        if (!f.exists()) toast(tr(R.string.toast_online_getting), false);
         loader.execute(() -> {
             OnlineSource.Picture p;
             try {
@@ -3181,13 +3203,15 @@ public class MainActivity extends Activity {
                 onlineLoading = false;
                 if (got == null) {
                     // No network: keep yesterday's (or the plain background) and try again later.
-                    if (!onlineWarned) toast("Can't reach Wikimedia right now. Trying again later.", false);
+                    if (!onlineWarned) toast(tr(R.string.toast_online_unreachable), false);
                     onlineWarned = true;
                     if (!f.exists()) setEdges(false);
                     return;
                 }
                 onlineWarned = false;
-                prefs.edit().putString("online_day", today()).putString("online_credit", got.credit).apply();
+                // Who and which licence, not a sentence: the credit is worded in the language shown.
+                prefs.edit().putString("online_day", today()).remove("online_credit")
+                        .putString("online_artist", got.artist).putString("online_license", got.license).apply();
                 if (!"online".equals(currentBg()) || bm == null) return;
                 crossfadeTo(bm, tk.slow);
                 showCredit(true);
@@ -3207,8 +3231,21 @@ public class MainActivity extends Activity {
             lp.bottomMargin = tk.space4;
             hero.addView(creditView, lp);
         }
-        creditView.setText(prefs.getString("online_credit", ""));
-        creditView.setVisibility(show && !prefs.getString("online_credit", "").isEmpty() ? View.VISIBLE : View.GONE);
+        String credit = onlineCredit();
+        creditView.setText(credit);
+        creditView.setVisibility(show && !credit.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * "Photo: Jane Doe, Wikimedia Commons (CC BY-SA 4.0)" for today's picture. A credit saved as a
+     * sentence by 1.3 or earlier shows as it was until the next picture arrives.
+     */
+    private String onlineCredit() {
+        if (!prefs.contains("online_artist")) return prefs.getString("online_credit", "");
+        String artist = prefs.getString("online_artist", ""), license = prefs.getString("online_license", "");
+        String source = artist.isEmpty() ? tr(R.string.online_source) : tr(R.string.online_source_artist, artist.trim());
+        String line = tr(R.string.online_credit, source);
+        return license.isEmpty() ? line : tr(R.string.online_credit_license, line, license);
     }
 
     // Adjust: brightness, contrast, saturation, blur. Drawn into each picture once, previewed live.
@@ -3218,7 +3255,7 @@ public class MainActivity extends Activity {
             R.string.set_background_adjust_contrast, R.string.set_background_adjust_saturation};
 
     private void openAdjustMenu(int focus) {
-        String crumb = crumb("Background");
+        String crumb = crumb(tr(R.string.menu_background));
         startMenu(crumb, tr(R.string.menu_background_adjust));
         boolean video = "video".equals(currentBg()), anim = "anim".equals(currentBg());
         Wallpaper.Adjust before = Wallpaper.Adjust.from(prefs);
@@ -3234,31 +3271,33 @@ public class MainActivity extends Activity {
                 previewAdjust();
             });
             // A video can only be dimmed or brightened (a layer over it); the rest needs the pixels.
-            if (video && i > 0) row.disabled("Videos can only change brightness.");
+            if (video && i > 0) row.disabled(tr(R.string.adjust_video_only_brightness));
         }
         int blur = prefs.getInt("adj_blur", 0);
-        MenuView.Row blurRow = addAdjust(MenuView.Row.stepper(0, tr(R.string.set_background_adjust_blur), Wallpaper.BLUR_NAMES[blur]), dir -> {
+        MenuView.Row blurRow = addAdjust(MenuView.Row.stepper(0, tr(R.string.set_background_adjust_blur), tr(Wallpaper.BLUR_NAMES[blur])), dir -> {
             int nb = Math.max(0, Math.min(3, prefs.getInt("adj_blur", 0) + dir));
             prefs.edit().putInt("adj_blur", nb).apply();
-            menu.focused().value(Wallpaper.BLUR_NAMES[nb]);
+            menu.focused().value(tr(Wallpaper.BLUR_NAMES[nb]));
             previewAdjust();
         });
-        if (video || anim) blurRow.disabled(video ? "Videos can't be blurred." : "Animated photos can't be blurred.");
+        if (video || anim) blurRow.disabled(tr(video ? R.string.adjust_video_no_blur : R.string.adjust_anim_no_blur));
         add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.set_background_adjust_reset_adjustments)), () -> {
             prefs.edit().remove("adj_b").remove("adj_c").remove("adj_s").remove("adj_blur").apply();
             previewAdjust();
-            toast("Background back to how it was", true);
+            toast(tr(R.string.toast_adjust_reset), true);
             openAdjustMenu(4);
         });
         showSheet(focus, () -> {
-            if (!before.equals(Wallpaper.Adjust.from(prefs))) toast("Adjustments saved", true);
+            if (!before.equals(Wallpaper.Adjust.from(prefs))) toast(tr(R.string.toast_adjust_saved), true);
             openBackgroundMenu();
         }, null);
-        menu.setHints("◀ ▶", "Adjust", "BACK", "Done");
+        menu.setHints("◀ ▶", tr(R.string.hint_adjust), tr(R.string.key_back), tr(R.string.hint_done));
     }
 
+    /** -5, 0, +5 as numbers are written in the language shown. */
     private static String signed(int v) {
-        return v > 0 ? "+" + v : String.valueOf(v);
+        java.text.NumberFormat f = java.text.NumberFormat.getIntegerInstance();
+        return v > 0 ? "+" + f.format(v) : f.format(v);
     }
 
     private final Runnable adjustTick = this::applyAdjustNow;
@@ -3304,17 +3343,17 @@ public class MainActivity extends Activity {
     private void openColoursMenu() {
         String current = currentBg();
         boolean resWallpaper = getResources().getIdentifier("wallpaper", "drawable", getPackageName()) != 0;
-        startMenu(crumb("Background"), "Colours");
+        startMenu(crumb(tr(R.string.menu_background)), tr(R.string.set_background_colours));
         int focus = 0;
         int from = theme.light ? FIRST_LIGHT_PRESET : 0, to = theme.light ? PRESETS.length : FIRST_LIGHT_PRESET;
         for (int i = from; i < to; i++) {
             String spec = "preset:" + i;
-            String name = PRESETS[i];
+            String name = tr(PRESETS[i]);
             boolean isCurrent = spec.equals(current) || (i == 0 && current.isEmpty() && !resWallpaper);
             if (isCurrent) focus = pendingRows.size();
             add(MenuView.Row.choice(name, isCurrent), () -> {
                 applyBackground(spec, true);
-                toast("Background set to " + name, true);
+                toast(tr(R.string.toast_bg_set_to, name), true);
                 openBackgroundMenu();
             }, () -> applyBackground(spec, false));
         }
@@ -3324,16 +3363,16 @@ public class MainActivity extends Activity {
     /** Shape backgrounds (Backdrops); drawn for the current light or dark look. */
     private void openShapesMenu() {
         String current = currentBg();
-        startMenu(crumb("Background"), "Shapes");
+        startMenu(crumb(tr(R.string.menu_background)), tr(R.string.set_background_shapes));
         int focus = 0;
         for (int i = 0; i < Backdrops.NAMES.length; i++) {
             String spec = "shape:" + i;
-            String name = Backdrops.NAMES[i];
+            String name = tr(Backdrops.NAMES[i]);
             if (spec.equals(current)) focus = i;
             add(MenuView.Row.choice(name, spec.equals(current)), () -> {
                 cancelPhotoPreview();
                 applyBackground(spec, true);
-                toast("Background set to " + name, true);
+                toast(tr(R.string.toast_bg_set_to, name), true);
                 openBackgroundMenu();
             }, () -> {
                 // Drawing one takes a moment, so wait until you pause on it.
@@ -3526,9 +3565,9 @@ public class MainActivity extends Activity {
             requestPermissions(new String[] {imagePermission()}, REQ_PHOTOS);
             return;
         }
-        String crumb = crumb("Background");
-        startMenu(crumb, "Photo");
-        add(MenuView.Row.loading("Looking for photos…"), null);
+        String crumb = crumb(tr(R.string.menu_background));
+        startMenu(crumb, tr(R.string.set_background_photo));
+        add(MenuView.Row.loading(tr(R.string.photo_looking)), null);
         String current = currentBg();
         Runnable restore = () -> {
             cancelPhotoPreview();
@@ -3551,17 +3590,17 @@ public class MainActivity extends Activity {
             ui.post(() -> {
                 // Still on the loading sheet? (Back may have been pressed meanwhile.)
                 if (isDestroyed() || area != MENU || !crumb.equals(menuCrumb)) return;
-                startMenu(crumb, "Photo");
+                startMenu(crumb, tr(R.string.set_background_photo));
                 for (int i = 0; i < uris.size(); i++) {
                     Uri uri = uris.get(i);
                     String name = names.get(i);
-                    add(MenuView.Row.action(0, name == null ? "Photo" : name), () -> {
+                    add(MenuView.Row.action(0, name == null ? tr(R.string.set_background_photo) : name), () -> {
                         cancelPhotoPreview();
                         usePhoto(uri);
                     }, () -> schedulePhotoPreview(uri));
                 }
                 if (uris.isEmpty()) {
-                    add(MenuView.Row.note(R.drawable.ic_info, "No photos found. Plug in a USB drive with photos on it."), null);
+                    add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.photo_none)), null);
                 }
                 showSheet(0, this::openBackgroundMenu, restore);
                 if (!uris.isEmpty()) schedulePhotoPreview(uris.get(0));
@@ -3598,27 +3637,32 @@ public class MainActivity extends Activity {
         if (requestCode == REQ_SLIDES && ok) openSlideshowMenu();
         if (requestCode == REQ_VIDEOS && ok) openVideoMenu();
         if (!ok && (requestCode == REQ_PHOTOS || requestCode == REQ_SLIDES)) {
-            toast("Leios needs permission to see your photos for this", false);
+            toast(tr(R.string.toast_photos_permission), false);
         }
-        if (!ok && requestCode == REQ_VIDEOS) toast("Leios needs permission to see your videos for this", false);
+        if (!ok && requestCode == REQ_VIDEOS) toast(tr(R.string.toast_videos_permission), false);
         if (requestCode == REQ_MIC) {
             askingMic = false;
             Runnable then = afterMic;
             afterMic = null;
             if (ok && then != null && search.isOpen()) then.run();
-            if (!ok) toast("Voice search needs the microphone. The keyboard still works.", false);
+            if (!ok) toast(tr(R.string.toast_mic_permission), false);
         }
     }
 
     // Slideshow: random order through the USB drive's photos, one decoded bitmap at a time.
 
     private static final int[] SLIDE_SECONDS = {15, 30, 60, 300, 900};
-    private static final String[] SLIDE_LABELS = {"Every 15 seconds", "Every 30 seconds", "Every minute",
-            "Every 5 minutes", "Every 15 minutes"};
-    private static final String[] SLIDE_SHORT = {"15 sec", "30 sec", "1 min", "5 min", "15 min"};
+    private static final int[] SLIDE_LABELS = {R.string.slide_every_15s, R.string.slide_every_30s, R.string.slide_every_1m,
+            R.string.slide_every_5m, R.string.slide_every_15m};
     private final List<Uri> slideQueue = new ArrayList<>();
     private boolean slideshowOn, slideLoading, slideWarned;
     private final Runnable slideTick = this::nextSlide;
+
+    /** "15 sec", "1 min": how often the slideshow changes, short. */
+    private String slideShort(int i) {
+        int s = SLIDE_SECONDS[i];
+        return s < 60 ? trn(R.plurals.duration_sec_short, s) : trn(R.plurals.duration_min_short, s / 60);
+    }
 
     private int slideIndex() {
         int s = prefs.getInt("slide_seconds", 60);
@@ -3632,18 +3676,19 @@ public class MainActivity extends Activity {
             return;
         }
         boolean on = "slideshow".equals(currentBg());
-        String crumb = crumb("Background");
+        String crumb = crumb(tr(R.string.menu_background));
         startMenu(crumb, tr(R.string.menu_background_slideshow));
         add(MenuView.Row.nav(R.drawable.ic_background, tr(R.string.set_background_slideshow_photos_from), slideFolderName()), this::openSlideFolderMenu);
-        add(MenuView.Row.nav(R.drawable.ic_sleep, tr(R.string.set_background_slideshow_change_every), SLIDE_SHORT[slideIndex()]), () -> openChoice(
-                crumb + "  ›  Slideshow", "Change every", SLIDE_LABELS, slideIndex(), i -> {
+        add(MenuView.Row.nav(R.drawable.ic_sleep, tr(R.string.set_background_slideshow_change_every), slideShort(slideIndex())), () -> openChoice(
+                crumbOf(crumb, tr(R.string.menu_background_slideshow)), tr(R.string.set_background_slideshow_change_every),
+                trAll(SLIDE_LABELS), slideIndex(), i -> {
                     prefs.edit().putInt("slide_seconds", SLIDE_SECONDS[i]).apply();
                     if ("slideshow".equals(currentBg())) restartSlideshow();
                     openSlideshowMenu();
                 }, null, this::openSlideshowMenu));
-        add(MenuView.Row.action(R.drawable.ic_check, on ? "Next photo now" : "Use as background"), () -> {
+        add(MenuView.Row.action(R.drawable.ic_check, tr(on ? R.string.slide_next_now : R.string.bg_use_as_background)), () -> {
             restartSlideshow();
-            toast(on ? "Next photo" : "Slideshow on, every " + SLIDE_SHORT[slideIndex()], true);
+            toast(on ? tr(R.string.toast_slide_next) : tr(R.string.toast_slide_on, slideShort(slideIndex())), true);
             openBackgroundMenu();
         });
         showSheet(on ? 0 : 2, this::openBackgroundMenu, null);
@@ -3665,14 +3710,16 @@ public class MainActivity extends Activity {
 
     private String slideFolderName() {
         String f = slideFolder();
-        if (f.isEmpty()) return "USB drives";
+        if (f.isEmpty()) return tr(R.string.slide_usb_drives);
         return folderLabel(f.substring(0, f.indexOf('|')), f.substring(f.indexOf('|') + 1));
     }
 
-    private static String folderLabel(String volume, String path) {
-        String where = Media.primary().equals(volume) ? "This TV" : "USB";
+    /** "USB › Photos › 2024": a drive, then the folders on it (their own names). */
+    private String folderLabel(String volume, String path) {
+        String where = tr(Media.primary().equals(volume) ? R.string.slide_this_tv : R.string.slide_usb);
         String p = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
-        return p.isEmpty() ? where : where + " › " + p.replace("/", " › ");
+        String sep = tr(R.string.folder_separator);
+        return p.isEmpty() ? where : where + sep + p.replace("/", sep);
     }
 
     /**
@@ -3680,9 +3727,9 @@ public class MainActivity extends Activity {
      * the photos in it and in every folder below it.
      */
     private void openSlideFolderMenu() {
-        String crumb = crumb("Background") + "  ›  Slideshow";
-        startMenu(crumb, "Photos from");
-        add(MenuView.Row.loading("Looking for folders…"), null);
+        String crumb = crumb(tr(R.string.menu_background), tr(R.string.menu_background_slideshow));
+        startMenu(crumb, tr(R.string.set_background_slideshow_photos_from));
+        add(MenuView.Row.loading(tr(R.string.slide_looking_folders)), null);
         showSheet(0, this::openSlideshowMenu, null);
         loader.execute(() -> {
             Map<String, Integer> counts = new java.util.TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -3708,19 +3755,18 @@ public class MainActivity extends Activity {
             }
             ui.post(() -> {
                 if (isDestroyed() || area != MENU || !crumb.equals(menuCrumb)) return;
-                startMenu(crumb, "Photos from");
+                startMenu(crumb, tr(R.string.set_background_slideshow_photos_from));
                 String cur = slideFolder();
-                add(MenuView.Row.choice("Every photo on USB drives", cur.isEmpty()), () -> pickSlideFolder(""));
+                add(MenuView.Row.choice(tr(R.string.slide_every_usb_photo), cur.isEmpty()), () -> pickSlideFolder(""));
                 int focus = 0;
                 for (Map.Entry<String, Integer> e : counts.entrySet()) {
                     String key = e.getKey();
                     if (key.equals(cur)) focus = pendingRows.size();
                     String vol = key.substring(0, key.indexOf('|')), rel = key.substring(key.indexOf('|') + 1);
-                    add(MenuView.Row.choice(folderLabel(vol, rel), key.equals(cur)).value(String.valueOf(e.getValue())),
+                    add(MenuView.Row.choice(folderLabel(vol, rel), key.equals(cur)).value(number(e.getValue())),
                             () -> pickSlideFolder(key));
                 }
-                if (counts.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info,
-                        "No photos found. Plug in a USB drive with photos on it."), null);
+                if (counts.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.photo_none)), null);
                 showSheet(focus, this::openSlideshowMenu, null);
             });
         });
@@ -3729,7 +3775,7 @@ public class MainActivity extends Activity {
     private void pickSlideFolder(String key) {
         prefs.edit().putString("slide_folder", key).apply();
         restartSlideshow();
-        toast("Slideshow: " + slideFolderName(), true);
+        toast(tr(R.string.toast_slide_folder, slideFolderName()), true);
         openSlideshowMenu();
     }
 
@@ -3746,9 +3792,9 @@ public class MainActivity extends Activity {
             requestPermissions(new String[] {videoPermission()}, REQ_VIDEOS);
             return;
         }
-        String crumb = crumb("Background");
-        startMenu(crumb, "Video");
-        add(MenuView.Row.loading("Looking for videos…"), null);
+        String crumb = crumb(tr(R.string.menu_background));
+        startMenu(crumb, tr(R.string.set_background_video));
+        add(MenuView.Row.loading(tr(R.string.video_looking)), null);
         String current = currentBg();
         Runnable restore = () -> {
             cancelPhotoPreview();
@@ -3767,24 +3813,25 @@ public class MainActivity extends Activity {
                     names.add(c.getString(1));
                     long s = c.getLong(2) / 1000;
                     // Some TVs don't index the length; better nothing than "0 s".
-                    lengths.add(s <= 0 ? "" : s >= 60 ? s / 60 + " min" : s + " s");
+                    lengths.add(s <= 0 ? "" : s >= 60 ? trn(R.plurals.video_length_min, (int) (s / 60))
+                            : trn(R.plurals.video_length_sec, (int) s));
                 }
             } catch (RuntimeException ignored) {
             }
             ui.post(() -> {
                 if (isDestroyed() || area != MENU || !crumb.equals(menuCrumb)) return;
-                startMenu(crumb, "Video");
+                startMenu(crumb, tr(R.string.set_background_video));
                 String cur = prefs.getString("bg_video", "");
                 int focus = 0;
                 for (int i = 0; i < uris.size(); i++) {
                     Uri uri = uris.get(i);
                     if (uri.toString().equals(cur)) focus = i;
-                    add(MenuView.Row.choice(names.get(i) == null ? "Video" : names.get(i),
+                    add(MenuView.Row.choice(names.get(i) == null ? tr(R.string.set_background_video) : names.get(i),
                             "video".equals(current) && uri.toString().equals(cur)).value(lengths.get(i)), () -> {
                         cancelPhotoPreview();
                         prefs.edit().putString("bg_video", uri.toString()).apply();
                         applyBackground("video", true);
-                        toast("Video background set. It plays muted and pauses while an app is open.", true);
+                        toast(tr(R.string.toast_video_set), true);
                         backTo(SEC_BACKGROUND).run();
                     }, () -> {
                         cancelPhotoPreview();
@@ -3796,8 +3843,7 @@ public class MainActivity extends Activity {
                         ui.postDelayed(pendingPreview, tk.spinnerDelay * 2);
                     });
                 }
-                if (uris.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info,
-                        "No videos found. Plug in a USB drive with a video on it (MP4 works best)."), null);
+                if (uris.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.video_none)), null);
                 showSheet(focus, this::openBackgroundMenu, restore);
             });
         });
@@ -3845,9 +3891,8 @@ public class MainActivity extends Activity {
                     }
                     delay = 2000;
                 } else {
-                    if (!slideWarned) toast(slideFolder().isEmpty()
-                            ? "No photos on the USB drive yet. The slideshow starts when you plug one in."
-                            : "Can't find " + slideFolderName() + ". The slideshow carries on when it's back.", false);
+                    if (!slideWarned) toast(slideFolder().isEmpty() ? tr(R.string.toast_slide_no_usb)
+                            : tr(R.string.toast_slide_folder_missing, slideFolderName()), false);
                     slideWarned = true;
                     delay = 30_000;
                 }
@@ -3936,7 +3981,7 @@ public class MainActivity extends Activity {
             if (copyIfAnimated(uri)) {
                 ui.post(() -> {
                     applyBackground("anim", true);
-                    toast("Animated background set", true);
+                    toast(tr(R.string.toast_anim_set), true);
                 });
                 return;
             }
@@ -3954,7 +3999,7 @@ public class MainActivity extends Activity {
             Bitmap bm = saved ? prepared(raw) : null;
             ui.post(() -> {
                 if (!saved) {
-                    toast("Couldn't open that photo. Try another one.", false);
+                    toast(tr(R.string.toast_photo_unusable), false);
                     return;
                 }
                 prefs.edit().putString(bgKey(), "photo").apply();
@@ -3962,7 +4007,7 @@ public class MainActivity extends Activity {
                 stopVideo();
                 stopAnim();
                 crossfadeTo(bm, tk.slow);
-                toast("Background set", true);
+                toast(tr(R.string.toast_bg_set), true);
             });
         });
         backTo(SEC_BACKGROUND).run();
@@ -4035,7 +4080,7 @@ public class MainActivity extends Activity {
             ui.post(() -> {
                 if (isDestroyed() || !"anim".equals(currentBg())) return;
                 if (!(result instanceof android.graphics.drawable.AnimatedImageDrawable)) {
-                    toast("Couldn't play the animated background", false);
+                    toast(tr(R.string.toast_anim_unplayable), false);
                     return;
                 }
                 stopAnim();
@@ -4301,7 +4346,7 @@ public class MainActivity extends Activity {
 
     private void openHomeMenu(int focus) {
         lastSection = SEC_HOME;
-        startMenu(CUSTOMIZE, tr(R.string.menu_home));
+        startMenu(tr(R.string.customize), tr(R.string.menu_home));
         add(MenuView.Row.nav(R.drawable.ic_rows, tr(R.string.set_home_categories), String.valueOf(categories.list.size())),
                 () -> openCategoriesMenu(0));
         add(MenuView.Row.nav(R.drawable.ic_dock, tr(R.string.set_home_dock), dockApps.size() + " apps"), () -> openDockMenu(0));
@@ -4312,7 +4357,7 @@ public class MainActivity extends Activity {
     }
 
     private void openLayoutMenu(int focus) {
-        startMenu(crumb("Home layout"), tr(R.string.menu_home_layout));
+        startMenu(crumb(tr(R.string.menu_home)), tr(R.string.menu_home_layout));
         add(MenuView.Row.nav(0, tr(R.string.set_home_layout_tiles_per_row), String.valueOf(columns)), () -> layoutChoice(0, "Tiles per row",
                 new String[] {"4 (largest tiles)", "5", "6", "7 (smallest tiles)"}, "columns", columns - 4, 4));
         add(MenuView.Row.nav(0, tr(R.string.set_home_layout_tile_spacing), SPACING[pref("gap", 1, 2)]), () -> layoutChoice(1, "Tile spacing",
@@ -4333,7 +4378,7 @@ public class MainActivity extends Activity {
 
     /** A layout choice that shows on screen as you pause on it; Back puts the old one back. */
     private void layoutChoice(int row, String title, String[] options, String key, int current, int offset) {
-        openChoice(crumb("Home layout") + "  ›  Layout", title, options, current, i -> {
+        openChoice(crumb(tr(R.string.menu_home), tr(R.string.menu_home_layout)), title, options, current, i -> {
             cancelPhotoPreview();
             prefs.edit().putInt(key, i + offset).apply();
             relayout();
@@ -4361,7 +4406,7 @@ public class MainActivity extends Activity {
             names.add(catName(c));
             ids.add(c.id);
         }
-        openChoice(crumb("Home layout"), "Home button goes to", names.toArray(new String[0]),
+        openChoice(crumb(tr(R.string.menu_home)), "Home button goes to", names.toArray(new String[0]),
                 ids.indexOf(categories.startOn), i -> {
                     categories.startOn = ids.get(i);
                     categories.save(prefs);
@@ -4370,16 +4415,15 @@ public class MainActivity extends Activity {
                 }, null, () -> openHomeMenu(2));
     }
 
-    private static final String CATEGORIES = CUSTOMIZE + "  ›  Home layout";
 
     private void openCategoriesMenu(int focus) {
-        startMenu(CATEGORIES, tr(R.string.menu_home_categories));
+        startMenu(categoriesCrumb(), tr(R.string.menu_home_categories));
         for (Categories.Cat c : categories.list) {
             int n = 0;
             for (Section s : sections) if (s.cat == c) n = s.apps.size();
             add(MenuView.Row.nav(0, catName(c), n == 1 ? "1 app" : n + " apps"), () -> openCategoryMenu(c, 0));
         }
-        add(MenuView.Row.action(R.drawable.ic_add, tr(R.string.set_home_categories_new_category)), () -> askText(CATEGORIES, "New category",
+        add(MenuView.Row.action(R.drawable.ic_add, tr(R.string.set_home_categories_new_category)), () -> askText(categoriesCrumb(), "New category",
                 "Name, e.g. Movies", "", InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
                     Categories.Cat c = categories.create(name);
                     categories.save(prefs);
@@ -4408,7 +4452,7 @@ public class MainActivity extends Activity {
             openCategoriesMenu(base + 2);
         });
         MenuView.Row reset = add(MenuView.Row.nav(R.drawable.ic_reset, tr(R.string.set_home_categories_reset_categories), ""), () -> {
-            startMenu(CATEGORIES + "  ›  Categories", "Reset categories?");
+            startMenu(crumbOf(categoriesCrumb(), tr(R.string.menu_home_categories)), "Reset categories?");
             add(MenuView.Row.note(R.drawable.ic_info, "Your categories are removed and every app goes back to one "
                     + "Apps row, A–Z. Apps aren't hidden or uninstalled."), null);
             add(MenuView.Row.action(R.drawable.ic_close, "Cancel"), () -> openCategoriesMenu(base + 3));
@@ -4431,7 +4475,7 @@ public class MainActivity extends Activity {
     }
 
     private void openCategoryMenu(Categories.Cat c, int focus) {
-        String crumb = CATEGORIES + "  ›  Categories";
+        String crumb = crumbOf(categoriesCrumb(), tr(R.string.menu_home_categories));
         startMenu(crumb, catName(c));
         Section shown = null;
         for (Section s : sections) if (s.cat == c) shown = s;
@@ -4507,7 +4551,7 @@ public class MainActivity extends Activity {
 
     /** Ticked apps are in the category; OK adds or takes one out (back to Apps). */
     private void openCategoryApps(Categories.Cat c, int focus) {
-        startMenu(CATEGORIES + "  ›  " + catName(c), "Apps in " + catName(c));
+        startMenu(crumbOf(categoriesCrumb(), catName(c)), "Apps in " + catName(c));
         Set<String> hidden = hiddenApps();
         for (int i = 0; i < allApps.size(); i++) {
             AppRepo.App a = allApps.get(i);
@@ -4533,7 +4577,7 @@ public class MainActivity extends Activity {
 
     private void openDockMenu(int focus) {
         lastSection = SEC_HOME;
-        startMenu(crumb("Home layout"), tr(R.string.menu_home_dock));
+        startMenu(crumb(tr(R.string.menu_home)), tr(R.string.menu_home_dock));
         add(MenuView.Row.note(R.drawable.ic_info, "The dock holds as many apps as a row (Layout › Tiles per row)."), null);
         MenuView.Row rearrange = add(MenuView.Row.action(0, tr(R.string.set_home_dock_rearrange)), () -> {
             area = DOCK;
@@ -4565,7 +4609,7 @@ public class MainActivity extends Activity {
 
     private void openAppsMenu(int focus) {
         lastSection = SEC_APPS;
-        startMenu(CUSTOMIZE, tr(R.string.menu_apps));
+        startMenu(tr(R.string.customize), tr(R.string.menu_apps));
         add(MenuView.Row.nav(0, tr(R.string.set_apps_show_or_hide_apps), hiddenCount() + " hidden"), () -> openHideMenu(0));
         MenuView.Row arrange = add(MenuView.Row.action(0, tr(R.string.set_apps_arrange_apps)), () -> {
             area = GRID;
@@ -4593,7 +4637,7 @@ public class MainActivity extends Activity {
 
     /** One pack for every app it has an icon for; apps it doesn't cover keep their own. */
     private void openIconPackMenu(List<IconPacks.Pack> packs) {
-        String crumb = crumb("Apps");
+        String crumb = crumb(tr(R.string.menu_apps));
         startMenu(crumb, "Icon pack");
         String cur = prefs.getString("icon_pack", "");
         add(MenuView.Row.choice("None (each app's own)", cur.isEmpty()), () -> setIconPack("", "None"));
@@ -4624,7 +4668,7 @@ public class MainActivity extends Activity {
 
     /** Ticked apps show on Home; OK toggles one. */
     private void openHideMenu(int focus) {
-        startMenu(crumb("Apps"), "Show on Home");
+        startMenu(crumb(tr(R.string.menu_apps)), "Show on Home");
         Set<String> hidden = hiddenApps();
         for (int i = 0; i < allApps.size(); i++) {
             AppRepo.App a = allApps.get(i);
@@ -4657,7 +4701,7 @@ public class MainActivity extends Activity {
 
     private void openWeatherMenu(int focus) {
         lastSection = SEC_HOME;
-        startMenu(crumb("Home layout"), tr(R.string.menu_home_weather));
+        startMenu(crumb(tr(R.string.menu_home)), tr(R.string.menu_home_weather));
         boolean on = prefs.getBoolean("weather_on", true);
         add(MenuView.Row.action(0, tr(R.string.set_home_weather_show_weather)).value(on ? "On" : "Off"), () -> {
             prefs.edit().putBoolean("weather_on", !on).apply();
@@ -4689,8 +4733,8 @@ public class MainActivity extends Activity {
 
     private void openLockMenu(int focus) {
         lastSection = SEC_LOCK;
-        String crumb = crumb("Lock & remote");
-        startMenu(CUSTOMIZE, tr(R.string.menu_lock));
+        String crumb = crumb(tr(R.string.menu_lock));
+        startMenu(tr(R.string.customize), tr(R.string.menu_lock));
         boolean pin = Lock.hasPin(this);
         add(MenuView.Row.nav(R.drawable.ic_lock, tr(R.string.set_lock_pin_lock), pin ? "On" : "Off"), this::openPinMenu);
         MenuView.Row what = add(MenuView.Row.nav(0, tr(R.string.set_lock_what_it_locks), lockWhatSummary()), () -> openLockWhat(0));
@@ -4727,7 +4771,7 @@ public class MainActivity extends Activity {
     }
 
     private void openPinMenu() {
-        String crumb = crumb("Lock & remote");
+        String crumb = crumb(tr(R.string.menu_lock));
         startMenu(crumb, "PIN lock");
         boolean pin = Lock.hasPin(this);
         add(MenuView.Row.action(R.drawable.ic_lock, pin ? "Change PIN" : "Set a PIN"), () -> setNewPin(null));
@@ -4749,7 +4793,7 @@ public class MainActivity extends Activity {
     private void setNewPin(String first) {
         Dialog dialog = new Dialog(this, android.R.style.Theme_DeviceDefault_Dialog_NoActionBar);
         PinPad[] pad = new PinPad[1];
-        pad[0] = new PinPad(this, theme, crumb("Lock & remote"), first == null ? "New PIN" : "Same PIN again",
+        pad[0] = new PinPad(this, theme, crumb(tr(R.string.menu_lock)), first == null ? "New PIN" : "Same PIN again",
                 first == null ? "Pick four digits you'll remember" : "To make sure", new PinPad.Listener() {
             @Override
             public void done(String pin) {
@@ -4792,7 +4836,7 @@ public class MainActivity extends Activity {
     }
 
     private void openLockWhat(int focus) {
-        String crumb = crumb("Lock & remote");
+        String crumb = crumb(tr(R.string.menu_lock));
         startMenu(crumb, "What it locks");
         boolean settings = prefs.getBoolean("lock_settings", true);
         add(MenuView.Row.choice("Customize and Settings", settings), () -> {
@@ -4830,7 +4874,7 @@ public class MainActivity extends Activity {
 
     private void openLockWhen() {
         int cur = Math.max(0, Arrays.asList(SCHEDULES).indexOf(prefs.getString("lock_sched", "")));
-        openChoice(crumb("Lock & remote"), "When the lock applies", new String[] {"Always",
+        openChoice(crumb(tr(R.string.menu_lock)), "When the lock applies", new String[] {"Always",
                 "Bedtime: 21:00 to 7:00", "Bedtime: 20:00 to 8:00"}, Math.min(cur, 2), i -> {
                     prefs.edit().putString("lock_sched", SCHEDULES[i]).apply();
                     PanelService.locksChanged();
@@ -4855,7 +4899,7 @@ public class MainActivity extends Activity {
     }
 
     private void openShortcutsMenu(int focus) {
-        String crumb = crumb("Lock & remote");
+        String crumb = crumb(tr(R.string.menu_lock));
         startMenu(crumb, tr(R.string.menu_lock_shortcuts));
         add(MenuView.Row.nav(0, tr(R.string.set_lock_shortcuts_hold), holdName("hold_menu")), () -> openHoldChoice("hold_menu", "Hold ≡", 0));
         add(MenuView.Row.nav(0, tr(R.string.set_lock_shortcuts_hold_the_settings_button), holdName("hold_gear")),
@@ -4874,7 +4918,7 @@ public class MainActivity extends Activity {
 
     private void openHoldChoice(String key, String title, int row) {
         int cur = Math.max(0, Arrays.asList(HOLD_ACTIONS).indexOf(prefs.getString(key, "")));
-        openChoice(crumb("Lock & remote") + "  ›  Remote shortcuts", title, HOLD_NAMES, cur, i -> {
+        openChoice(crumb(tr(R.string.menu_lock), tr(R.string.menu_lock_shortcuts)), title, HOLD_NAMES, cur, i -> {
             prefs.edit().putString(key, HOLD_ACTIONS[i]).apply();
             toast(title + ": " + HOLD_NAMES[i].toLowerCase(Locale.getDefault()), true);
             openShortcutsMenu(row);
@@ -4958,7 +5002,7 @@ public class MainActivity extends Activity {
 
     /** City by name with the on-screen keyboard (this projector has no location of its own). */
     private void askCity() {
-        askText(crumb("Weather"), "Your city", "City name, e.g. Lisbon", prefs.getString("weather_city", ""),
+        askText(crumb(tr(R.string.menu_home_weather)), "Your city", "City name, e.g. Lisbon", prefs.getString("weather_city", ""),
                 InputType.TYPE_TEXT_FLAG_CAP_WORDS, IME_SEARCH, this::searchCity, () -> openWeatherMenu(1));
     }
 
@@ -5042,7 +5086,7 @@ public class MainActivity extends Activity {
             openWeatherMenu(1);
             return;
         }
-        String crumb = crumb("Weather");
+        String crumb = crumb(tr(R.string.menu_home_weather));
         startMenu(crumb, "Choose your city");
         add(MenuView.Row.loading("Looking up “" + q + "”…"), null);
         showSheet(0, () -> openWeatherMenu(1), null);
@@ -5156,9 +5200,13 @@ public class MainActivity extends Activity {
         return Math.max(0, Arrays.asList(APPEARANCE_KEYS).indexOf(Theme.mode(prefs)));
     }
 
+    private String appearanceName() {
+        return APPEARANCE[appearanceIndex()];
+    }
+
     private void openLookMenu(int focus) {
         lastSection = SEC_LOOK;
-        startMenu(CUSTOMIZE, tr(R.string.menu_look));
+        startMenu(tr(R.string.customize), tr(R.string.menu_look));
         add(MenuView.Row.nav(0, tr(R.string.set_look_appearance), APPEARANCE[appearanceIndex()]), () -> openAppearanceMenu(0));
         add(MenuView.Row.nav(0, tr(R.string.set_look_font_and_text_size), Tokens.FONT_NAMES[fontIndex()]), () -> openFontMenu(0));
         add(MenuView.Row.nav(0, tr(R.string.set_look_clock), clockSummary()), () -> openClockMenu(0));
@@ -5170,10 +5218,10 @@ public class MainActivity extends Activity {
     }
 
     private void openAppearanceMenu(int focus) {
-        String crumb = crumb("Look & sound");
+        String crumb = crumb(tr(R.string.menu_look));
         startMenu(crumb, tr(R.string.menu_look_appearance));
         int mode = appearanceIndex();
-        add(MenuView.Row.nav(0, tr(R.string.set_look_appearance_mode), APPEARANCE[mode]), () -> openChoice(crumb + "  ›  Appearance", "Mode",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_appearance_mode), APPEARANCE[mode]), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_appearance)), "Mode",
                 new String[] {"Dark", "Light", "Automatic (light from sunrise to sunset)"}, mode, i -> {
                     // Colours are applied as views are built, so rebuild Home in the new look.
                     prefs.edit().putString("appearance", APPEARANCE_KEYS[i]).putInt("area", TOP)
@@ -5181,7 +5229,7 @@ public class MainActivity extends Activity {
                     recreate();
                 }, null, () -> openAppearanceMenu(0)));
         boolean auto = accentAuto();
-        add(MenuView.Row.nav(0, tr(R.string.set_look_appearance_accent_colour), auto ? "From background" : "Azure"), () -> openChoice(crumb + "  ›  Appearance",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_appearance_accent_colour), auto ? "From background" : "Azure"), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_appearance)),
                 "Accent colour", new String[] {"Azure (default)", "From background"}, auto ? 1 : 0, i -> {
                     prefs.edit().putBoolean("accent_auto", i == 1).apply();
                     if (i == 1) {
@@ -5212,7 +5260,7 @@ public class MainActivity extends Activity {
     }
 
     private void openSoundsMenu(int focus) {
-        String crumb = crumb("Look & sound");
+        String crumb = crumb(tr(R.string.menu_look));
         startMenu(crumb, tr(R.string.menu_look_sounds));
         int volume = Sounds.volume(prefs);
         addAdjust(MenuView.Row.slider(0, tr(R.string.set_look_sounds_volume), volume / (float) Sounds.VOLUME_MAX, soundVolumeText(volume))
@@ -5271,10 +5319,10 @@ public class MainActivity extends Activity {
 
     /** Which of Android's channels the sounds use, and why you might not hear them. */
     private void openSoundsOutputMenu(int focus) {
-        String crumb = crumb("Look & sound") + "  ›  Sounds";
+        String crumb = crumb(tr(R.string.menu_look), tr(R.string.menu_look_sounds));
         startMenu(crumb, tr(R.string.menu_look_sounds_output));
         int output = pref("sound_output", 0, 2);
-        add(MenuView.Row.nav(0, tr(R.string.set_look_sounds_output_sound_output), SOUND_OUTPUTS[output]), () -> openChoice(crumb + "  ›  Output",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_sounds_output_sound_output), SOUND_OUTPUTS[output]), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_sounds_output)),
                 "Sound output", SOUND_OUTPUTS, output, i -> {
                     prefs.edit().putInt("sound_output", i).apply();
                     sounds.refresh();
@@ -5301,7 +5349,7 @@ public class MainActivity extends Activity {
     }
 
     private void openSoundsQuietMenu(int focus) {
-        startMenu(crumb("Look & sound") + "  ›  Sounds", tr(R.string.menu_look_sounds_quiet));
+        startMenu(crumb(tr(R.string.menu_look), tr(R.string.menu_look_sounds)), tr(R.string.menu_look_sounds_quiet));
         addToggle(tr(R.string.set_look_sounds_quiet_silent_at_bedtime), "sound_mute_bed", false, () -> openSoundsQuietMenu(0));
         if (prefs.getString("lock_sched", "").isEmpty()) {
             pendingRows.get(pendingRows.size() - 1).disabled("Choose a time in Lock & remote › When first.");
@@ -5313,10 +5361,10 @@ public class MainActivity extends Activity {
     private static final String[] TEXT_SIZES = {"Smaller", "Normal", "Larger"};
 
     private void openFontMenu(int focus) {
-        String crumb = crumb("Look & sound");
+        String crumb = crumb(tr(R.string.menu_look));
         startMenu(crumb, tr(R.string.menu_look_font));
         int font = fontIndex();
-        add(MenuView.Row.nav(0, tr(R.string.set_look_font_font), Tokens.FONT_NAMES[font]), () -> openChoice(crumb + "  ›  Font and text size",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_font_font), Tokens.FONT_NAMES[font]), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_font)),
                 "Font", Tokens.FONT_NAMES, font, i -> {
                     prefs.edit().putString("font", Tokens.FONTS[i]).putInt("area", TOP).putInt("top", PILL_CUSTOMIZE).apply();
                     // Every screen (and the ≡ panel) picks up the new font.
@@ -5325,7 +5373,7 @@ public class MainActivity extends Activity {
                 }, i -> previewFont(Tokens.FONTS[i]), () -> openFontMenu(0)));
         int scale = Math.max(0, Arrays.stream(Tokens.TEXT_SCALES).boxed().collect(java.util.stream.Collectors.toList())
                 .indexOf(prefs.getInt("text_scale", 100)));
-        add(MenuView.Row.nav(0, tr(R.string.set_look_font_text_size), TEXT_SIZES[scale]), () -> openChoice(crumb + "  ›  Font and text size",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_font_text_size), TEXT_SIZES[scale]), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_font)),
                 "Text size", TEXT_SIZES, scale, i -> {
                     prefs.edit().putInt("text_scale", Tokens.TEXT_SCALES[i]).putInt("area", TOP)
                             .putInt("top", PILL_CUSTOMIZE).apply();
@@ -5343,7 +5391,7 @@ public class MainActivity extends Activity {
     // Themes: the whole look, saved, shared as a picture, or one of three built in.
 
     private void openThemesMenu(int focus) {
-        String crumb = crumb("Look & sound");
+        String crumb = crumb(tr(R.string.menu_look));
         startMenu(crumb, tr(R.string.menu_look_themes));
         for (int i = 0; i < Themes.PRESETS.length; i++) {
             int n = i;
@@ -5358,7 +5406,7 @@ public class MainActivity extends Activity {
             String name = Themes.name(f);
             add(MenuView.Row.nav(0, name, "Yours"), () -> openSavedTheme(f, name));
         }
-        add(MenuView.Row.action(R.drawable.ic_add, tr(R.string.set_look_themes_save_this_look)), () -> askText(crumb + "  ›  Themes",
+        add(MenuView.Row.action(R.drawable.ic_add, tr(R.string.set_look_themes_save_this_look)), () -> askText(crumbOf(crumb, tr(R.string.menu_look_themes)),
                 "Save this look", "Name, e.g. Movie night", "", InputType.TYPE_TEXT_FLAG_CAP_SENTENCES, name -> {
                     try {
                         Themes.save(this, name);
@@ -5408,7 +5456,7 @@ public class MainActivity extends Activity {
     }
 
     private void openSavedTheme(File f, String name) {
-        String crumb = crumb("Look & sound") + "  ›  Themes";
+        String crumb = crumb(tr(R.string.menu_look), tr(R.string.menu_look_themes));
         startMenu(crumb, name);
         add(MenuView.Row.action(R.drawable.ic_check, "Apply"), () -> {
             try {
@@ -5445,7 +5493,7 @@ public class MainActivity extends Activity {
             requestPermissions(new String[] {imagePermission()}, REQ_PHOTOS);
             return;
         }
-        String crumb = crumb("Look & sound") + "  ›  Themes";
+        String crumb = crumb(tr(R.string.menu_look), tr(R.string.menu_look_themes));
         startMenu(crumb, "Import a theme");
         add(MenuView.Row.loading("Looking for theme pictures…"), null);
         showSheet(0, () -> openThemesMenu(0), null);
@@ -5534,17 +5582,17 @@ public class MainActivity extends Activity {
     }
 
     private void openClockMenu(int focus) {
-        String crumb = crumb("Look & sound");
+        String crumb = crumb(tr(R.string.menu_look));
         startMenu(crumb, tr(R.string.menu_look_clock));
         int fmt = Math.max(0, Arrays.asList(CLOCK_FORMATS).indexOf(prefs.getString("clock_fmt", "auto")));
-        add(MenuView.Row.nav(0, tr(R.string.set_look_clock_format), CLOCK_FORMAT_NAMES[fmt]), () -> openChoice(crumb + "  ›  Clock", "Format",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_clock_format), CLOCK_FORMAT_NAMES[fmt]), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_clock)), "Format",
                 CLOCK_FORMAT_NAMES, fmt, i -> {
                     prefs.edit().putString("clock_fmt", CLOCK_FORMATS[i]).apply();
                     updateClock();
                     openClockMenu(0);
                 }, null, () -> openClockMenu(0)));
         int size = pref("clock_size", 1, 2);
-        add(MenuView.Row.nav(0, tr(R.string.set_look_clock_size), CLOCK_SIZE_NAMES[size]), () -> openChoice(crumb + "  ›  Clock", "Size",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_clock_size), CLOCK_SIZE_NAMES[size]), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_clock)), "Size",
                 CLOCK_SIZE_NAMES, size, i -> {
                     prefs.edit().putInt("clock_size", i).apply();
                     applyClockLook();
@@ -5554,7 +5602,7 @@ public class MainActivity extends Activity {
                     applyClockLook();
                 }, () -> openClockMenu(1)));
         boolean centre = "centre".equals(prefs.getString("clock_pos", "left"));
-        add(MenuView.Row.nav(0, tr(R.string.set_look_clock_position), centre ? "Centre" : "Top left"), () -> openChoice(crumb + "  ›  Clock",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_clock_position), centre ? "Centre" : "Top left"), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_clock)),
                 "Position", new String[] {"Top left", "Centre"}, centre ? 1 : 0, i -> {
                     prefs.edit().putString("clock_pos", i == 1 ? "centre" : "left").apply();
                     applyClockLook();
@@ -5649,13 +5697,13 @@ public class MainActivity extends Activity {
     }
 
     private void openBarMenu(int focus) {
-        String crumb = crumb("Look & sound");
+        String crumb = crumb(tr(R.string.menu_look));
         startMenu(crumb, tr(R.string.menu_look_bar));
         addToggle(tr(R.string.set_look_bar_search_button), "bar_search", true, () -> openBarMenu(0));
         addToggle(tr(R.string.set_look_bar_inputs_button), "bar_inputs", true, () -> openBarMenu(1));
         if (!hasInputs) pendingRows.get(pendingRows.size() - 1).disabled("This TV has no HDMI inputs.");
         int wifi = pref("bar_wifi", 0, 2);
-        add(MenuView.Row.nav(0, tr(R.string.set_look_bar_wi_fi), WIFI_SHOW[wifi]), () -> openChoice(crumb + "  ›  Top bar", "Wi-Fi",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_bar_wi_fi), WIFI_SHOW[wifi]), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_bar)), "Wi-Fi",
                 new String[] {"Name and signal", "Signal only", "Hidden"}, wifi, i -> {
                     prefs.edit().putInt("bar_wifi", i).apply();
                     applyBarLook();
@@ -5666,7 +5714,7 @@ public class MainActivity extends Activity {
                 this::openNotifSetting);
         addToggle(tr(R.string.set_look_bar_settings_button), "bar_settings", true, () -> openBarMenu(4));
         boolean compact = pref("bar_size", 0, 1) == 1;
-        add(MenuView.Row.nav(0, tr(R.string.set_look_bar_size), compact ? "Compact" : "Normal"), () -> openChoice(crumb + "  ›  Top bar", "Size",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_bar_size), compact ? "Compact" : "Normal"), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_bar)), "Size",
                 new String[] {"Normal", "Compact"}, compact ? 1 : 0, i -> {
                     prefs.edit().putInt("bar_size", i).apply();
                     applyBarLook();
@@ -5691,7 +5739,7 @@ public class MainActivity extends Activity {
      */
     private void openNotifSetting() {
         boolean on = prefs.getBoolean("bar_notif", false);
-        String crumb = crumb("Look & sound") + "  ›  Top bar";
+        String crumb = crumb(tr(R.string.menu_look), tr(R.string.menu_look_bar));
         startMenu(crumb, tr(R.string.menu_look_bar_notif));
         add(MenuView.Row.note(R.drawable.ic_info, "Shows a bell in the top bar when an app has a notification. "
                 + "OK on it lists them. Needs notification access, which you turn on in Android's settings."), null);
@@ -5816,13 +5864,13 @@ public class MainActivity extends Activity {
     }
 
     private void openTilesMenu(int focus) {
-        String crumb = crumb("Look & sound");
+        String crumb = crumb(tr(R.string.menu_look));
         startMenu(crumb, tr(R.string.menu_look_tiles));
         int style = tileStyleIndex();
         add(MenuView.Row.nav(0, tr(R.string.set_look_tiles_style), TILE_STYLES[style]), () -> {
             int[][] before = {{pref("tile_corners", 1, 2), pref("focus_color", 0, 2), pref("icon_bg", 0, 2)}};
             // "Custom" (your own Advanced settings) has no tick here; Back puts them back.
-            openChoice(crumb + "  ›  Tiles", "Style", Arrays.copyOf(TILE_STYLES, 3), style == 3 ? -1 : style,
+            openChoice(crumbOf(crumb, tr(R.string.menu_look_tiles)), "Style", Arrays.copyOf(TILE_STYLES, 3), style == 3 ? -1 : style,
                     i -> {
                         setTilePreset(TILE_PRESETS[i]);
                         reloadApps();
@@ -5836,7 +5884,7 @@ public class MainActivity extends Activity {
                     });
         });
         boolean icons = "icon".equals(prefs.getString("tile_style", "banner"));
-        add(MenuView.Row.nav(0, tr(R.string.set_look_tiles_show_apps_as), icons ? "Icons" : "Banners"), () -> openChoice(crumb + "  ›  Tiles",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_tiles_show_apps_as), icons ? "Icons" : "Banners"), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_tiles)),
                 "Show apps as", new String[] {"Banners (16:9 artwork)", "Icons"}, icons ? 1 : 0, i -> {
                     prefs.edit().putString("tile_style", i == 1 ? "icon" : "banner").apply();
                     refreshAppLooks();
@@ -5845,7 +5893,7 @@ public class MainActivity extends Activity {
                     prefs.edit().putString("tile_style", i == 1 ? "icon" : "banner").apply();
                     refreshAppLooks();
                 }, () -> openTilesMenu(1)));
-        add(MenuView.Row.nav(0, tr(R.string.set_look_tiles_app_names), LABELS[labelMode]), () -> openChoice(crumb + "  ›  Tiles",
+        add(MenuView.Row.nav(0, tr(R.string.set_look_tiles_app_names), LABELS[labelMode]), () -> openChoice(crumbOf(crumb, tr(R.string.menu_look_tiles)),
                 "App names under tiles", LABELS, labelMode, i -> {
                     labelMode = i;
                     prefs.edit().putInt("labels", i).apply();
@@ -5873,7 +5921,7 @@ public class MainActivity extends Activity {
     }
 
     private void openTilesAdvanced(int focus) {
-        String crumb = crumb("Look & sound") + "  ›  Tiles";
+        String crumb = crumb(tr(R.string.menu_look), tr(R.string.menu_look_tiles));
         startMenu(crumb, tr(R.string.menu_look_tiles_advanced));
         tileOption(0, tr(R.string.set_look_tiles_advanced_corners), CORNERS, "tile_corners", 1, true);
         tileOption(1, tr(R.string.set_look_tiles_advanced_focus_colour), FOCUS_COLOURS, "focus_color", 0, false);
@@ -5890,7 +5938,7 @@ public class MainActivity extends Activity {
     /** One tile setting that previews on the tiles as you move; {@code banners} redraws banner corners. */
     private void tileOption(int row, String title, String[] options, String key, int def, boolean banners) {
         int cur = pref(key, def, options.length - 1);
-        add(MenuView.Row.nav(0, title, options[cur]), () -> openChoice(crumb("Look & sound") + "  ›  Tiles  ›  Advanced",
+        add(MenuView.Row.nav(0, title, options[cur]), () -> openChoice(crumb(tr(R.string.menu_look), tr(R.string.menu_look_tiles), tr(R.string.menu_look_tiles_advanced)),
                 title, options, cur, i -> {
                     prefs.edit().putInt(key, i).apply();
                     relayout();
@@ -5921,7 +5969,7 @@ public class MainActivity extends Activity {
 
     private void openProjectorMenu(int focus) {
         lastSection = SEC_PROJECTOR;
-        startMenu(CUSTOMIZE, tr(R.string.menu_projector));
+        startMenu(tr(R.string.customize), tr(R.string.menu_projector));
         // JMGO's own screens, only those this TV has (other TVs show just the tools below).
         for (int i = 0; i < PROJECTOR.length; i++) {
             String[] p = PROJECTOR[i];
@@ -5940,7 +5988,7 @@ public class MainActivity extends Activity {
     }
 
     private void openPatternsMenu() {
-        startMenu(crumb("Projector & tools"), "Test patterns");
+        startMenu(crumb(tr(R.string.menu_projector)), "Test patterns");
         for (int i = 0; i < PatternsActivity.NAMES.length; i++) {
             int n = i;
             add(MenuView.Row.action(0, PatternsActivity.NAMES[i]), () -> startSafely(
@@ -5967,7 +6015,7 @@ public class MainActivity extends Activity {
     }
 
     private void openStartupMenu(int focus) {
-        String crumb = crumb("Projector & tools");
+        String crumb = crumb(tr(R.string.menu_projector));
         startMenu(crumb, tr(R.string.menu_projector_startup));
         add(MenuView.Row.nav(0, tr(R.string.set_projector_startup_when_it_starts), targetName(prefs.getString("boot_app", ""))),
                 () -> openTargetChoice("When the projector starts", "boot_app", false, 0));
@@ -5995,7 +6043,7 @@ public class MainActivity extends Activity {
             ids.add(a.pkg);
         }
         String cur = prefs.getString(key, wake ? "stay" : "");
-        openChoice(crumb("Projector & tools") + "  ›  Start-up and wake", title, names.toArray(new String[0]),
+        openChoice(crumb(tr(R.string.menu_projector), tr(R.string.menu_projector_startup)), title, names.toArray(new String[0]),
                 Math.max(0, ids.indexOf(cur)), i -> {
                     prefs.edit().putString(key, ids.get(i)).apply();
                     toast(title + ": " + names.get(i), true);
@@ -6036,10 +6084,10 @@ public class MainActivity extends Activity {
     }
 
     private void openIdleMenu() {
-        String crumb = crumb("Projector & tools");
+        String crumb = crumb(tr(R.string.menu_projector));
         startMenu(crumb, tr(R.string.menu_projector_idle));
         int mode = pref("idle_mode", 0, 2);
-        add(MenuView.Row.nav(0, tr(R.string.set_projector_idle_do_this), IDLE_MODES[mode]), () -> openChoice(crumb + "  ›  Idle", "When Home is idle",
+        add(MenuView.Row.nav(0, tr(R.string.set_projector_idle_do_this), IDLE_MODES[mode]), () -> openChoice(crumbOf(crumb, tr(R.string.crumb_idle)), "When Home is idle",
                 IDLE_MODES, mode, i -> {
                     prefs.edit().putInt("idle_mode", i).apply();
                     resetIdle();
@@ -6049,7 +6097,7 @@ public class MainActivity extends Activity {
         String[] mins = new String[IDLE_MINUTES.length];
         for (int i = 0; i < mins.length; i++) mins[i] = "After " + IDLE_MINUTES[i] + " minutes";
         int cur = Math.max(0, Arrays.stream(IDLE_MINUTES).boxed().collect(java.util.stream.Collectors.toList()).indexOf(min));
-        MenuView.Row after = add(MenuView.Row.nav(0, tr(R.string.set_projector_idle_after), min + " minutes"), () -> openChoice(crumb + "  ›  Idle",
+        MenuView.Row after = add(MenuView.Row.nav(0, tr(R.string.set_projector_idle_after), min + " minutes"), () -> openChoice(crumbOf(crumb, tr(R.string.crumb_idle)),
                 "After", mins, cur, i -> {
                     prefs.edit().putInt("idle_min", IDLE_MINUTES[i]).apply();
                     resetIdle();
@@ -6134,7 +6182,7 @@ public class MainActivity extends Activity {
 
     private void openSleepMenu() {
         int left = SleepTimer.minutesLeft(this);
-        startMenu(crumb("Projector & tools"), "Sleep timer");
+        startMenu(crumb(tr(R.string.menu_projector)), "Sleep timer");
         if (left > 0) add(MenuView.Row.note(R.drawable.ic_sleep, "Going to sleep in " + left + " min"), null);
         String[] options = {"Off", "15 minutes", "30 minutes", "1 hour", "1½ hours", "2 hours"};
         for (int i = 0; i < options.length; i++) {
@@ -6189,7 +6237,7 @@ public class MainActivity extends Activity {
 
     private void openBackupMenu(int focus) {
         lastSection = SEC_RESET;
-        startMenu(CUSTOMIZE, tr(R.string.menu_system));
+        startMenu(tr(R.string.customize), tr(R.string.menu_system));
         add(MenuView.Row.nav(R.drawable.ic_search, tr(R.string.set_system_search_and_privacy), searchSummary()), () -> openSearchSettings(0));
         add(MenuView.Row.nav(R.drawable.ic_open, tr(R.string.set_system_save_a_backup), ""), this::openBackupSave);
         add(MenuView.Row.nav(R.drawable.ic_reset, tr(R.string.set_system_restore_a_backup), ""), this::openRestoreList);
@@ -6213,7 +6261,7 @@ public class MainActivity extends Activity {
 
     /** Customization › System › Search & privacy. */
     private void openSearchSettings(int focus) {
-        String crumb = crumb("System");
+        String crumb = crumb(tr(R.string.menu_system));
         startMenu(crumb, tr(R.string.menu_system_search));
         int state = SearchPrefs.online(prefs, Titles.hasKey());
         MenuView.Row online = add(MenuView.Row.action(0, tr(R.string.set_system_search_online_title_search))
@@ -6270,7 +6318,7 @@ public class MainActivity extends Activity {
         String cur = prefs.getString("search_region", "");
         // A region picked before that isn't listed any more counts as Automatic.
         int current = cur.isEmpty() ? 0 : Math.max(0, Arrays.asList(REGIONS).indexOf(cur) + 1);
-        openChoice(crumb("System") + "  ›  Search & privacy", "Region", names, current, i -> {
+        openChoice(crumb(tr(R.string.menu_system), tr(R.string.menu_system_search)), "Region", names, current, i -> {
             prefs.edit().putString("search_region", i == 0 ? "" : REGIONS[i - 1]).apply();
             openSearchSettings(1);
         }, null, () -> openSearchSettings(1));
@@ -6278,7 +6326,7 @@ public class MainActivity extends Activity {
 
     /** Customization › System › About: version, credits, and the attribution TMDB and JustWatch ask for. */
     private void openAboutMenu(int focus) {
-        startMenu(crumb("System"), tr(R.string.menu_system_about));
+        startMenu(crumb(tr(R.string.menu_system)), tr(R.string.menu_system_about));
         add(MenuView.Row.note(R.drawable.ic_info, "Leios " + BuildConfig.VERSION_NAME + ", free and open source. "
                 + "github.com/leioslauncher/leios-launcher"), null);
         // TMDB's logo with its required notice (smaller than Leios's own name above), then the other
@@ -6301,7 +6349,7 @@ public class MainActivity extends Activity {
     }
 
     private void openBackupSave() {
-        String crumb = crumb("System");
+        String crumb = crumb(tr(R.string.menu_system));
         startMenu(crumb, "Save a backup");
         add(MenuView.Row.note(R.drawable.ic_info, "Everything you've set on Home, with your photo and icons, as a "
                 + "picture in Pictures › Leios. Restore it here, or on another projector."), null);
@@ -6328,7 +6376,7 @@ public class MainActivity extends Activity {
     }
 
     private void openRestoreList() {
-        String crumb = crumb("System");
+        String crumb = crumb(tr(R.string.menu_system));
         startMenu(crumb, "Restore a backup");
         add(MenuView.Row.loading("Looking for backups…"), null);
         showSheet(0, () -> openBackupMenu(2), null);
@@ -6349,7 +6397,7 @@ public class MainActivity extends Activity {
     }
 
     private void confirmRestore(Backups.Entry e) {
-        String crumb = crumb("System") + "  ›  Restore";
+        String crumb = crumb(tr(R.string.menu_system), tr(R.string.crumb_restore));
         startMenu(crumb, "Restore " + e.label + "?");
         add(MenuView.Row.note(R.drawable.ic_info, "Home goes back to how it was on " + Backups.when(e.time)
                 + ". What you have now is backed up first, so you can come back to it."), null);
@@ -6390,7 +6438,7 @@ public class MainActivity extends Activity {
     @android.annotation.SuppressLint("ApplySharedPref")
     private void openResetMenu() {
         lastSection = SEC_RESET;
-        startMenu(crumb("System"), "Reset everything?");
+        startMenu(crumb(tr(R.string.menu_system)), "Reset everything?");
         add(MenuView.Row.note(R.drawable.ic_info, "Background, dock, categories, hidden apps, weather and look go "
                 + "back to how they started. Your apps and the projector's settings aren't touched. A backup is "
                 + "made first."), null);

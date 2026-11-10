@@ -19,7 +19,7 @@ final class Wallpaper {
     private Wallpaper() {
     }
 
-    static final String[] BLUR_NAMES = {"Off", "Light", "Medium", "Strong"};
+    static final int[] BLUR_NAMES = {R.string.blur_off, R.string.blur_light, R.string.blur_medium, R.string.blur_strong};
 
     /** Each from -50 to 50 (percent), blur 0 to 3. All zero leaves the picture exactly as it is. */
     static final class Adjust {

@@ -20,7 +20,8 @@ import android.graphics.SweepGradient;
 final class Backdrops {
 
     static final int BLOOM = 0, ORBIT = 1, PRISM = 2, DUNES = 3;
-    static final String[] NAMES = {"Bloom", "Orbit", "Prism", "Dunes"};
+    /** Each shape's name (string resources), in the order of their numbers. */
+    static final int[] NAMES = {R.string.shape_bloom, R.string.shape_orbit, R.string.shape_prism, R.string.shape_dunes};
 
     private Backdrops() {
     }

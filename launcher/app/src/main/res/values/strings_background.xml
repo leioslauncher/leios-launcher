@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Customize › Background: colours, shapes, photos, slideshow, video, photo of the day and Adjust.
+     Setting names are in strings_settings.xml. -->
+<resources>
+    <!-- Plain colour backgrounds: names of colours and moods. The first six show in dark mode,
+         the last three in light mode. -->
+    <string name="bg_black">Black</string>
+    <string name="bg_midnight">Midnight</string>
+    <string name="bg_graphite">Graphite</string>
+    <string name="bg_aurora">Aurora</string>
+    <string name="bg_ember">Ember</string>
+    <string name="bg_dusk">Dusk</string>
+    <string name="bg_pearl">Pearl</string>
+    <string name="bg_mist">Mist</string>
+    <string name="bg_sand">Sand</string>
+    <!-- Shape backgrounds, named after what they look like. -->
+    <string name="shape_bloom">Bloom</string>
+    <string name="shape_orbit">Orbit</string>
+    <string name="shape_prism">Prism</string>
+    <string name="shape_dunes">Dunes</string>
+    <!-- A background picture that moves (GIF or animated WebP). -->
+    <string name="bg_animated_photo">Animated photo</string>
+    <!-- A background built into this copy of Leios by whoever built it. -->
+    <string name="bg_custom">Custom</string>
+    <!-- Next to the kind of background that's showing now. -->
+    <string name="bg_in_use">In use</string>
+    <string name="bg_uses_internet">Uses the internet</string>
+    <string name="bg_use_as_background">Use as background</string>
+    <!-- %1$s: the background's name. -->
+    <string name="toast_bg_set_to">Background set to %1$s</string>
+    <string name="toast_bg_set">Background set</string>
+
+    <!-- Photo: from this TV or a USB drive. -->
+    <string name="photo_looking">Looking for photos…</string>
+    <string name="photo_none">No photos found. Plug in a USB drive with photos on it.</string>
+    <string name="toast_photo_unusable">Couldn\'t open that photo. Try another one.</string>
+    <string name="toast_anim_set">Animated background set</string>
+    <string name="toast_anim_unplayable">Couldn\'t play the animated background</string>
+    <!-- Android didn't allow Leios to see photos or videos. -->
+    <string name="toast_photos_permission">Leios needs permission to see your photos for this</string>
+    <string name="toast_videos_permission">Leios needs permission to see your videos for this</string>
+    <!-- Android didn't allow the microphone for voice search. -->
+    <string name="toast_mic_permission">Voice search needs the microphone. The keyboard still works.</string>
+
+    <!-- Slideshow: how often the photo changes. -->
+    <string name="slide_every_15s">Every 15 seconds</string>
+    <string name="slide_every_30s">Every 30 seconds</string>
+    <string name="slide_every_1m">Every minute</string>
+    <string name="slide_every_5m">Every 5 minutes</string>
+    <string name="slide_every_15m">Every 15 minutes</string>
+    <!-- %1$s: a short time, like "1 min". -->
+    <string name="slide_every_short">Every %1$s</string>
+    <string name="slide_next_now">Next photo now</string>
+    <string name="toast_slide_next">Next photo</string>
+    <!-- %1$s: a short time, like "1 min". -->
+    <string name="toast_slide_on">Slideshow on, every %1$s</string>
+    <!-- Where the slideshow's photos come from. -->
+    <string name="slide_usb_drives">USB drives</string>
+    <string name="slide_every_usb_photo">Every photo on USB drives</string>
+    <string name="slide_this_tv">This TV</string>
+    <string name="slide_usb">USB</string>
+    <!-- Between a drive and its folders: "USB › Photos › 2024". -->
+    <string name="folder_separator">" › "</string>
+    <string name="slide_looking_folders">Looking for folders…</string>
+    <!-- %1$s: the folder, like "USB › Holidays". -->
+    <string name="toast_slide_folder">Slideshow: %1$s</string>
+    <string name="toast_slide_no_usb">No photos on the USB drive yet. The slideshow starts when you plug one in.</string>
+    <!-- %1$s: the folder, like "USB › Holidays". -->
+    <string name="toast_slide_folder_missing">Can\'t find %1$s. The slideshow carries on when it\'s back.</string>
+
+    <!-- Video backgrounds. -->
+    <string name="video_looking">Looking for videos…</string>
+    <string name="video_none">No videos found. Plug in a USB drive with a video on it (MP4 works best).</string>
+    <string name="toast_video_set">Video background set. It plays muted and pauses while an app is open.</string>
+    <!-- A video's length next to its name. -->
+    <plurals name="video_length_min">
+        <item quantity="one">%d min</item>
+        <item quantity="other">%d min</item>
+    </plurals>
+    <plurals name="video_length_sec">
+        <item quantity="one">%d s</item>
+        <item quantity="other">%d s</item>
+    </plurals>
+
+    <!-- Photo of the day (Wikimedia Commons). -->
+    <string name="online_about">A freely licensed photo from Wikimedia Commons, new each day.</string>
+    <!-- %1$s: the line above (online_about). -->
+    <string name="online_note">%1$s Uses the internet: Home asks Wikimedia for one picture a day, only while it\'s your background. The photographer is credited on screen.</string>
+    <string name="online_again">Get today\'s again</string>
+    <string name="toast_online_getting">Getting today\'s photo…</string>
+    <string name="toast_online_unreachable">Can\'t reach Wikimedia right now. Trying again later.</string>
+    <!-- The credit in the corner. Wikimedia Commons is a name. -->
+    <string name="online_source" translatable="false">Wikimedia Commons</string>
+    <!-- %1$s: the photographer's name. -->
+    <string name="online_source_artist">%1$s, Wikimedia Commons</string>
+    <!-- %1$s: who took it ("Jane Doe, Wikimedia Commons"). -->
+    <string name="online_credit">Photo: %1$s</string>
+    <!-- %1$s: the credit; %2$s: the licence, like "CC BY-SA 4.0". -->
+    <string name="online_credit_license">%1$s (%2$s)</string>
+
+    <!-- Adjust: changes to a photo, slideshow or video background. -->
+    <string name="adjust_for_what">For photos, slideshows and videos.</string>
+    <string name="adjust_video_only_brightness">Videos can only change brightness.</string>
+    <string name="adjust_video_no_blur">Videos can\'t be blurred.</string>
+    <string name="adjust_anim_no_blur">Animated photos can\'t be blurred.</string>
+    <string name="toast_adjust_reset">Background back to how it was</string>
+    <string name="toast_adjust_saved">Adjustments saved</string>
+    <!-- How much the background is blurred. -->
+    <string name="blur_off">Off</string>
+    <string name="blur_light">Light</string>
+    <string name="blur_medium">Medium</string>
+    <string name="blur_strong">Strong</string>
+</resources>
