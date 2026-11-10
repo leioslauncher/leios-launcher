@@ -49,11 +49,11 @@
     <string name="off">Off</string>
 
     <!-- Joins a list of names: "Movies, Games". -->
-    <string name="list_separator">, </string>
+    <string name="list_separator">", "</string>
     <!-- Between parts of one line: "Cloudy  ·  76°". -->
-    <string name="dot_separator">  ·  </string>
+    <string name="dot_separator">"  ·  "</string>
     <!-- Where a menu sits: "Customize  ›  Look & sound". -->
-    <string name="crumb_separator">  ›  </string>
+    <string name="crumb_separator">"  ›  "</string>
 
     <!-- The catch-all row of apps on Home, until you rename it. -->
     <string name="category_apps">Apps</string>

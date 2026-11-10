@@ -42,13 +42,14 @@ public class SettingsIndexTest {
             "openTitleFallback"));
 
     /** Rows that are part of a confirmation, not a setting. */
-    private static final Set<String> NOT_ROWS = new HashSet<>(Arrays.asList("Cancel"));
+    private static final Set<String> NOT_ROWS = new HashSet<>(Arrays.asList("Cancel", "@action_cancel"));
 
     private static String source;
     private static final Map<String, String> bodies = new LinkedHashMap<>();
 
     @BeforeClass
     public static void readSource() throws Exception {
+        SettingsIndex.localize("test", TestStrings::get);
         File f = new File("src/main/java/tv/leios/launcher/MainActivity.java");
         if (!f.exists()) f = new File("app/src/main/java/tv/leios/launcher/MainActivity.java");
         source = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
@@ -69,22 +70,32 @@ public class SettingsIndexTest {
         }
     }
 
+    /** Row labels in a menu's code: "@name" for tr(R.string.name), or the text of a literal. */
     private static List<String> labels(String body) {
         List<String> out = new ArrayList<>();
+        String label = "(?:\"([^\"]+)\"|tr\\(R\\.string\\.(\\w+)\\))";
         Pattern[] ps = {
-                Pattern.compile("Row\\.(?:nav|action|slider|stepper)\\(\\s*(?:R\\.drawable\\.\\w+|0|\\w+)\\s*,\\s*\"([^\"]+)\""),
-                Pattern.compile("addToggle\\(\\s*\"([^\"]+)\""),
-                Pattern.compile("tileOption\\(\\s*\\d+\\s*,\\s*\"([^\"]+)\""),
+                Pattern.compile("Row\\.(?:nav|action|slider|stepper)\\(\\s*(?:R\\.drawable\\.\\w+|0|\\w+)\\s*,\\s*" + label),
+                Pattern.compile("addToggle\\(\\s*" + label),
+                Pattern.compile("tileOption\\(\\s*\\d+\\s*,\\s*" + label),
         };
         for (Pattern p : ps) {
             Matcher m = p.matcher(body);
-            while (m.find()) if (!NOT_ROWS.contains(m.group(1))) out.add(m.group(1));
+            while (m.find()) {
+                String found = m.group(1) != null ? m.group(1) : "@" + m.group(2);
+                if (!NOT_ROWS.contains(found)) out.add(found);
+            }
         }
         return out;
     }
 
     private static boolean indexed(String menu, String label) {
-        for (SettingsIndex.Entry e : SettingsIndex.ENTRIES) if (e.menu.equals(menu) && e.label.equals(label)) return true;
+        for (SettingsIndex.Entry e : SettingsIndex.ENTRIES) {
+            if (!e.menu.equals(menu)) continue;
+            if (label.startsWith("@") ? label.substring(1).equals(TestStrings.name(e.label)) : label.equals(e.labelText)) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -130,8 +141,8 @@ public class SettingsIndexTest {
     @Test
     public void everyEntryHasAPlaceAndADescription() {
         for (SettingsIndex.Entry e : SettingsIndex.ENTRIES) {
-            assertFalse(e.label, e.crumb().isEmpty());
-            assertFalse(e.label, e.description.isEmpty());
+            assertFalse(e.labelText, e.crumb().isEmpty());
+            assertFalse(e.labelText, e.descriptionText.isEmpty());
             int s = SettingsIndex.section(e.menu);
             assertTrue(s >= 0 && s < SettingsIndex.SECTIONS.length);
         }
@@ -143,15 +154,31 @@ public class SettingsIndexTest {
     public void synonymsFindTheRightSetting() {
         assertEquals("background", SettingsIndex.search("wallpaper", 5).get(0).menu);
         SettingsIndex.Entry dark = SettingsIndex.search("dark", 5).get(0);
-        assertTrue(dark.label, dark.label.equals("Appearance") || dark.label.equals("Mode"));
-        assertEquals("PIN lock", SettingsIndex.search("pin", 5).get(0).label);
-        String mute = SettingsIndex.search("mute", 5).get(0).label;
+        assertTrue(dark.labelText, dark.labelText.equals("Appearance") || dark.labelText.equals("Mode"));
+        assertEquals("PIN lock", SettingsIndex.search("pin", 5).get(0).labelText);
+        String mute = SettingsIndex.search("mute", 5).get(0).labelText;
         assertTrue(mute, mute.equals("Volume") || mute.equals("Sounds"));
         assertTrue(SettingsIndex.search("zzzz", 5).isEmpty());
     }
 
     @Test
+    public void searchMatchesTheLanguageShown() {
+        // Another language: the clock setting is "Uhr", its words "Zeit，Wecker" (a wide comma).
+        SettingsIndex.Entry clock = SettingsIndex.search("clock", 5).get(0);
+        try {
+            SettingsIndex.localize("de", id -> id == clock.label ? "Uhr"
+                    : id == clock.words ? "Zeit，Wecker" : TestStrings.get(id));
+            assertEquals(clock, SettingsIndex.search("uhr", 5).get(0));
+            assertEquals(clock, SettingsIndex.search("wecker", 5).get(0));
+            assertEquals("Uhr", clock.labelText);
+        } finally {
+            SettingsIndex.localize("test", TestStrings::get);
+        }
+        assertEquals("Clock", clock.labelText);
+    }
+
+    @Test
     public void exactNameBeatsSynonym() {
-        assertEquals("Clock", SettingsIndex.search("clock", 5).get(0).label);
+        assertEquals("Clock", SettingsIndex.search("clock", 5).get(0).labelText);
     }
 }

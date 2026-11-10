@@ -677,6 +677,7 @@ final class SearchOverlay extends FrameLayout {
         // Leios's own settings (none in guest mode).
         if (host.settingsAllowed()) {
             List<SettingsIndex.Entry> settings = new ArrayList<>();
+            SettingsIndex.localize(getResources().getConfiguration().getLocales().get(0), getContext()::getString);
             for (SettingsIndex.Entry e : SettingsIndex.search(q, 20)) {
                 if (host.settingAvailable(e)) settings.add(e);
                 if (settings.size() >= MAX_SETTINGS) break;
@@ -685,7 +686,7 @@ final class SearchOverlay extends FrameLayout {
                 any = true;
                 row(rows, MenuView.Row.header("Settings"), "h:settings", null);
                 for (SettingsIndex.Entry e : settings) {
-                    row(rows, MenuView.Row.nav(R.drawable.ic_settings, e.label, "").detail(e.crumb()),
+                    row(rows, MenuView.Row.nav(R.drawable.ic_settings, e.labelText, "").detail(e.crumb()),
                             "s:" + e.menu + "/" + e.label, () -> remember(() -> host.openSetting(e)));
                 }
             }

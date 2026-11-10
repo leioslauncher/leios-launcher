@@ -5,15 +5,20 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntFunction;
 
 /**
  * Every Leios setting in one place, for search: its name as the menu shows it, a short description,
  * where it lives, and other words people use for it. Picking one opens its menu in Customization with
  * the row highlighted.
  *
- * <p>Adding a setting: add its row to the menu in MainActivity, then one {@link #e} line here. A
- * new menu gets a {@link #menu} line too, and a case in MainActivity.openSettingMenu.
- * SettingsIndexTest fails when a row or a menu is missing here.
+ * <p>All of it is text in res/values/strings_settings.xml: a setting's name there is the same string
+ * its menu row uses, so search finds the row by that string, in any language. {@link #localize}
+ * reads the texts for the language Leios shows.
+ *
+ * <p>Adding a setting: add its name, _desc and _words to strings_settings.xml, use the name for its
+ * row in MainActivity, then add one {@link #e} line here. A new menu gets a {@link #menu} line too,
+ * and a case in MainActivity.openSettingMenu. SettingsIndexTest fails when a row or a menu is missing.
  */
 final class SettingsIndex {
 
@@ -22,9 +27,12 @@ final class SettingsIndex {
 
     /** A menu that holds settings. {@code method} is the MainActivity method that opens it. */
     static final class Menu {
-        final String id, title, parent, method;
+        final String id, parent, method;
+        /** String resource: the menu's title. */
+        final int title;
+        String titleText = "";
 
-        Menu(String id, String title, String parent, String method) {
+        Menu(String id, int title, String parent, String method) {
             this.id = id;
             this.title = title;
             this.parent = parent;
@@ -32,16 +40,18 @@ final class SettingsIndex {
         }
     }
 
-    /** One setting: a row in a menu. */
+    /** One setting: a row in a menu. The ints are string resources ({@code words}: 0 for none). */
     static final class Entry {
-        final String menu, label, description;
-        final String[] synonyms;
+        final String menu;
+        final int label, description, words;
+        String labelText = "", descriptionText = "";
+        String[] wordTexts = new String[0];
 
-        Entry(String menu, String label, String description, String[] synonyms) {
+        Entry(String menu, int label, int description, int words) {
             this.menu = menu;
             this.label = label;
             this.description = description;
-            this.synonyms = synonyms;
+            this.words = words;
         }
 
         /** Every name of this setting, made ready for matching once (search runs on each key press). */
@@ -50,14 +60,14 @@ final class SettingsIndex {
 
         private void prepare() {
             if (pLabel != null) return;
-            pLabel = SearchRank.prepare(label);
-            pMenu = SearchRank.prepare(MENUS.get(menu).title);
-            pDescription = SearchRank.prepare(description);
-            pSynonyms = new SearchRank.Prepared[synonyms.length];
-            for (int i = 0; i < synonyms.length; i++) pSynonyms[i] = SearchRank.prepare(synonyms[i]);
+            pLabel = SearchRank.prepare(labelText);
+            pMenu = SearchRank.prepare(MENUS.get(menu).titleText);
+            pDescription = SearchRank.prepare(descriptionText);
+            pSynonyms = new SearchRank.Prepared[wordTexts.length];
+            for (int i = 0; i < wordTexts.length; i++) pSynonyms[i] = SearchRank.prepare(wordTexts[i]);
         }
 
-        /** Where it is, e.g. "Look & sound › Sounds". */
+        /** Where it is, e.g. "Look & sound  ›  Sounds". */
         String crumb() {
             return SettingsIndex.crumb(menu);
         }
@@ -68,190 +78,215 @@ final class SettingsIndex {
 
     static final Map<String, Menu> MENUS = new LinkedHashMap<>();
     static final List<Entry> ENTRIES = new ArrayList<>();
+    /** What the texts were read for (a locale), and the separator between a crumb's parts. */
+    private static Object localizedFor;
+    private static String crumbSeparator = "  ›  ";
 
-    private static void menu(String id, String title, String parent, String method) {
+    private static void menu(String id, int title, String parent, String method) {
         MENUS.put(id, new Menu(id, title, parent, method));
     }
 
-    private static void e(String menu, String label, String description, String... synonyms) {
+    private static void e(String menu, int label, int description, int words) {
         if (!MENUS.containsKey(menu)) throw new IllegalStateException("No menu " + menu);
-        ENTRIES.add(new Entry(menu, label, description, synonyms));
+        ENTRIES.add(new Entry(menu, label, description, words));
+    }
+
+    /**
+     * Reads every name, description and search word with {@code text} (Context::getString), once per
+     * {@code locale}: search then matches what people type in the language Leios shows.
+     */
+    static synchronized void localize(Object locale, IntFunction<String> text) {
+        if (locale != null && locale.equals(localizedFor)) return;
+        crumbSeparator = text.apply(R.string.crumb_separator);
+        for (Menu m : MENUS.values()) m.titleText = text.apply(m.title);
+        for (Entry e : ENTRIES) {
+            e.labelText = text.apply(e.label);
+            e.descriptionText = text.apply(e.description);
+            List<String> words = new ArrayList<>();
+            if (e.words != 0) {
+                // Comma-separated; Chinese and Japanese often write a wide comma, Arabic its own.
+                for (String w : text.apply(e.words).split("[,，、،]")) if (!w.trim().isEmpty()) words.add(w.trim());
+            }
+            e.wordTexts = words.toArray(new String[0]);
+            e.pLabel = null;
+        }
+        localizedFor = locale;
     }
 
     static {
-        menu("background", "Background", null, "openBackgroundMenu");
-        menu("background.slideshow", "Slideshow", "background", "openSlideshowMenu");
-        menu("background.adjust", "Adjust", "background", "openAdjustMenu");
-        menu("home", "Home layout", null, "openHomeMenu");
-        menu("home.layout", "Layout", "home", "openLayoutMenu");
-        menu("home.categories", "Categories", "home", "openCategoriesMenu");
-        menu("home.dock", "Dock", "home", "openDockMenu");
-        menu("home.weather", "Weather", "home", "openWeatherMenu");
-        menu("apps", "Apps", null, "openAppsMenu");
-        menu("look", "Look & sound", null, "openLookMenu");
-        menu("look.appearance", "Appearance", "look", "openAppearanceMenu");
-        menu("look.font", "Font and text size", "look", "openFontMenu");
-        menu("look.clock", "Clock", "look", "openClockMenu");
-        menu("look.bar", "Top bar", "look", "openBarMenu");
-        menu("look.bar.notif", "Notifications", "look.bar", "openNotifSetting");
-        menu("look.tiles", "Tiles", "look", "openTilesMenu");
-        menu("look.tiles.advanced", "Advanced", "look.tiles", "openTilesAdvanced");
-        menu("look.themes", "Themes", "look", "openThemesMenu");
-        menu("look.sounds", "Sounds", "look", "openSoundsMenu");
-        menu("look.sounds.output", "Output", "look.sounds", "openSoundsOutputMenu");
-        menu("look.sounds.quiet", "Quiet times", "look.sounds", "openSoundsQuietMenu");
-        menu("projector", "Projector & tools", null, "openProjectorMenu");
-        menu("projector.startup", "Start-up and wake", "projector", "openStartupMenu");
-        menu("projector.idle", "When Home is idle", "projector", "openIdleMenu");
-        menu("lock", "Lock & remote", null, "openLockMenu");
-        menu("lock.shortcuts", "Remote shortcuts", "lock", "openShortcutsMenu");
-        menu("system", "System", null, "openBackupMenu");
-        menu("system.search", "Search & privacy", "system", "openSearchSettings");
-        menu("system.about", "About", "system", "openAboutMenu");
+        menu("background", R.string.menu_background, null, "openBackgroundMenu");
+        menu("background.slideshow", R.string.menu_background_slideshow, "background", "openSlideshowMenu");
+        menu("background.adjust", R.string.menu_background_adjust, "background", "openAdjustMenu");
+        menu("home", R.string.menu_home, null, "openHomeMenu");
+        menu("home.layout", R.string.menu_home_layout, "home", "openLayoutMenu");
+        menu("home.categories", R.string.menu_home_categories, "home", "openCategoriesMenu");
+        menu("home.dock", R.string.menu_home_dock, "home", "openDockMenu");
+        menu("home.weather", R.string.menu_home_weather, "home", "openWeatherMenu");
+        menu("apps", R.string.menu_apps, null, "openAppsMenu");
+        menu("look", R.string.menu_look, null, "openLookMenu");
+        menu("look.appearance", R.string.menu_look_appearance, "look", "openAppearanceMenu");
+        menu("look.font", R.string.menu_look_font, "look", "openFontMenu");
+        menu("look.clock", R.string.menu_look_clock, "look", "openClockMenu");
+        menu("look.bar", R.string.menu_look_bar, "look", "openBarMenu");
+        menu("look.bar.notif", R.string.menu_look_bar_notif, "look.bar", "openNotifSetting");
+        menu("look.tiles", R.string.menu_look_tiles, "look", "openTilesMenu");
+        menu("look.tiles.advanced", R.string.menu_look_tiles_advanced, "look.tiles", "openTilesAdvanced");
+        menu("look.themes", R.string.menu_look_themes, "look", "openThemesMenu");
+        menu("look.sounds", R.string.menu_look_sounds, "look", "openSoundsMenu");
+        menu("look.sounds.output", R.string.menu_look_sounds_output, "look.sounds", "openSoundsOutputMenu");
+        menu("look.sounds.quiet", R.string.menu_look_sounds_quiet, "look.sounds", "openSoundsQuietMenu");
+        menu("projector", R.string.menu_projector, null, "openProjectorMenu");
+        menu("projector.startup", R.string.menu_projector_startup, "projector", "openStartupMenu");
+        menu("projector.idle", R.string.menu_projector_idle, "projector", "openIdleMenu");
+        menu("lock", R.string.menu_lock, null, "openLockMenu");
+        menu("lock.shortcuts", R.string.menu_lock_shortcuts, "lock", "openShortcutsMenu");
+        menu("system", R.string.menu_system, null, "openBackupMenu");
+        menu("system.search", R.string.menu_system_search, "system", "openSearchSettings");
+        menu("system.about", R.string.menu_system_about, "system", "openAboutMenu");
 
         // Background
-        e("background", "Colours", "A plain colour behind Home", "wallpaper", "background colour", "color", "solid");
-        e("background", "Shapes", "Soft shapes and gradients", "wallpaper", "pattern", "gradient", "abstract");
-        e("background", "Photo", "A photo or animated picture from this TV or a USB drive", "wallpaper", "picture", "image", "gif", "usb");
-        e("background", "Slideshow", "Your photos, changing on their own", "wallpaper", "photos", "rotate", "gallery");
-        e("background", "Video", "A looping video behind Home", "wallpaper", "live wallpaper", "movie", "mp4");
-        e("background", "Photo of the day", "A new free photo from Wikimedia Commons each day", "wallpaper", "daily", "online", "internet", "wikimedia");
-        e("background", "Adjust", "Brightness, contrast, colour and blur of the background", "wallpaper", "dim", "darker", "lighter");
-        e("background.slideshow", "Photos from", "Which folder the slideshow uses", "folder", "usb", "source");
-        e("background.slideshow", "Change every", "How long each photo stays", "interval", "speed", "timer", "duration");
-        e("background.adjust", "Brightness", "Make the background darker or lighter", "dim", "darker", "lighter");
-        e("background.adjust", "Contrast", "More or less contrast in the background");
-        e("background.adjust", "Saturation", "More or less colour in the background", "color", "colour", "grey", "black and white");
-        e("background.adjust", "Blur", "Soften the background behind your apps", "soft", "frosted");
-        e("background.adjust", "Reset adjustments", "Background back to how it was", "undo");
+        e("background", R.string.set_background_colours, R.string.set_background_colours_desc, R.string.set_background_colours_words);
+        e("background", R.string.set_background_shapes, R.string.set_background_shapes_desc, R.string.set_background_shapes_words);
+        e("background", R.string.set_background_photo, R.string.set_background_photo_desc, R.string.set_background_photo_words);
+        e("background", R.string.set_background_slideshow, R.string.set_background_slideshow_desc, R.string.set_background_slideshow_words);
+        e("background", R.string.set_background_video, R.string.set_background_video_desc, R.string.set_background_video_words);
+        e("background", R.string.set_background_photo_of_the_day, R.string.set_background_photo_of_the_day_desc, R.string.set_background_photo_of_the_day_words);
+        e("background", R.string.set_background_adjust, R.string.set_background_adjust_desc, R.string.set_background_adjust_words);
+        e("background.slideshow", R.string.set_background_slideshow_photos_from, R.string.set_background_slideshow_photos_from_desc, R.string.set_background_slideshow_photos_from_words);
+        e("background.slideshow", R.string.set_background_slideshow_change_every, R.string.set_background_slideshow_change_every_desc, R.string.set_background_slideshow_change_every_words);
+        e("background.adjust", R.string.set_background_adjust_brightness, R.string.set_background_adjust_brightness_desc, R.string.set_background_adjust_brightness_words);
+        e("background.adjust", R.string.set_background_adjust_contrast, R.string.set_background_adjust_contrast_desc, 0);
+        e("background.adjust", R.string.set_background_adjust_saturation, R.string.set_background_adjust_saturation_desc, R.string.set_background_adjust_saturation_words);
+        e("background.adjust", R.string.set_background_adjust_blur, R.string.set_background_adjust_blur_desc, R.string.set_background_adjust_blur_words);
+        e("background.adjust", R.string.set_background_adjust_reset_adjustments, R.string.set_background_adjust_reset_adjustments_desc, R.string.set_background_adjust_reset_adjustments_words);
 
         // Home layout
-        e("home", "Categories", "Rows of apps and how they're sorted", "rows", "groups", "folders");
-        e("home", "Dock", "The row of apps at the top", "favourites", "favorites", "pinned");
-        e("home", "Layout", "Tile size, spacing and margins", "grid", "columns", "size");
-        e("home", "Home button goes to", "Where focus lands when you press Home", "start", "focus", "landing");
-        e("home", "Weather", "Weather under the clock", "forecast", "temperature");
-        e("home.layout", "Tiles per row", "How many apps fit in a row", "columns", "tile size", "bigger", "smaller");
-        e("home.layout", "Tile spacing", "Space between apps", "gap", "padding");
-        e("home.layout", "Row spacing", "Space between rows", "gap");
-        e("home.layout", "Side margins", "Space at the screen edges", "overscan", "edges", "border");
-        e("home.layout", "Reset layout", "Layout back to the default", "undo");
-        e("home.categories", "New category…", "Make your own row of apps", "add row", "group", "folder");
-        e("home.categories", "All apps row", "Show a row with every app", "all apps");
-        e("home.categories", "Inputs row (HDMI)", "Show HDMI inputs as a row", "hdmi", "inputs", "sources");
-        e("home.categories", "Empty categories", "Show or hide rows with no apps", "empty");
-        e("home.categories", "Reset categories", "Categories back to the default", "undo");
-        e("home.dock", "Rearrange", "Move apps around in the dock", "order", "move", "sort dock");
-        e("home.dock", "Reset dock to default", "Default apps in the dock", "undo");
-        e("home.weather", "Show weather", "Weather under the clock on Home", "forecast");
-        e("home.weather", "City", "Where the weather is for", "location", "town", "place");
-        e("home.weather", "Units", "Celsius or Fahrenheit", "celsius", "fahrenheit", "temperature");
-        e("home.weather", "Reset weather", "Forget the city and units", "undo");
+        e("home", R.string.set_home_categories, R.string.set_home_categories_desc, R.string.set_home_categories_words);
+        e("home", R.string.set_home_dock, R.string.set_home_dock_desc, R.string.set_home_dock_words);
+        e("home", R.string.set_home_layout, R.string.set_home_layout_desc, R.string.set_home_layout_words);
+        e("home", R.string.set_home_home_button_goes_to, R.string.set_home_home_button_goes_to_desc, R.string.set_home_home_button_goes_to_words);
+        e("home", R.string.set_home_weather, R.string.set_home_weather_desc, R.string.set_home_weather_words);
+        e("home.layout", R.string.set_home_layout_tiles_per_row, R.string.set_home_layout_tiles_per_row_desc, R.string.set_home_layout_tiles_per_row_words);
+        e("home.layout", R.string.set_home_layout_tile_spacing, R.string.set_home_layout_tile_spacing_desc, R.string.set_home_layout_tile_spacing_words);
+        e("home.layout", R.string.set_home_layout_row_spacing, R.string.set_home_layout_row_spacing_desc, R.string.set_home_layout_row_spacing_words);
+        e("home.layout", R.string.set_home_layout_side_margins, R.string.set_home_layout_side_margins_desc, R.string.set_home_layout_side_margins_words);
+        e("home.layout", R.string.set_home_layout_reset_layout, R.string.set_home_layout_reset_layout_desc, R.string.set_home_layout_reset_layout_words);
+        e("home.categories", R.string.set_home_categories_new_category, R.string.set_home_categories_new_category_desc, R.string.set_home_categories_new_category_words);
+        e("home.categories", R.string.set_home_categories_all_apps_row, R.string.set_home_categories_all_apps_row_desc, R.string.set_home_categories_all_apps_row_words);
+        e("home.categories", R.string.set_home_categories_inputs_row_hdmi, R.string.set_home_categories_inputs_row_hdmi_desc, R.string.set_home_categories_inputs_row_hdmi_words);
+        e("home.categories", R.string.set_home_categories_empty_categories, R.string.set_home_categories_empty_categories_desc, R.string.set_home_categories_empty_categories_words);
+        e("home.categories", R.string.set_home_categories_reset_categories, R.string.set_home_categories_reset_categories_desc, R.string.set_home_categories_reset_categories_words);
+        e("home.dock", R.string.set_home_dock_rearrange, R.string.set_home_dock_rearrange_desc, R.string.set_home_dock_rearrange_words);
+        e("home.dock", R.string.set_home_dock_reset_dock_to_default, R.string.set_home_dock_reset_dock_to_default_desc, R.string.set_home_dock_reset_dock_to_default_words);
+        e("home.weather", R.string.set_home_weather_show_weather, R.string.set_home_weather_show_weather_desc, R.string.set_home_weather_show_weather_words);
+        e("home.weather", R.string.set_home_weather_city, R.string.set_home_weather_city_desc, R.string.set_home_weather_city_words);
+        e("home.weather", R.string.set_home_weather_units, R.string.set_home_weather_units_desc, R.string.set_home_weather_units_words);
+        e("home.weather", R.string.set_home_weather_reset_weather, R.string.set_home_weather_reset_weather_desc, R.string.set_home_weather_reset_weather_words);
 
         // Apps
-        e("apps", "Show or hide apps", "Choose which apps Home shows", "hide", "hidden", "unhide");
-        e("apps", "Arrange apps", "Move apps around on Home", "order", "move", "sort");
-        e("apps", "Sort and categories", "Rows of apps and how they're sorted", "categories", "a-z", "alphabetical");
-        e("apps", "Icon pack", "Change every app's icon with an icon pack", "icons", "theme");
-        e("apps", "Reset names, tiles and icons", "Every app gets its own name and icon back", "rename", "undo");
+        e("apps", R.string.set_apps_show_or_hide_apps, R.string.set_apps_show_or_hide_apps_desc, R.string.set_apps_show_or_hide_apps_words);
+        e("apps", R.string.set_apps_arrange_apps, R.string.set_apps_arrange_apps_desc, R.string.set_apps_arrange_apps_words);
+        e("apps", R.string.set_apps_sort_and_categories, R.string.set_apps_sort_and_categories_desc, R.string.set_apps_sort_and_categories_words);
+        e("apps", R.string.set_apps_icon_pack, R.string.set_apps_icon_pack_desc, R.string.set_apps_icon_pack_words);
+        e("apps", R.string.set_apps_reset_names_tiles_and_icons, R.string.set_apps_reset_names_tiles_and_icons_desc, R.string.set_apps_reset_names_tiles_and_icons_words);
 
         // Look & sound
-        e("look", "Appearance", "Light, dark or automatic, and the accent colour", "dark", "light", "dark mode", "night", "theme", "accent");
-        e("look", "Font and text size", "The font and how big the text is", "typeface", "bigger text", "readability");
-        e("look", "Clock", "Clock format, size and position", "time", "12 hour", "24 hour");
-        e("look", "Top bar", "Which buttons show at the top", "buttons", "bar", "pills");
-        e("look", "Tiles", "How app tiles look", "icons", "banners", "corners");
-        e("look", "Themes", "Save and apply whole looks", "presets", "style", "import");
-        e("look", "Sounds", "Interface sounds and their volume", "audio", "beep", "click", "mute", "sound effects");
-        e("look.appearance", "Mode", "Dark, light, or automatic from sunrise to sunset", "dark", "light", "dark mode", "night mode", "automatic");
-        e("look.appearance", "Accent colour", "Azure, or a colour from the background", "color", "highlight", "focus colour");
-        e("look.font", "Font", "The typeface used everywhere", "typeface", "lettering");
-        e("look.font", "Text size", "Smaller or bigger text", "bigger text", "zoom", "large text", "readability");
-        e("look.font", "Reset font and size", "Default font and size", "undo");
-        e("look.clock", "Format", "12-hour, 24-hour or automatic", "12 hour", "24 hour", "am pm");
-        e("look.clock", "Size", "How big the clock is", "bigger clock", "smaller clock");
-        e("look.clock", "Position", "Where the clock sits", "place", "left", "centre", "center");
-        e("look.clock", "Date", "Show the date under the clock", "day");
-        e("look.clock", "Greeting", "Good morning above the clock", "hello", "message");
-        e("look.clock", "Shadow", "A soft shadow behind the clock", "outline", "readability");
-        e("look.clock", "Reset clock", "Clock back to the default", "undo");
-        e("look.bar", "Inputs button", "Show the Inputs button", "hdmi", "sources");
-        e("look.bar", "Search button", "Show the Search button", "find", "magnifier");
-        e("look.bar", "Wi-Fi", "Show the Wi-Fi name and signal", "wifi", "network", "internet");
-        e("look.bar", "Notifications", "A bell when apps have notifications", "bell", "alerts");
-        e("look.bar", "Settings button", "Show the Settings button", "gear");
-        e("look.bar", "Size", "Normal or compact buttons", "compact", "smaller buttons");
-        e("look.bar", "Reset top bar", "Top bar back to the default", "undo");
-        e("look.bar.notif", "Show the bell", "A bell in the top bar for notifications", "alerts");
-        e("look.bar.notif", "Notification access", "Android's permission for the bell", "permission");
-        e("look.tiles", "Style", "Clean, soft or crisp tiles", "look", "corners");
-        e("look.tiles", "Show apps as", "Icons or wide banners", "banners", "icons");
-        e("look.tiles", "App names", "When app names show under tiles", "labels", "titles");
-        e("look.tiles", "Advanced", "Corners, focus colour and icon backgrounds", "corners", "rounded");
-        e("look.tiles", "Reset tiles", "Tiles back to the default", "undo");
-        e("look.tiles.advanced", "Corners", "How round tile corners are", "rounded", "radius");
-        e("look.tiles.advanced", "Focus colour", "The colour around the app you're on", "highlight", "accent");
-        e("look.tiles.advanced", "Icon tile background", "What's behind each app icon", "glass", "plain");
-        e("look.tiles.advanced", "Glow behind the dock", "A soft glow in the accent colour", "light", "halo");
-        e("look.themes", "Save this look…", "Save the current look as a theme", "save theme", "preset");
-        e("look.themes", "Import from a picture", "Load a theme someone shared", "import", "load theme");
-        e("look.themes", "Undo last theme", "Go back to the look before the last theme", "undo", "revert");
-        e("look.sounds", "Volume", "How loud interface sounds are, or off", "loud", "quiet", "mute", "sound volume", "off");
-        e("look.sounds", "Output", "System sounds or media volume", "speaker", "channel");
-        e("look.sounds", "Quiet times", "When sounds stay silent", "bedtime", "silent", "night");
-        e("look.sounds", "Start-up sound", "A sound when Home starts", "boot", "chime");
-        e("look.sounds", "≡ panel open and close", "Sounds when the quick panel opens", "menu sound", "panel");
-        e("look.sounds", "Reset sounds", "Sounds back to the default", "undo");
-        e("look.sounds.output", "Sound output", "Automatic, system sounds or media volume", "channel", "speaker");
-        e("look.sounds.output", "Silent on Bluetooth or ARC", "No sounds through headphones or a soundbar", "headphones", "soundbar", "hdmi arc");
-        e("look.sounds.quiet", "Silent at bedtime", "No sounds while the bedtime lock is on", "night", "sleep");
-        e("look.sounds.quiet", "Silent in guest mode", "No sounds in guest mode", "guest");
+        e("look", R.string.set_look_appearance, R.string.set_look_appearance_desc, R.string.set_look_appearance_words);
+        e("look", R.string.set_look_font_and_text_size, R.string.set_look_font_and_text_size_desc, R.string.set_look_font_and_text_size_words);
+        e("look", R.string.set_look_clock, R.string.set_look_clock_desc, R.string.set_look_clock_words);
+        e("look", R.string.set_look_top_bar, R.string.set_look_top_bar_desc, R.string.set_look_top_bar_words);
+        e("look", R.string.set_look_tiles, R.string.set_look_tiles_desc, R.string.set_look_tiles_words);
+        e("look", R.string.set_look_themes, R.string.set_look_themes_desc, R.string.set_look_themes_words);
+        e("look", R.string.set_look_sounds, R.string.set_look_sounds_desc, R.string.set_look_sounds_words);
+        e("look.appearance", R.string.set_look_appearance_mode, R.string.set_look_appearance_mode_desc, R.string.set_look_appearance_mode_words);
+        e("look.appearance", R.string.set_look_appearance_accent_colour, R.string.set_look_appearance_accent_colour_desc, R.string.set_look_appearance_accent_colour_words);
+        e("look.font", R.string.set_look_font_font, R.string.set_look_font_font_desc, R.string.set_look_font_font_words);
+        e("look.font", R.string.set_look_font_text_size, R.string.set_look_font_text_size_desc, R.string.set_look_font_text_size_words);
+        e("look.font", R.string.set_look_font_reset_font_and_size, R.string.set_look_font_reset_font_and_size_desc, R.string.set_look_font_reset_font_and_size_words);
+        e("look.clock", R.string.set_look_clock_format, R.string.set_look_clock_format_desc, R.string.set_look_clock_format_words);
+        e("look.clock", R.string.set_look_clock_size, R.string.set_look_clock_size_desc, R.string.set_look_clock_size_words);
+        e("look.clock", R.string.set_look_clock_position, R.string.set_look_clock_position_desc, R.string.set_look_clock_position_words);
+        e("look.clock", R.string.set_look_clock_date, R.string.set_look_clock_date_desc, R.string.set_look_clock_date_words);
+        e("look.clock", R.string.set_look_clock_greeting, R.string.set_look_clock_greeting_desc, R.string.set_look_clock_greeting_words);
+        e("look.clock", R.string.set_look_clock_shadow, R.string.set_look_clock_shadow_desc, R.string.set_look_clock_shadow_words);
+        e("look.clock", R.string.set_look_clock_reset_clock, R.string.set_look_clock_reset_clock_desc, R.string.set_look_clock_reset_clock_words);
+        e("look.bar", R.string.set_look_bar_inputs_button, R.string.set_look_bar_inputs_button_desc, R.string.set_look_bar_inputs_button_words);
+        e("look.bar", R.string.set_look_bar_search_button, R.string.set_look_bar_search_button_desc, R.string.set_look_bar_search_button_words);
+        e("look.bar", R.string.set_look_bar_wi_fi, R.string.set_look_bar_wi_fi_desc, R.string.set_look_bar_wi_fi_words);
+        e("look.bar", R.string.set_look_bar_notifications, R.string.set_look_bar_notifications_desc, R.string.set_look_bar_notifications_words);
+        e("look.bar", R.string.set_look_bar_settings_button, R.string.set_look_bar_settings_button_desc, R.string.set_look_bar_settings_button_words);
+        e("look.bar", R.string.set_look_bar_size, R.string.set_look_bar_size_desc, R.string.set_look_bar_size_words);
+        e("look.bar", R.string.set_look_bar_reset_top_bar, R.string.set_look_bar_reset_top_bar_desc, R.string.set_look_bar_reset_top_bar_words);
+        e("look.bar.notif", R.string.set_look_bar_notif_show_the_bell, R.string.set_look_bar_notif_show_the_bell_desc, R.string.set_look_bar_notif_show_the_bell_words);
+        e("look.bar.notif", R.string.set_look_bar_notif_notification_access, R.string.set_look_bar_notif_notification_access_desc, R.string.set_look_bar_notif_notification_access_words);
+        e("look.tiles", R.string.set_look_tiles_style, R.string.set_look_tiles_style_desc, R.string.set_look_tiles_style_words);
+        e("look.tiles", R.string.set_look_tiles_show_apps_as, R.string.set_look_tiles_show_apps_as_desc, R.string.set_look_tiles_show_apps_as_words);
+        e("look.tiles", R.string.set_look_tiles_app_names, R.string.set_look_tiles_app_names_desc, R.string.set_look_tiles_app_names_words);
+        e("look.tiles", R.string.set_look_tiles_advanced, R.string.set_look_tiles_advanced_desc, R.string.set_look_tiles_advanced_words);
+        e("look.tiles", R.string.set_look_tiles_reset_tiles, R.string.set_look_tiles_reset_tiles_desc, R.string.set_look_tiles_reset_tiles_words);
+        e("look.tiles.advanced", R.string.set_look_tiles_advanced_corners, R.string.set_look_tiles_advanced_corners_desc, R.string.set_look_tiles_advanced_corners_words);
+        e("look.tiles.advanced", R.string.set_look_tiles_advanced_focus_colour, R.string.set_look_tiles_advanced_focus_colour_desc, R.string.set_look_tiles_advanced_focus_colour_words);
+        e("look.tiles.advanced", R.string.set_look_tiles_advanced_icon_tile_background, R.string.set_look_tiles_advanced_icon_tile_background_desc, R.string.set_look_tiles_advanced_icon_tile_background_words);
+        e("look.tiles.advanced", R.string.set_look_tiles_advanced_glow_behind_the_dock, R.string.set_look_tiles_advanced_glow_behind_the_dock_desc, R.string.set_look_tiles_advanced_glow_behind_the_dock_words);
+        e("look.themes", R.string.set_look_themes_save_this_look, R.string.set_look_themes_save_this_look_desc, R.string.set_look_themes_save_this_look_words);
+        e("look.themes", R.string.set_look_themes_import_from_a_picture, R.string.set_look_themes_import_from_a_picture_desc, R.string.set_look_themes_import_from_a_picture_words);
+        e("look.themes", R.string.set_look_themes_undo_last_theme, R.string.set_look_themes_undo_last_theme_desc, R.string.set_look_themes_undo_last_theme_words);
+        e("look.sounds", R.string.set_look_sounds_volume, R.string.set_look_sounds_volume_desc, R.string.set_look_sounds_volume_words);
+        e("look.sounds", R.string.set_look_sounds_output, R.string.set_look_sounds_output_desc, R.string.set_look_sounds_output_words);
+        e("look.sounds", R.string.set_look_sounds_quiet_times, R.string.set_look_sounds_quiet_times_desc, R.string.set_look_sounds_quiet_times_words);
+        e("look.sounds", R.string.set_look_sounds_start_up_sound, R.string.set_look_sounds_start_up_sound_desc, R.string.set_look_sounds_start_up_sound_words);
+        e("look.sounds", R.string.set_look_sounds_panel_open_and_close, R.string.set_look_sounds_panel_open_and_close_desc, R.string.set_look_sounds_panel_open_and_close_words);
+        e("look.sounds", R.string.set_look_sounds_reset_sounds, R.string.set_look_sounds_reset_sounds_desc, R.string.set_look_sounds_reset_sounds_words);
+        e("look.sounds.output", R.string.set_look_sounds_output_sound_output, R.string.set_look_sounds_output_sound_output_desc, R.string.set_look_sounds_output_sound_output_words);
+        e("look.sounds.output", R.string.set_look_sounds_output_silent_on_bluetooth_or_arc, R.string.set_look_sounds_output_silent_on_bluetooth_or_arc_desc, R.string.set_look_sounds_output_silent_on_bluetooth_or_arc_words);
+        e("look.sounds.quiet", R.string.set_look_sounds_quiet_silent_at_bedtime, R.string.set_look_sounds_quiet_silent_at_bedtime_desc, R.string.set_look_sounds_quiet_silent_at_bedtime_words);
+        e("look.sounds.quiet", R.string.set_look_sounds_quiet_silent_in_guest_mode, R.string.set_look_sounds_quiet_silent_in_guest_mode_desc, R.string.set_look_sounds_quiet_silent_in_guest_mode_words);
 
         // Projector & tools
-        e("projector", "Picture", "The projector's picture mode, colour and HDR", "image", "colour", "hdr", "picture mode");
-        e("projector", "Brightness", "The projector's laser brightness", "laser", "light", "dim");
-        e("projector", "Keystone", "Straighten the image", "angle", "skew", "correction", "focus");
-        e("projector", "Sleep timer", "Turn off after a while", "timer", "turn off", "shutdown", "power off");
-        e("projector", "Test patterns", "Patterns for focus, levels and colour", "calibration", "focus", "grid");
-        e("projector", "Start-up and wake", "What opens when the projector starts or wakes", "boot", "power on", "autostart");
-        e("projector", "When Home is idle", "Dim Home or show a clock when idle", "screensaver", "idle", "clock", "dim");
-        e("projector.startup", "When it starts", "An app or input to open at start-up", "boot", "autostart", "power on");
-        e("projector.startup", "When it wakes", "An app or input to open on wake", "resume", "wake up");
-        e("projector.idle", "Do this", "Dim Home or show a clock", "screensaver", "clock");
-        e("projector.idle", "After", "How long before Home goes idle", "minutes", "timeout");
+        e("projector", R.string.set_projector_picture, R.string.set_projector_picture_desc, R.string.set_projector_picture_words);
+        e("projector", R.string.set_projector_brightness, R.string.set_projector_brightness_desc, R.string.set_projector_brightness_words);
+        e("projector", R.string.set_projector_keystone, R.string.set_projector_keystone_desc, R.string.set_projector_keystone_words);
+        e("projector", R.string.set_projector_sleep_timer, R.string.set_projector_sleep_timer_desc, R.string.set_projector_sleep_timer_words);
+        e("projector", R.string.set_projector_test_patterns, R.string.set_projector_test_patterns_desc, R.string.set_projector_test_patterns_words);
+        e("projector", R.string.set_projector_start_up_and_wake, R.string.set_projector_start_up_and_wake_desc, R.string.set_projector_start_up_and_wake_words);
+        e("projector", R.string.set_projector_when_home_is_idle, R.string.set_projector_when_home_is_idle_desc, R.string.set_projector_when_home_is_idle_words);
+        e("projector.startup", R.string.set_projector_startup_when_it_starts, R.string.set_projector_startup_when_it_starts_desc, R.string.set_projector_startup_when_it_starts_words);
+        e("projector.startup", R.string.set_projector_startup_when_it_wakes, R.string.set_projector_startup_when_it_wakes_desc, R.string.set_projector_startup_when_it_wakes_words);
+        e("projector.idle", R.string.set_projector_idle_do_this, R.string.set_projector_idle_do_this_desc, R.string.set_projector_idle_do_this_words);
+        e("projector.idle", R.string.set_projector_idle_after, R.string.set_projector_idle_after_desc, R.string.set_projector_idle_after_words);
 
         // Lock & remote
-        e("lock", "PIN lock", "Set or change the PIN", "password", "code", "parental", "kids", "child lock");
-        e("lock", "What it locks", "Customize, Settings, apps and categories", "parental", "lock apps", "restrict");
-        e("lock", "When", "Always, or only at bedtime", "schedule", "bedtime", "hours");
-        e("lock", "Guest mode", "Hide Customize and Settings for visitors", "visitor", "kiosk", "kids");
-        e("lock", "Remote shortcuts", "What holding ≡ or the Settings button does", "buttons", "hold", "long press");
-        e("lock.shortcuts", "Hold ≡", "What holding the ≡ button does", "menu button", "long press");
-        e("lock.shortcuts", "Hold the Settings button", "What holding the gear does", "gear", "long press");
-        e("lock.shortcuts", "Hold Home for search", "Holding Home on Home opens search", "long press", "home button", "search");
+        e("lock", R.string.set_lock_pin_lock, R.string.set_lock_pin_lock_desc, R.string.set_lock_pin_lock_words);
+        e("lock", R.string.set_lock_what_it_locks, R.string.set_lock_what_it_locks_desc, R.string.set_lock_what_it_locks_words);
+        e("lock", R.string.set_lock_when, R.string.set_lock_when_desc, R.string.set_lock_when_words);
+        e("lock", R.string.set_lock_guest_mode, R.string.set_lock_guest_mode_desc, R.string.set_lock_guest_mode_words);
+        e("lock", R.string.set_lock_remote_shortcuts, R.string.set_lock_remote_shortcuts_desc, R.string.set_lock_remote_shortcuts_words);
+        e("lock.shortcuts", R.string.set_lock_shortcuts_hold, R.string.set_lock_shortcuts_hold_desc, R.string.set_lock_shortcuts_hold_words);
+        e("lock.shortcuts", R.string.set_lock_shortcuts_hold_the_settings_button, R.string.set_lock_shortcuts_hold_the_settings_button_desc, R.string.set_lock_shortcuts_hold_the_settings_button_words);
+        e("lock.shortcuts", R.string.set_lock_shortcuts_hold_home_for_search, R.string.set_lock_shortcuts_hold_home_for_search_desc, R.string.set_lock_shortcuts_hold_home_for_search_words);
 
         // System
-        e("system", "Search & privacy", "Online title search, region and recent searches", "search", "tmdb", "privacy", "movies", "online");
-        e("system", "Save a backup", "Save all your settings to a picture file", "backup", "export");
-        e("system", "Restore a backup", "Load settings from a backup", "restore", "import");
-        e("system", "Automatic backups", "Back up before big changes", "auto backup");
-        e("system", "Reset everything", "Every setting back to the default", "factory", "reset", "clear", "start over");
-        e("system", "About", "Version, licences and credits", "version", "credits", "licences", "licenses", "tmdb", "justwatch");
-        e("system.search", "Online title search", "Find movies and shows with TMDB", "tmdb", "movies", "tv shows", "internet", "online");
-        e("system.search", "Region", "Which country's streaming apps to show", "country", "location");
-        e("system.search", "Titles not on your apps", "Show or hide titles your apps don't have", "elsewhere", "other services");
-        e("system.search", "Recent searches", "Remember what you searched for", "history");
-        e("system.search", "Clear recent searches", "Forget what you searched for", "history", "delete");
+        e("system", R.string.set_system_search_and_privacy, R.string.set_system_search_and_privacy_desc, R.string.set_system_search_and_privacy_words);
+        e("system", R.string.set_system_save_a_backup, R.string.set_system_save_a_backup_desc, R.string.set_system_save_a_backup_words);
+        e("system", R.string.set_system_restore_a_backup, R.string.set_system_restore_a_backup_desc, R.string.set_system_restore_a_backup_words);
+        e("system", R.string.set_system_automatic_backups, R.string.set_system_automatic_backups_desc, R.string.set_system_automatic_backups_words);
+        e("system", R.string.set_system_reset_everything, R.string.set_system_reset_everything_desc, R.string.set_system_reset_everything_words);
+        e("system", R.string.set_system_about, R.string.set_system_about_desc, R.string.set_system_about_words);
+        e("system.search", R.string.set_system_search_online_title_search, R.string.set_system_search_online_title_search_desc, R.string.set_system_search_online_title_search_words);
+        e("system.search", R.string.set_system_search_region, R.string.set_system_search_region_desc, R.string.set_system_search_region_words);
+        e("system.search", R.string.set_system_search_titles_not_on_your_apps, R.string.set_system_search_titles_not_on_your_apps_desc, R.string.set_system_search_titles_not_on_your_apps_words);
+        e("system.search", R.string.set_system_search_recent_searches, R.string.set_system_search_recent_searches_desc, R.string.set_system_search_recent_searches_words);
+        e("system.search", R.string.set_system_search_clear_recent_searches, R.string.set_system_search_clear_recent_searches_desc, R.string.set_system_search_clear_recent_searches_words);
     }
 
     /** "Look & sound › Sounds" for "look.sounds". */
     static String crumb(String menuId) {
         List<String> parts = new ArrayList<>();
         for (Menu m = MENUS.get(menuId); m != null; m = m.parent == null ? null : MENUS.get(m.parent)) {
-            parts.add(m.title);
+            parts.add(m.titleText);
         }
         Collections.reverse(parts);
-        return String.join("  ›  ", parts);
+        return String.join(crumbSeparator, parts);
     }
 
     /** The section (0–6) a menu belongs to. */

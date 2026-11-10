@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Customization's menus and settings, as the menus show them and as search finds them.
+    For each setting: its name (the row in the menu), a short description (shown nowhere yet, used
+    by search), and _words: other words people search for, separated by commas. Translate the
+    words into ones people use in your language; there can be more or fewer of them.
+-->
+<resources>
+    <!-- Customization's seven sections and the menus inside them (their titles). -->
+    <string name="menu_background">Background</string>
+    <string name="menu_background_slideshow">Slideshow</string>
+    <string name="menu_background_adjust">Adjust</string>
+    <string name="menu_home">Home layout</string>
+    <string name="menu_home_layout">Layout</string>
+    <string name="menu_home_categories">Categories</string>
+    <string name="menu_home_dock">Dock</string>
+    <string name="menu_home_weather">Weather</string>
+    <string name="menu_apps">Apps</string>
+    <string name="menu_look">Look &amp; sound</string>
+    <string name="menu_look_appearance">Appearance</string>
+    <string name="menu_look_font">Font and text size</string>
+    <string name="menu_look_clock">Clock</string>
+    <string name="menu_look_bar">Top bar</string>
+    <string name="menu_look_bar_notif">Notifications</string>
+    <string name="menu_look_tiles">Tiles</string>
+    <string name="menu_look_tiles_advanced">Advanced</string>
+    <string name="menu_look_themes">Themes</string>
+    <string name="menu_look_sounds">Sounds</string>
+    <string name="menu_look_sounds_output">Output</string>
+    <string name="menu_look_sounds_quiet">Quiet times</string>
+    <string name="menu_projector">Projector &amp; tools</string>
+    <string name="menu_projector_startup">Start-up and wake</string>
+    <string name="menu_projector_idle">When Home is idle</string>
+    <string name="menu_lock">Lock &amp; remote</string>
+    <string name="menu_lock_shortcuts">Remote shortcuts</string>
+    <string name="menu_system">System</string>
+    <string name="menu_system_search">Search &amp; privacy</string>
+    <string name="menu_system_about">About</string>
+
+    <!-- Customize › Background -->
+    <string name="set_background_colours">Colours</string>
+    <string name="set_background_colours_desc">A plain colour behind Home</string>
+    <string name="set_background_colours_words">wallpaper, background colour, color, solid</string>
+    <string name="set_background_shapes">Shapes</string>
+    <string name="set_background_shapes_desc">Soft shapes and gradients</string>
+    <string name="set_background_shapes_words">wallpaper, pattern, gradient, abstract</string>
+    <string name="set_background_photo">Photo</string>
+    <string name="set_background_photo_desc">A photo or animated picture from this TV or a USB drive</string>
+    <string name="set_background_photo_words">wallpaper, picture, image, gif, usb</string>
+    <string name="set_background_slideshow">Slideshow</string>
+    <string name="set_background_slideshow_desc">Your photos, changing on their own</string>
+    <string name="set_background_slideshow_words">wallpaper, photos, rotate, gallery</string>
+    <string name="set_background_video">Video</string>
+    <string name="set_background_video_desc">A looping video behind Home</string>
+    <string name="set_background_video_words">wallpaper, live wallpaper, movie, mp4</string>
+    <string name="set_background_photo_of_the_day">Photo of the day</string>
+    <string name="set_background_photo_of_the_day_desc">A new free photo from Wikimedia Commons each day</string>
+    <string name="set_background_photo_of_the_day_words">wallpaper, daily, online, internet, wikimedia</string>
+    <string name="set_background_adjust">Adjust</string>
+    <string name="set_background_adjust_desc">Brightness, contrast, colour and blur of the background</string>
+    <string name="set_background_adjust_words">wallpaper, dim, darker, lighter</string>
+
+    <!-- Customize › Background › Slideshow -->
+    <string name="set_background_slideshow_photos_from">Photos from</string>
+    <string name="set_background_slideshow_photos_from_desc">Which folder the slideshow uses</string>
+    <string name="set_background_slideshow_photos_from_words">folder, usb, source</string>
+    <string name="set_background_slideshow_change_every">Change every</string>
+    <string name="set_background_slideshow_change_every_desc">How long each photo stays</string>
+    <string name="set_background_slideshow_change_every_words">interval, speed, timer, duration</string>
+
+    <!-- Customize › Background › Adjust -->
+    <string name="set_background_adjust_brightness">Brightness</string>
+    <string name="set_background_adjust_brightness_desc">Make the background darker or lighter</string>
+    <string name="set_background_adjust_brightness_words">dim, darker, lighter</string>
+    <string name="set_background_adjust_contrast">Contrast</string>
+    <string name="set_background_adjust_contrast_desc">More or less contrast in the background</string>
+    <string name="set_background_adjust_saturation">Saturation</string>
+    <string name="set_background_adjust_saturation_desc">More or less colour in the background</string>
+    <string name="set_background_adjust_saturation_words">color, colour, grey, black and white</string>
+    <string name="set_background_adjust_blur">Blur</string>
+    <string name="set_background_adjust_blur_desc">Soften the background behind your apps</string>
+    <string name="set_background_adjust_blur_words">soft, frosted</string>
+    <string name="set_background_adjust_reset_adjustments">Reset adjustments</string>
+    <string name="set_background_adjust_reset_adjustments_desc">Background back to how it was</string>
+    <string name="set_background_adjust_reset_adjustments_words">undo</string>
+
+    <!-- Customize › Home layout -->
+    <string name="set_home_categories">Categories</string>
+    <string name="set_home_categories_desc">Rows of apps and how they\'re sorted</string>
+    <string name="set_home_categories_words">rows, groups, folders</string>
+    <string name="set_home_dock">Dock</string>
+    <string name="set_home_dock_desc">The row of apps at the top</string>
+    <string name="set_home_dock_words">favourites, favorites, pinned</string>
+    <string name="set_home_layout">Layout</string>
+    <string name="set_home_layout_desc">Tile size, spacing and margins</string>
+    <string name="set_home_layout_words">grid, columns, size</string>
+    <string name="set_home_home_button_goes_to">Home button goes to</string>
+    <string name="set_home_home_button_goes_to_desc">Where focus lands when you press Home</string>
+    <string name="set_home_home_button_goes_to_words">start, focus, landing</string>
+    <string name="set_home_weather">Weather</string>
+    <string name="set_home_weather_desc">Weather under the clock</string>
+    <string name="set_home_weather_words">forecast, temperature</string>
+
+    <!-- Customize › Home layout › Layout -->
+    <string name="set_home_layout_tiles_per_row">Tiles per row</string>
+    <string name="set_home_layout_tiles_per_row_desc">How many apps fit in a row</string>
+    <string name="set_home_layout_tiles_per_row_words">columns, tile size, bigger, smaller</string>
+    <string name="set_home_layout_tile_spacing">Tile spacing</string>
+    <string name="set_home_layout_tile_spacing_desc">Space between apps</string>
+    <string name="set_home_layout_tile_spacing_words">gap, padding</string>
+    <string name="set_home_layout_row_spacing">Row spacing</string>
+    <string name="set_home_layout_row_spacing_desc">Space between rows</string>
+    <string name="set_home_layout_row_spacing_words">gap</string>
+    <string name="set_home_layout_side_margins">Side margins</string>
+    <string name="set_home_layout_side_margins_desc">Space at the screen edges</string>
+    <string name="set_home_layout_side_margins_words">overscan, edges, border</string>
+    <string name="set_home_layout_reset_layout">Reset layout</string>
+    <string name="set_home_layout_reset_layout_desc">Layout back to the default</string>
+    <string name="set_home_layout_reset_layout_words">undo</string>
+
+    <!-- Customize › Home layout › Categories -->
+    <string name="set_home_categories_new_category">New category…</string>
+    <string name="set_home_categories_new_category_desc">Make your own row of apps</string>
+    <string name="set_home_categories_new_category_words">add row, group, folder</string>
+    <string name="set_home_categories_all_apps_row">All apps row</string>
+    <string name="set_home_categories_all_apps_row_desc">Show a row with every app</string>
+    <string name="set_home_categories_all_apps_row_words">all apps</string>
+    <string name="set_home_categories_inputs_row_hdmi">Inputs row (HDMI)</string>
+    <string name="set_home_categories_inputs_row_hdmi_desc">Show HDMI inputs as a row</string>
+    <string name="set_home_categories_inputs_row_hdmi_words">hdmi, inputs, sources</string>
+    <string name="set_home_categories_empty_categories">Empty categories</string>
+    <string name="set_home_categories_empty_categories_desc">Show or hide rows with no apps</string>
+    <string name="set_home_categories_empty_categories_words">empty</string>
+    <string name="set_home_categories_reset_categories">Reset categories</string>
+    <string name="set_home_categories_reset_categories_desc">Categories back to the default</string>
+    <string name="set_home_categories_reset_categories_words">undo</string>
+
+    <!-- Customize › Home layout › Dock -->
+    <string name="set_home_dock_rearrange">Rearrange</string>
+    <string name="set_home_dock_rearrange_desc">Move apps around in the dock</string>
+    <string name="set_home_dock_rearrange_words">order, move, sort dock</string>
+    <string name="set_home_dock_reset_dock_to_default">Reset dock to default</string>
+    <string name="set_home_dock_reset_dock_to_default_desc">Default apps in the dock</string>
+    <string name="set_home_dock_reset_dock_to_default_words">undo</string>
+
+    <!-- Customize › Home layout › Weather -->
+    <string name="set_home_weather_show_weather">Show weather</string>
+    <string name="set_home_weather_show_weather_desc">Weather under the clock on Home</string>
+    <string name="set_home_weather_show_weather_words">forecast</string>
+    <string name="set_home_weather_city">City</string>
+    <string name="set_home_weather_city_desc">Where the weather is for</string>
+    <string name="set_home_weather_city_words">location, town, place</string>
+    <string name="set_home_weather_units">Units</string>
+    <string name="set_home_weather_units_desc">Celsius or Fahrenheit</string>
+    <string name="set_home_weather_units_words">celsius, fahrenheit, temperature</string>
+    <string name="set_home_weather_reset_weather">Reset weather</string>
+    <string name="set_home_weather_reset_weather_desc">Forget the city and units</string>
+    <string name="set_home_weather_reset_weather_words">undo</string>
+
+    <!-- Customize › Apps -->
+    <string name="set_apps_show_or_hide_apps">Show or hide apps</string>
+    <string name="set_apps_show_or_hide_apps_desc">Choose which apps Home shows</string>
+    <string name="set_apps_show_or_hide_apps_words">hide, hidden, unhide</string>
+    <string name="set_apps_arrange_apps">Arrange apps</string>
+    <string name="set_apps_arrange_apps_desc">Move apps around on Home</string>
+    <string name="set_apps_arrange_apps_words">order, move, sort</string>
+    <string name="set_apps_sort_and_categories">Sort and categories</string>
+    <string name="set_apps_sort_and_categories_desc">Rows of apps and how they\'re sorted</string>
+    <string name="set_apps_sort_and_categories_words">categories, a-z, alphabetical</string>
+    <string name="set_apps_icon_pack">Icon pack</string>
+    <string name="set_apps_icon_pack_desc">Change every app\'s icon with an icon pack</string>
+    <string name="set_apps_icon_pack_words">icons, theme</string>
+    <string name="set_apps_reset_names_tiles_and_icons">Reset names, tiles and icons</string>
+    <string name="set_apps_reset_names_tiles_and_icons_desc">Every app gets its own name and icon back</string>
+    <string name="set_apps_reset_names_tiles_and_icons_words">rename, undo</string>
+
+    <!-- Customize › Look & sound -->
+    <string name="set_look_appearance">Appearance</string>
+    <string name="set_look_appearance_desc">Light, dark or automatic, and the accent colour</string>
+    <string name="set_look_appearance_words">dark, light, dark mode, night, theme, accent</string>
+    <string name="set_look_font_and_text_size">Font and text size</string>
+    <string name="set_look_font_and_text_size_desc">The font and how big the text is</string>
+    <string name="set_look_font_and_text_size_words">typeface, bigger text, readability</string>
+    <string name="set_look_clock">Clock</string>
+    <string name="set_look_clock_desc">Clock format, size and position</string>
+    <string name="set_look_clock_words">time, 12 hour, 24 hour</string>
+    <string name="set_look_top_bar">Top bar</string>
+    <string name="set_look_top_bar_desc">Which buttons show at the top</string>
+    <string name="set_look_top_bar_words">buttons, bar, pills</string>
+    <string name="set_look_tiles">Tiles</string>
+    <string name="set_look_tiles_desc">How app tiles look</string>
+    <string name="set_look_tiles_words">icons, banners, corners</string>
+    <string name="set_look_themes">Themes</string>
+    <string name="set_look_themes_desc">Save and apply whole looks</string>
+    <string name="set_look_themes_words">presets, style, import</string>
+    <string name="set_look_sounds">Sounds</string>
+    <string name="set_look_sounds_desc">Interface sounds and their volume</string>
+    <string name="set_look_sounds_words">audio, beep, click, mute, sound effects</string>
+
+    <!-- Customize › Look & sound › Appearance -->
+    <string name="set_look_appearance_mode">Mode</string>
+    <string name="set_look_appearance_mode_desc">Dark, light, or automatic from sunrise to sunset</string>
+    <string name="set_look_appearance_mode_words">dark, light, dark mode, night mode, automatic</string>
+    <string name="set_look_appearance_accent_colour">Accent colour</string>
+    <string name="set_look_appearance_accent_colour_desc">Azure, or a colour from the background</string>
+    <string name="set_look_appearance_accent_colour_words">color, highlight, focus colour</string>
+
+    <!-- Customize › Look & sound › Font and text size -->
+    <string name="set_look_font_font">Font</string>
+    <string name="set_look_font_font_desc">The typeface used everywhere</string>
+    <string name="set_look_font_font_words">typeface, lettering</string>
+    <string name="set_look_font_text_size">Text size</string>
+    <string name="set_look_font_text_size_desc">Smaller or bigger text</string>
+    <string name="set_look_font_text_size_words">bigger text, zoom, large text, readability</string>
+    <string name="set_look_font_reset_font_and_size">Reset font and size</string>
+    <string name="set_look_font_reset_font_and_size_desc">Default font and size</string>
+    <string name="set_look_font_reset_font_and_size_words">undo</string>
+
+    <!-- Customize › Look & sound › Clock -->
+    <string name="set_look_clock_format">Format</string>
+    <string name="set_look_clock_format_desc">12-hour, 24-hour or automatic</string>
+    <string name="set_look_clock_format_words">12 hour, 24 hour, am pm</string>
+    <string name="set_look_clock_size">Size</string>
+    <string name="set_look_clock_size_desc">How big the clock is</string>
+    <string name="set_look_clock_size_words">bigger clock, smaller clock</string>
+    <string name="set_look_clock_position">Position</string>
+    <string name="set_look_clock_position_desc">Where the clock sits</string>
+    <string name="set_look_clock_position_words">place, left, centre, center</string>
+    <string name="set_look_clock_date">Date</string>
+    <string name="set_look_clock_date_desc">Show the date under the clock</string>
+    <string name="set_look_clock_date_words">day</string>
+    <string name="set_look_clock_greeting">Greeting</string>
+    <string name="set_look_clock_greeting_desc">Good morning above the clock</string>
+    <string name="set_look_clock_greeting_words">hello, message</string>
+    <string name="set_look_clock_shadow">Shadow</string>
+    <string name="set_look_clock_shadow_desc">A soft shadow behind the clock</string>
+    <string name="set_look_clock_shadow_words">outline, readability</string>
+    <string name="set_look_clock_reset_clock">Reset clock</string>
+    <string name="set_look_clock_reset_clock_desc">Clock back to the default</string>
+    <string name="set_look_clock_reset_clock_words">undo</string>
+
+    <!-- Customize › Look & sound › Top bar -->
+    <string name="set_look_bar_inputs_button">Inputs button</string>
+    <string name="set_look_bar_inputs_button_desc">Show the Inputs button</string>
+    <string name="set_look_bar_inputs_button_words">hdmi, sources</string>
+    <string name="set_look_bar_search_button">Search button</string>
+    <string name="set_look_bar_search_button_desc">Show the Search button</string>
+    <string name="set_look_bar_search_button_words">find, magnifier</string>
+    <string name="set_look_bar_wi_fi">Wi-Fi</string>
+    <string name="set_look_bar_wi_fi_desc">Show the Wi-Fi name and signal</string>
+    <string name="set_look_bar_wi_fi_words">wifi, network, internet</string>
+    <string name="set_look_bar_notifications">Notifications</string>
+    <string name="set_look_bar_notifications_desc">A bell when apps have notifications</string>
+    <string name="set_look_bar_notifications_words">bell, alerts</string>
+    <string name="set_look_bar_settings_button">Settings button</string>
+    <string name="set_look_bar_settings_button_desc">Show the Settings button</string>
+    <string name="set_look_bar_settings_button_words">gear</string>
+    <string name="set_look_bar_size">Size</string>
+    <string name="set_look_bar_size_desc">Normal or compact buttons</string>
+    <string name="set_look_bar_size_words">compact, smaller buttons</string>
+    <string name="set_look_bar_reset_top_bar">Reset top bar</string>
+    <string name="set_look_bar_reset_top_bar_desc">Top bar back to the default</string>
+    <string name="set_look_bar_reset_top_bar_words">undo</string>
+
+    <!-- Customize › Look & sound › Top bar › Notifications -->
+    <string name="set_look_bar_notif_show_the_bell">Show the bell</string>
+    <string name="set_look_bar_notif_show_the_bell_desc">A bell in the top bar for notifications</string>
+    <string name="set_look_bar_notif_show_the_bell_words">alerts</string>
+    <string name="set_look_bar_notif_notification_access">Notification access</string>
+    <string name="set_look_bar_notif_notification_access_desc">Android\'s permission for the bell</string>
+    <string name="set_look_bar_notif_notification_access_words">permission</string>
+
+    <!-- Customize › Look & sound › Tiles -->
+    <string name="set_look_tiles_style">Style</string>
+    <string name="set_look_tiles_style_desc">Clean, soft or crisp tiles</string>
+    <string name="set_look_tiles_style_words">look, corners</string>
+    <string name="set_look_tiles_show_apps_as">Show apps as</string>
+    <string name="set_look_tiles_show_apps_as_desc">Icons or wide banners</string>
+    <string name="set_look_tiles_show_apps_as_words">banners, icons</string>
+    <string name="set_look_tiles_app_names">App names</string>
+    <string name="set_look_tiles_app_names_desc">When app names show under tiles</string>
+    <string name="set_look_tiles_app_names_words">labels, titles</string>
+    <string name="set_look_tiles_advanced">Advanced</string>
+    <string name="set_look_tiles_advanced_desc">Corners, focus colour and icon backgrounds</string>
+    <string name="set_look_tiles_advanced_words">corners, rounded</string>
+    <string name="set_look_tiles_reset_tiles">Reset tiles</string>
+    <string name="set_look_tiles_reset_tiles_desc">Tiles back to the default</string>
+    <string name="set_look_tiles_reset_tiles_words">undo</string>
+
+    <!-- Customize › Look & sound › Tiles › Advanced -->
+    <string name="set_look_tiles_advanced_corners">Corners</string>
+    <string name="set_look_tiles_advanced_corners_desc">How round tile corners are</string>
+    <string name="set_look_tiles_advanced_corners_words">rounded, radius</string>
+    <string name="set_look_tiles_advanced_focus_colour">Focus colour</string>
+    <string name="set_look_tiles_advanced_focus_colour_desc">The colour around the app you\'re on</string>
+    <string name="set_look_tiles_advanced_focus_colour_words">highlight, accent</string>
+    <string name="set_look_tiles_advanced_icon_tile_background">Icon tile background</string>
+    <string name="set_look_tiles_advanced_icon_tile_background_desc">What\'s behind each app icon</string>
+    <string name="set_look_tiles_advanced_icon_tile_background_words">glass, plain</string>
+    <string name="set_look_tiles_advanced_glow_behind_the_dock">Glow behind the dock</string>
+    <string name="set_look_tiles_advanced_glow_behind_the_dock_desc">A soft glow in the accent colour</string>
+    <string name="set_look_tiles_advanced_glow_behind_the_dock_words">light, halo</string>
+
+    <!-- Customize › Look & sound › Themes -->
+    <string name="set_look_themes_save_this_look">Save this look…</string>
+    <string name="set_look_themes_save_this_look_desc">Save the current look as a theme</string>
+    <string name="set_look_themes_save_this_look_words">save theme, preset</string>
+    <string name="set_look_themes_import_from_a_picture">Import from a picture</string>
+    <string name="set_look_themes_import_from_a_picture_desc">Load a theme someone shared</string>
+    <string name="set_look_themes_import_from_a_picture_words">import, load theme</string>
+    <string name="set_look_themes_undo_last_theme">Undo last theme</string>
+    <string name="set_look_themes_undo_last_theme_desc">Go back to the look before the last theme</string>
+    <string name="set_look_themes_undo_last_theme_words">undo, revert</string>
+
+    <!-- Customize › Look & sound › Sounds -->
+    <string name="set_look_sounds_volume">Volume</string>
+    <string name="set_look_sounds_volume_desc">How loud interface sounds are, or off</string>
+    <string name="set_look_sounds_volume_words">loud, quiet, mute, sound volume, off</string>
+    <string name="set_look_sounds_output">Output</string>
+    <string name="set_look_sounds_output_desc">System sounds or media volume</string>
+    <string name="set_look_sounds_output_words">speaker, channel</string>
+    <string name="set_look_sounds_quiet_times">Quiet times</string>
+    <string name="set_look_sounds_quiet_times_desc">When sounds stay silent</string>
+    <string name="set_look_sounds_quiet_times_words">bedtime, silent, night</string>
+    <string name="set_look_sounds_start_up_sound">Start-up sound</string>
+    <string name="set_look_sounds_start_up_sound_desc">A sound when Home starts</string>
+    <string name="set_look_sounds_start_up_sound_words">boot, chime</string>
+    <string name="set_look_sounds_panel_open_and_close">≡ panel open and close</string>
+    <string name="set_look_sounds_panel_open_and_close_desc">Sounds when the quick panel opens</string>
+    <string name="set_look_sounds_panel_open_and_close_words">menu sound, panel</string>
+    <string name="set_look_sounds_reset_sounds">Reset sounds</string>
+    <string name="set_look_sounds_reset_sounds_desc">Sounds back to the default</string>
+    <string name="set_look_sounds_reset_sounds_words">undo</string>
+
+    <!-- Customize › Look & sound › Sounds › Output -->
+    <string name="set_look_sounds_output_sound_output">Sound output</string>
+    <string name="set_look_sounds_output_sound_output_desc">Automatic, system sounds or media volume</string>
+    <string name="set_look_sounds_output_sound_output_words">channel, speaker</string>
+    <string name="set_look_sounds_output_silent_on_bluetooth_or_arc">Silent on Bluetooth or ARC</string>
+    <string name="set_look_sounds_output_silent_on_bluetooth_or_arc_desc">No sounds through headphones or a soundbar</string>
+    <string name="set_look_sounds_output_silent_on_bluetooth_or_arc_words">headphones, soundbar, hdmi arc</string>
+
+    <!-- Customize › Look & sound › Sounds › Quiet times -->
+    <string name="set_look_sounds_quiet_silent_at_bedtime">Silent at bedtime</string>
+    <string name="set_look_sounds_quiet_silent_at_bedtime_desc">No sounds while the bedtime lock is on</string>
+    <string name="set_look_sounds_quiet_silent_at_bedtime_words">night, sleep</string>
+    <string name="set_look_sounds_quiet_silent_in_guest_mode">Silent in guest mode</string>
+    <string name="set_look_sounds_quiet_silent_in_guest_mode_desc">No sounds in guest mode</string>
+    <string name="set_look_sounds_quiet_silent_in_guest_mode_words">guest</string>
+
+    <!-- Customize › Projector & tools -->
+    <string name="set_projector_picture">Picture</string>
+    <string name="set_projector_picture_desc">The projector\'s picture mode, colour and HDR</string>
+    <string name="set_projector_picture_words">image, colour, hdr, picture mode</string>
+    <string name="set_projector_brightness">Brightness</string>
+    <string name="set_projector_brightness_desc">The projector\'s laser brightness</string>
+    <string name="set_projector_brightness_words">laser, light, dim</string>
+    <string name="set_projector_keystone">Keystone</string>
+    <string name="set_projector_keystone_desc">Straighten the image</string>
+    <string name="set_projector_keystone_words">angle, skew, correction, focus</string>
+    <string name="set_projector_sleep_timer">Sleep timer</string>
+    <string name="set_projector_sleep_timer_desc">Turn off after a while</string>
+    <string name="set_projector_sleep_timer_words">timer, turn off, shutdown, power off</string>
+    <string name="set_projector_test_patterns">Test patterns</string>
+    <string name="set_projector_test_patterns_desc">Patterns for focus, levels and colour</string>
+    <string name="set_projector_test_patterns_words">calibration, focus, grid</string>
+    <string name="set_projector_start_up_and_wake">Start-up and wake</string>
+    <string name="set_projector_start_up_and_wake_desc">What opens when the projector starts or wakes</string>
+    <string name="set_projector_start_up_and_wake_words">boot, power on, autostart</string>
+    <string name="set_projector_when_home_is_idle">When Home is idle</string>
+    <string name="set_projector_when_home_is_idle_desc">Dim Home or show a clock when idle</string>
+    <string name="set_projector_when_home_is_idle_words">screensaver, idle, clock, dim</string>
+
+    <!-- Customize › Projector & tools › Start-up and wake -->
+    <string name="set_projector_startup_when_it_starts">When it starts</string>
+    <string name="set_projector_startup_when_it_starts_desc">An app or input to open at start-up</string>
+    <string name="set_projector_startup_when_it_starts_words">boot, autostart, power on</string>
+    <string name="set_projector_startup_when_it_wakes">When it wakes</string>
+    <string name="set_projector_startup_when_it_wakes_desc">An app or input to open on wake</string>
+    <string name="set_projector_startup_when_it_wakes_words">resume, wake up</string>
+
+    <!-- Customize › Projector & tools › When Home is idle -->
+    <string name="set_projector_idle_do_this">Do this</string>
+    <string name="set_projector_idle_do_this_desc">Dim Home or show a clock</string>
+    <string name="set_projector_idle_do_this_words">screensaver, clock</string>
+    <string name="set_projector_idle_after">After</string>
+    <string name="set_projector_idle_after_desc">How long before Home goes idle</string>
+    <string name="set_projector_idle_after_words">minutes, timeout</string>
+
+    <!-- Customize › Lock & remote -->
+    <string name="set_lock_pin_lock">PIN lock</string>
+    <string name="set_lock_pin_lock_desc">Set or change the PIN</string>
+    <string name="set_lock_pin_lock_words">password, code, parental, kids, child lock</string>
+    <string name="set_lock_what_it_locks">What it locks</string>
+    <string name="set_lock_what_it_locks_desc">Customize, Settings, apps and categories</string>
+    <string name="set_lock_what_it_locks_words">parental, lock apps, restrict</string>
+    <string name="set_lock_when">When</string>
+    <string name="set_lock_when_desc">Always, or only at bedtime</string>
+    <string name="set_lock_when_words">schedule, bedtime, hours</string>
+    <string name="set_lock_guest_mode">Guest mode</string>
+    <string name="set_lock_guest_mode_desc">Hide Customize and Settings for visitors</string>
+    <string name="set_lock_guest_mode_words">visitor, kiosk, kids</string>
+    <string name="set_lock_remote_shortcuts">Remote shortcuts</string>
+    <string name="set_lock_remote_shortcuts_desc">What holding ≡ or the Settings button does</string>
+    <string name="set_lock_remote_shortcuts_words">buttons, hold, long press</string>
+
+    <!-- Customize › Lock & remote › Remote shortcuts -->
+    <string name="set_lock_shortcuts_hold">Hold ≡</string>
+    <string name="set_lock_shortcuts_hold_desc">What holding the ≡ button does</string>
+    <string name="set_lock_shortcuts_hold_words">menu button, long press</string>
+    <string name="set_lock_shortcuts_hold_the_settings_button">Hold the Settings button</string>
+    <string name="set_lock_shortcuts_hold_the_settings_button_desc">What holding the gear does</string>
+    <string name="set_lock_shortcuts_hold_the_settings_button_words">gear, long press</string>
+    <string name="set_lock_shortcuts_hold_home_for_search">Hold Home for search</string>
+    <string name="set_lock_shortcuts_hold_home_for_search_desc">Holding Home on Home opens search</string>
+    <string name="set_lock_shortcuts_hold_home_for_search_words">long press, home button, search</string>
+
+    <!-- Customize › System -->
+    <string name="set_system_search_and_privacy">Search &amp; privacy</string>
+    <string name="set_system_search_and_privacy_desc">Online title search, region and recent searches</string>
+    <string name="set_system_search_and_privacy_words">search, tmdb, privacy, movies, online</string>
+    <string name="set_system_save_a_backup">Save a backup</string>
+    <string name="set_system_save_a_backup_desc">Save all your settings to a picture file</string>
+    <string name="set_system_save_a_backup_words">backup, export</string>
+    <string name="set_system_restore_a_backup">Restore a backup</string>
+    <string name="set_system_restore_a_backup_desc">Load settings from a backup</string>
+    <string name="set_system_restore_a_backup_words">restore, import</string>
+    <string name="set_system_automatic_backups">Automatic backups</string>
+    <string name="set_system_automatic_backups_desc">Back up before big changes</string>
+    <string name="set_system_automatic_backups_words">auto backup</string>
+    <string name="set_system_reset_everything">Reset everything</string>
+    <string name="set_system_reset_everything_desc">Every setting back to the default</string>
+    <string name="set_system_reset_everything_words">factory, reset, clear, start over</string>
+    <string name="set_system_about">About</string>
+    <string name="set_system_about_desc">Version, licences and credits</string>
+    <string name="set_system_about_words">version, credits, licences, licenses, tmdb, justwatch</string>
+
+    <!-- Customize › System › Search & privacy -->
+    <string name="set_system_search_online_title_search">Online title search</string>
+    <string name="set_system_search_online_title_search_desc">Find movies and shows with TMDB</string>
+    <string name="set_system_search_online_title_search_words">tmdb, movies, tv shows, internet, online</string>
+    <string name="set_system_search_region">Region</string>
+    <string name="set_system_search_region_desc">Which country\'s streaming apps to show</string>
+    <string name="set_system_search_region_words">country, location</string>
+    <string name="set_system_search_titles_not_on_your_apps">Titles not on your apps</string>
+    <string name="set_system_search_titles_not_on_your_apps_desc">Show or hide titles your apps don\'t have</string>
+    <string name="set_system_search_titles_not_on_your_apps_words">elsewhere, other services</string>
+    <string name="set_system_search_recent_searches">Recent searches</string>
+    <string name="set_system_search_recent_searches_desc">Remember what you searched for</string>
+    <string name="set_system_search_recent_searches_words">history</string>
+    <string name="set_system_search_clear_recent_searches">Clear recent searches</string>
+    <string name="set_system_search_clear_recent_searches_desc">Forget what you searched for</string>
+    <string name="set_system_search_clear_recent_searches_words">history, delete</string>
+</resources>

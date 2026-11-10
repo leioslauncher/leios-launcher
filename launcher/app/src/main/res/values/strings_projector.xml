@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Customize › Projector & tools: the projector's own screens, the sleep timer, test patterns,
+     start-up and idle. Setting names are in strings_settings.xml. -->
+<resources>
+    <!-- Next to the projector's own screens (JMGO projectors): what each one changes. -->
+    <string name="projector_picture_summary">Mode, colour, HDR</string>
+    <string name="projector_brightness_summary">Laser brightness</string>
+    <string name="projector_keystone_summary">Straighten the image</string>
+</resources>
