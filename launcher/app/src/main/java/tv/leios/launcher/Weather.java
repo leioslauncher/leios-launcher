@@ -53,8 +53,13 @@ final class Weather {
         return n;
     }
 
-    static List<Place> search(String query) throws IOException, JSONException {
-        String url = "https://geocoding-api.open-meteo.com/v1/search?count=8&language=en&format=json&name="
+    /**
+     * Cities called {@code query}, named in {@code language} (an ISO 639 code, e.g. "en") where the
+     * service knows the name; {@code separator} joins region and country.
+     */
+    static List<Place> search(String query, String language, String separator) throws IOException, JSONException {
+        String lang = language != null && language.matches("[a-z]{2,3}") ? language : "en";
+        String url = "https://geocoding-api.open-meteo.com/v1/search?count=8&language=" + lang + "&format=json&name="
                 + URLEncoder.encode(query.trim(), "UTF-8");
         JSONArray results = new JSONObject(get(url)).optJSONArray("results");
         List<Place> places = new ArrayList<>();
@@ -63,7 +68,7 @@ final class Weather {
             Place p = new Place();
             p.name = r.getString("name");
             String admin = r.optString("admin1", ""), country = r.optString("country", "");
-            p.detail = admin.isEmpty() ? country : admin + ", " + country;
+            p.detail = admin.isEmpty() ? country : admin + separator + country;
             p.lat = r.getDouble("latitude");
             p.lon = r.getDouble("longitude");
             places.add(p);
@@ -71,19 +76,19 @@ final class Weather {
         return places;
     }
 
-    /** WMO weather codes. */
-    static String describe(int code) {
-        if (code == 0) return "Clear";
-        if (code <= 2) return "Partly cloudy";
-        if (code == 3) return "Cloudy";
-        if (code == 45 || code == 48) return "Fog";
-        if (code >= 51 && code <= 57) return "Drizzle";
-        if (code >= 61 && code <= 67) return "Rain";
-        if (code >= 71 && code <= 77) return "Snow";
-        if (code >= 80 && code <= 82) return "Showers";
-        if (code == 85 || code == 86) return "Snow showers";
-        if (code >= 95) return "Thunderstorm";
-        return "";
+    /** WMO weather codes: a string resource for the sky, or 0 for a code with no words. */
+    static int describe(int code) {
+        if (code == 0) return R.string.weather_clear;
+        if (code <= 2) return R.string.weather_partly_cloudy;
+        if (code == 3) return R.string.weather_cloudy;
+        if (code == 45 || code == 48) return R.string.weather_fog;
+        if (code >= 51 && code <= 57) return R.string.weather_drizzle;
+        if (code >= 61 && code <= 67) return R.string.weather_rain;
+        if (code >= 71 && code <= 77) return R.string.weather_snow;
+        if (code >= 80 && code <= 82) return R.string.weather_showers;
+        if (code == 85 || code == 86) return R.string.weather_snow_showers;
+        if (code >= 95) return R.string.weather_thunderstorm;
+        return 0;
     }
 
     static String emoji(int code, boolean day) {

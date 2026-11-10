@@ -44,9 +44,28 @@
     <string name="hint_results">Results</string>
     <string name="hint_complete">Complete</string>
 
+    <!-- Keys on the on-screen keyboard (not the remote) that finish typing. -->
+    <string name="key_search">Search key</string>
+    <string name="key_done">Done key</string>
+    <string name="hint_look_up">Look it up</string>
+    <string name="hint_save">Save</string>
+    <string name="hint_add_remove">Add / remove</string>
+    <string name="hint_show_hide">Show / hide</string>
+
     <!-- A setting's state, shown at the end of its row. -->
     <string name="on">On</string>
     <string name="off">Off</string>
+    <string name="shown">Shown</string>
+    <string name="hidden">Hidden</string>
+    <string name="not_set">Not set</string>
+    <!-- A reset that has nothing to undo. -->
+    <string name="already_default">Already the default.</string>
+    <!-- A menu row: leave without changing anything. -->
+    <string name="action_cancel">Cancel</string>
+    <string name="loading_apps">Loading apps…</string>
+    <string name="try_again">Try again</string>
+    <!-- A setting and what it was set to: "Tile spacing: Roomy". -->
+    <string name="toast_setting_value">%1$s: %2$s</string>
 
     <!-- Joins a list of names: "Movies, Games". -->
     <string name="list_separator">", "</string>

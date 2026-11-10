@@ -712,8 +712,14 @@ public class MainActivity extends Activity {
     // ---- layout: tile size, spacing, margins (Customize › Home layout › Layout) ---------------
 
     private static final int[] GAPS = {R.dimen.tile_gap_tight, R.dimen.tile_gap, R.dimen.tile_gap_roomy};
-    private static final String[] SPACING = {"Tight", "Normal", "Roomy"};
-    private static final String[] MARGINS = {"Standard", "Wider", "Widest"};
+    private static final int[] SPACING = {R.string.spacing_tight, R.string.spacing_normal, R.string.spacing_roomy};
+    private static final int[] MARGINS = {R.string.margin_standard, R.string.margin_wider, R.string.margin_widest};
+    /** The same, with what they're for, in the list to pick from. */
+    private static final int[] MARGIN_OPTIONS = {R.string.margin_standard, R.string.margin_wider_long,
+            R.string.margin_widest_long};
+    /** After sorting a row, in the order of Categories.SORTS. */
+    private static final int[] SORTED_TOASTS = {R.string.toast_sorted_custom, R.string.toast_sorted_az,
+            R.string.toast_sorted_recent, R.string.toast_sorted_used};
     private int innerW, rowGap;
 
     private int pref(String key, int def, int max) {
@@ -1230,6 +1236,11 @@ public class MainActivity extends Activity {
         String[] out = new String[ids.length];
         for (int i = 0; i < ids.length; i++) out[i] = tr(ids[i]);
         return out;
+    }
+
+    /** "On" or "Off" at the end of a toggle's row. */
+    private String onOff(boolean on) {
+        return tr(on ? R.string.on : R.string.off);
     }
 
     private String[] sortNames() {
@@ -4336,21 +4347,23 @@ public class MainActivity extends Activity {
 
     private String homeSummary() {
         int n = categories.list.size();
-        return n == 1 ? columns + " slots" : n + " categories";
+        return n == 1 ? trn(R.plurals.home_slots, columns) : trn(R.plurals.home_categories, n);
     }
 
     private String startOnName() {
         Categories.Cat c = categories.find(categories.startOn);
-        return c == null ? "Dock" : catName(c);
+        return c == null ? tr(R.string.set_home_dock) : catName(c);
     }
 
     private void openHomeMenu(int focus) {
         lastSection = SEC_HOME;
         startMenu(tr(R.string.customize), tr(R.string.menu_home));
-        add(MenuView.Row.nav(R.drawable.ic_rows, tr(R.string.set_home_categories), String.valueOf(categories.list.size())),
+        add(MenuView.Row.nav(R.drawable.ic_rows, tr(R.string.set_home_categories), number(categories.list.size())),
                 () -> openCategoriesMenu(0));
-        add(MenuView.Row.nav(R.drawable.ic_dock, tr(R.string.set_home_dock), dockApps.size() + " apps"), () -> openDockMenu(0));
-        add(MenuView.Row.nav(R.drawable.ic_apps, tr(R.string.set_home_layout), columns + " per row"), () -> openLayoutMenu(0));
+        add(MenuView.Row.nav(R.drawable.ic_dock, tr(R.string.set_home_dock), trn(R.plurals.apps_count, dockApps.size())),
+                () -> openDockMenu(0));
+        add(MenuView.Row.nav(R.drawable.ic_apps, tr(R.string.set_home_layout), trn(R.plurals.layout_per_row, columns)),
+                () -> openLayoutMenu(0));
         add(MenuView.Row.nav(R.drawable.ic_open, tr(R.string.set_home_home_button_goes_to), startOnName()), this::openStartOnMenu);
         add(MenuView.Row.nav(R.drawable.ic_weather, tr(R.string.set_home_weather), weatherSummary()), () -> openWeatherMenu(0));
         showSheet(focus, backTo(SEC_HOME), null);
@@ -4358,19 +4371,20 @@ public class MainActivity extends Activity {
 
     private void openLayoutMenu(int focus) {
         startMenu(crumb(tr(R.string.menu_home)), tr(R.string.menu_home_layout));
-        add(MenuView.Row.nav(0, tr(R.string.set_home_layout_tiles_per_row), String.valueOf(columns)), () -> layoutChoice(0, "Tiles per row",
-                new String[] {"4 (largest tiles)", "5", "6", "7 (smallest tiles)"}, "columns", columns - 4, 4));
-        add(MenuView.Row.nav(0, tr(R.string.set_home_layout_tile_spacing), SPACING[pref("gap", 1, 2)]), () -> layoutChoice(1, "Tile spacing",
-                SPACING, "gap", pref("gap", 1, 2), 0));
-        add(MenuView.Row.nav(0, tr(R.string.set_home_layout_row_spacing), SPACING[rowGap]), () -> layoutChoice(2, "Row spacing",
-                SPACING, "row_gap", rowGap, 0));
-        add(MenuView.Row.nav(0, tr(R.string.set_home_layout_side_margins), MARGINS[pref("margin", 0, 2)]), () -> layoutChoice(3, "Side margins",
-                new String[] {"Standard", "Wider (for overscan)", "Widest (for overscan)"}, "margin", pref("margin", 0, 2), 0));
+        add(MenuView.Row.nav(0, tr(R.string.set_home_layout_tiles_per_row), number(columns)), () -> layoutChoice(0,
+                tr(R.string.set_home_layout_tiles_per_row), new String[] {tr(R.string.layout_columns_largest, number(4)),
+                        number(5), number(6), tr(R.string.layout_columns_smallest, number(7))}, "columns", columns - 4, 4));
+        add(MenuView.Row.nav(0, tr(R.string.set_home_layout_tile_spacing), tr(SPACING[pref("gap", 1, 2)])), () -> layoutChoice(1,
+                tr(R.string.set_home_layout_tile_spacing), trAll(SPACING), "gap", pref("gap", 1, 2), 0));
+        add(MenuView.Row.nav(0, tr(R.string.set_home_layout_row_spacing), tr(SPACING[rowGap])), () -> layoutChoice(2,
+                tr(R.string.set_home_layout_row_spacing), trAll(SPACING), "row_gap", rowGap, 0));
+        add(MenuView.Row.nav(0, tr(R.string.set_home_layout_side_margins), tr(MARGINS[pref("margin", 0, 2)])), () -> layoutChoice(3,
+                tr(R.string.set_home_layout_side_margins), trAll(MARGIN_OPTIONS), "margin", pref("margin", 0, 2), 0));
         add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.set_home_layout_reset_layout)), () -> {
             prefs.edit().remove("columns").remove("gap").remove("row_gap").remove("margin").apply();
             relayout();
             reloadApps();
-            toast("Layout back to the default", true);
+            toast(tr(R.string.toast_layout_reset), true);
             openLayoutMenu(4);
         });
         showSheet(focus, () -> openHomeMenu(2), null);
@@ -4384,7 +4398,7 @@ public class MainActivity extends Activity {
             relayout();
             // Banners are drawn at tile size, so draw them again at the new size.
             reloadApps();
-            toast(title + ": " + options[i], true);
+            toast(tr(R.string.toast_setting_value, title, options[i]), true);
             openLayoutMenu(row);
         }, i -> {
             cancelPhotoPreview();
@@ -4400,17 +4414,17 @@ public class MainActivity extends Activity {
     }
 
     private void openStartOnMenu() {
-        List<String> names = new ArrayList<>(Collections.singletonList("Dock"));
+        List<String> names = new ArrayList<>(Collections.singletonList(tr(R.string.set_home_dock)));
         List<String> ids = new ArrayList<>(Collections.singletonList(Categories.DOCK));
         for (Categories.Cat c : categories.list) {
             names.add(catName(c));
             ids.add(c.id);
         }
-        openChoice(crumb(tr(R.string.menu_home)), "Home button goes to", names.toArray(new String[0]),
+        openChoice(crumb(tr(R.string.menu_home)), tr(R.string.set_home_home_button_goes_to), names.toArray(new String[0]),
                 ids.indexOf(categories.startOn), i -> {
                     categories.startOn = ids.get(i);
                     categories.save(prefs);
-                    toast("Home goes to " + names.get(i), true);
+                    toast(tr(R.string.toast_home_goes_to, names.get(i)), true);
                     openHomeMenu(2);
                 }, null, () -> openHomeMenu(2));
     }
@@ -4421,47 +4435,47 @@ public class MainActivity extends Activity {
         for (Categories.Cat c : categories.list) {
             int n = 0;
             for (Section s : sections) if (s.cat == c) n = s.apps.size();
-            add(MenuView.Row.nav(0, catName(c), n == 1 ? "1 app" : n + " apps"), () -> openCategoryMenu(c, 0));
+            add(MenuView.Row.nav(0, catName(c), trn(R.plurals.apps_count, n)), () -> openCategoryMenu(c, 0));
         }
-        add(MenuView.Row.action(R.drawable.ic_add, tr(R.string.set_home_categories_new_category)), () -> askText(categoriesCrumb(), "New category",
-                "Name, e.g. Movies", "", InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
+        add(MenuView.Row.action(R.drawable.ic_add, tr(R.string.set_home_categories_new_category)), () -> askText(categoriesCrumb(),
+                tr(R.string.category_new_title), tr(R.string.category_new_hint), "", InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
                     Categories.Cat c = categories.create(name);
                     categories.save(prefs);
                     rebuildLists();
-                    toast(name + " added. Pick its apps.", true);
+                    toast(tr(R.string.toast_category_added, name), true);
                     openCategoryApps(c, 0);
                 }, () -> openCategoriesMenu(categories.list.size())));
         int base = categories.list.size() + 1;
-        add(MenuView.Row.action(0, tr(R.string.set_home_categories_all_apps_row)).value(categories.allAppsRow ? "On" : "Off"), () -> {
+        add(MenuView.Row.action(0, tr(R.string.set_home_categories_all_apps_row)).value(onOff(categories.allAppsRow)), () -> {
             categories.allAppsRow = !categories.allAppsRow;
             categories.save(prefs);
             rebuildLists();
             openCategoriesMenu(base);
         });
-        MenuView.Row inputsRow = add(MenuView.Row.action(0, tr(R.string.set_home_categories_inputs_row_hdmi)).value(categories.inputsRow ? "On" : "Off"), () -> {
+        MenuView.Row inputsRow = add(MenuView.Row.action(0, tr(R.string.set_home_categories_inputs_row_hdmi)).value(onOff(categories.inputsRow)), () -> {
             categories.inputsRow = !categories.inputsRow;
             categories.save(prefs);
             rebuildLists();
             openCategoriesMenu(base + 1);
         });
-        if (!hasInputs) inputsRow.disabled("This TV has no HDMI inputs.");
-        add(MenuView.Row.action(0, tr(R.string.set_home_categories_empty_categories)).value(categories.showEmpty ? "Shown" : "Hidden"), () -> {
+        if (!hasInputs) inputsRow.disabled(tr(R.string.categories_no_inputs));
+        add(MenuView.Row.action(0, tr(R.string.set_home_categories_empty_categories))
+                .value(tr(categories.showEmpty ? R.string.shown : R.string.hidden)), () -> {
             categories.showEmpty = !categories.showEmpty;
             categories.save(prefs);
             rebuildLists();
             openCategoriesMenu(base + 2);
         });
         MenuView.Row reset = add(MenuView.Row.nav(R.drawable.ic_reset, tr(R.string.set_home_categories_reset_categories), ""), () -> {
-            startMenu(crumbOf(categoriesCrumb(), tr(R.string.menu_home_categories)), "Reset categories?");
-            add(MenuView.Row.note(R.drawable.ic_info, "Your categories are removed and every app goes back to one "
-                    + "Apps row, A–Z. Apps aren't hidden or uninstalled."), null);
-            add(MenuView.Row.action(R.drawable.ic_close, "Cancel"), () -> openCategoriesMenu(base + 3));
+            startMenu(crumbOf(categoriesCrumb(), tr(R.string.menu_home_categories)), tr(R.string.categories_reset_title));
+            add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.categories_reset_note)), null);
+            add(MenuView.Row.action(R.drawable.ic_close, tr(R.string.action_cancel)), () -> openCategoriesMenu(base + 3));
             add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.set_home_categories_reset_categories)), () -> {
                 autoBackup("Before category reset");
                 prefs.edit().remove("categories").remove("sort").remove("grid_order").apply();
                 categories = Categories.load(prefs);
                 rebuildLists();
-                toast("Categories back to one Apps row", true);
+                toast(tr(R.string.toast_categories_reset), true);
                 openCategoriesMenu(0);
             });
             // Cancel is preselected.
@@ -4469,7 +4483,7 @@ public class MainActivity extends Activity {
         });
         if (categories.list.size() == 1 && !categories.allAppsRow && !categories.inputsRow
                 && Categories.SORT_AZ.equals(categories.list.get(0).sort)) {
-            reset.disabled("Already the default.");
+            reset.disabled(tr(R.string.already_default));
         }
         showSheet(focus, () -> openHomeMenu(0), null);
     }
@@ -4480,21 +4494,23 @@ public class MainActivity extends Activity {
         Section shown = null;
         for (Section s : sections) if (s.cat == c) shown = s;
         int count = shown == null ? 0 : shown.apps.size();
-        MenuView.Row apps = add(MenuView.Row.nav(R.drawable.ic_apps, "Apps in it", String.valueOf(count)),
+        MenuView.Row apps = add(MenuView.Row.nav(R.drawable.ic_apps, tr(R.string.category_apps_in_it), number(count)),
                 () -> openCategoryApps(c, 0));
-        if (c.isApps()) apps.disabled("Every app that isn't in another category shows here.");
-        add(MenuView.Row.nav(R.drawable.ic_check, "Sort", tr(c.sortName())), () -> {
+        if (c.isApps()) apps.disabled(tr(R.string.category_apps_note));
+        add(MenuView.Row.nav(R.drawable.ic_check, tr(R.string.category_sort), tr(c.sortName())), () -> {
             int cur = Arrays.asList(Categories.SORTS).indexOf(c.sort);
-            openChoice(crumb, "Sort " + catName(c), sortNames(), cur, i -> {
+            openChoice(crumb, tr(R.string.category_sort_title, catName(c)), sortNames(), cur, i -> {
                 c.sort = Categories.SORTS[i];
                 categories.save(prefs);
                 rebuildLists();
-                toast(catName(c) + " sorted " + tr(Categories.SORT_NAMES[i]).toLowerCase(Locale.getDefault()), true);
+                toast(tr(SORTED_TOASTS[i], catName(c)), true);
                 openCategoryMenu(c, 1);
             }, null, () -> openCategoryMenu(c, 1));
         });
-        add(MenuView.Row.nav(R.drawable.ic_rows, "Layout", c.singleRow ? "One row" : "Grid"), () ->
-                openChoice(crumb, catName(c) + " layout", new String[] {"Grid (shows every app)", "One row (scrolls sideways)"},
+        add(MenuView.Row.nav(R.drawable.ic_rows, tr(R.string.category_layout), tr(c.singleRow ? R.string.category_one_row
+                        : R.string.category_grid)), () ->
+                openChoice(crumb, tr(R.string.category_layout_title, catName(c)),
+                        trAll(R.string.category_grid_long, R.string.category_one_row_long),
                         c.singleRow ? 1 : 0, i -> {
                             c.singleRow = i == 1;
                             categories.save(prefs);
@@ -4502,27 +4518,29 @@ public class MainActivity extends Activity {
                             openCategoryMenu(c, 2);
                         }, null, () -> openCategoryMenu(c, 2)));
         Section target = shown;
-        MenuView.Row arrange = add(MenuView.Row.action(R.drawable.ic_move, "Rearrange"), () -> {
+        MenuView.Row arrange = add(MenuView.Row.action(R.drawable.ic_move, tr(R.string.category_rearrange)), () -> {
             area = GRID;
             gridSec = sections.indexOf(target);
             gridIndex = 0;
             target.first = 0;
             startMove();
         });
-        if (count == 0) arrange.disabled("No apps in it yet.");
-        add(MenuView.Row.nav(R.drawable.ic_rename, "Rename", ""), () -> askText(crumb, "Rename " + catName(c),
-                "Name", catName(c), InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
+        if (count == 0) arrange.disabled(tr(R.string.category_no_apps_yet));
+        add(MenuView.Row.nav(R.drawable.ic_rename, tr(R.string.rename_title), ""), () -> askText(crumb,
+                tr(R.string.category_rename_title, catName(c)), tr(R.string.qa_name), catName(c),
+                InputType.TYPE_TEXT_FLAG_CAP_WORDS, name -> {
                     c.name = name;
                     categories.save(prefs);
                     rebuildLists();
-                    toast("Renamed to " + name, true);
+                    toast(tr(R.string.toast_renamed, name), true);
                     openCategoryMenu(c, 4);
                 }, () -> openCategoryMenu(c, 4)));
         int pos = categories.list.indexOf(c);
-        add(MenuView.Row.nav(R.drawable.ic_order, "Position", (pos + 1) + " of " + categories.list.size()), () -> {
+        add(MenuView.Row.nav(R.drawable.ic_order, tr(R.string.category_position),
+                tr(R.string.position_of, number(pos + 1), number(categories.list.size()))), () -> {
             String[] options = new String[categories.list.size()];
-            for (int i = 0; i < options.length; i++) options[i] = i == 0 ? "1 (top)" : String.valueOf(i + 1);
-            openChoice(crumb, "Position of " + catName(c), options, pos, i -> {
+            for (int i = 0; i < options.length; i++) options[i] = i == 0 ? tr(R.string.position_top, number(1)) : number(i + 1);
+            openChoice(crumb, tr(R.string.category_position_title, catName(c)), options, pos, i -> {
                 categories.list.remove(c);
                 categories.list.add(i, c);
                 categories.save(prefs);
@@ -4531,15 +4549,15 @@ public class MainActivity extends Activity {
             }, null, () -> openCategoryMenu(c, 5));
         });
         if (!c.isApps()) {
-            add(MenuView.Row.nav(R.drawable.ic_trash, "Delete", ""), () -> {
-                startMenu(crumb, "Delete " + catName(c) + "?");
-                add(MenuView.Row.note(R.drawable.ic_info, "Its apps go back to Apps. Nothing is uninstalled."), null);
-                add(MenuView.Row.action(R.drawable.ic_close, "Cancel"), () -> openCategoryMenu(c, 6));
-                add(MenuView.Row.action(R.drawable.ic_trash, "Delete " + catName(c)), () -> {
+            add(MenuView.Row.nav(R.drawable.ic_trash, tr(R.string.category_delete), ""), () -> {
+                startMenu(crumb, tr(R.string.category_delete_title, catName(c)));
+                add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.category_delete_note)), null);
+                add(MenuView.Row.action(R.drawable.ic_close, tr(R.string.action_cancel)), () -> openCategoryMenu(c, 6));
+                add(MenuView.Row.action(R.drawable.ic_trash, tr(R.string.category_delete_action, catName(c))), () -> {
                     categories.delete(c);
                     categories.save(prefs);
                     rebuildLists();
-                    toast(catName(c) + " deleted", true);
+                    toast(tr(R.string.toast_category_deleted, catName(c)), true);
                     openCategoriesMenu(0);
                 });
                 // Cancel is preselected.
@@ -4551,7 +4569,7 @@ public class MainActivity extends Activity {
 
     /** Ticked apps are in the category; OK adds or takes one out (back to Apps). */
     private void openCategoryApps(Categories.Cat c, int focus) {
-        startMenu(crumbOf(categoriesCrumb(), catName(c)), "Apps in " + catName(c));
+        startMenu(crumbOf(categoriesCrumb(), catName(c)), tr(R.string.category_apps_in_title, catName(c)));
         Set<String> hidden = hiddenApps();
         for (int i = 0; i < allApps.size(); i++) {
             AppRepo.App a = allApps.get(i);
@@ -4559,7 +4577,7 @@ public class MainActivity extends Activity {
             boolean mine = in == c;
             int n = i;
             // Docked apps can be added too; they show in the category once they leave the dock.
-            String where = hidden.contains(a.pkg) ? "Hidden" : dockApps.contains(a) ? "In dock"
+            String where = hidden.contains(a.pkg) ? tr(R.string.hidden) : dockApps.contains(a) ? tr(R.string.in_dock)
                     : !mine && !in.isApps() ? catName(in) : "";
             add(MenuView.Row.choice(a.label, mine).value(where), () -> {
                 categories.moveApp(a.pkg, mine ? categories.find(Categories.APPS) : c, -1);
@@ -4568,9 +4586,9 @@ public class MainActivity extends Activity {
                 openCategoryApps(c, n);
             });
         }
-        if (allApps.isEmpty()) add(MenuView.Row.loading("Loading apps…"), null);
+        if (allApps.isEmpty()) add(MenuView.Row.loading(tr(R.string.loading_apps)), null);
         showSheet(focus, () -> openCategoryMenu(c, 0), null);
-        menu.setHints("OK", "Add / remove", "BACK", "Back");
+        menu.setHints(tr(R.string.key_ok), tr(R.string.hint_add_remove), tr(R.string.key_back), tr(R.string.hint_back));
     }
 
     // Dock
@@ -4578,17 +4596,17 @@ public class MainActivity extends Activity {
     private void openDockMenu(int focus) {
         lastSection = SEC_HOME;
         startMenu(crumb(tr(R.string.menu_home)), tr(R.string.menu_home_dock));
-        add(MenuView.Row.note(R.drawable.ic_info, "The dock holds as many apps as a row (Layout › Tiles per row)."), null);
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.dock_note)), null);
         MenuView.Row rearrange = add(MenuView.Row.action(0, tr(R.string.set_home_dock_rearrange)), () -> {
             area = DOCK;
             dockIndex = Math.min(dockIndex, dockApps.size() - 1);
             startMove();
         });
-        if (dockApps.isEmpty()) rearrange.disabled("The dock is empty. Hold OK on an app in the grid to add it.");
+        if (dockApps.isEmpty()) rearrange.disabled(tr(R.string.dock_empty));
         add(MenuView.Row.action(0, tr(R.string.set_home_dock_reset_dock_to_default)), () -> {
             prefs.edit().remove("dock_order").remove("dock_config").apply();
             rebuildLists();
-            toast("Dock reset to the default apps", true);
+            toast(tr(R.string.toast_dock_reset), true);
         });
         showSheet(focus, () -> openHomeMenu(1), null);
     }
@@ -4604,23 +4622,23 @@ public class MainActivity extends Activity {
 
     private String appsSummary() {
         int hidden = hiddenCount();
-        return hidden > 0 ? hidden + " hidden" : "All shown";
+        return hidden > 0 ? trn(R.plurals.apps_hidden, hidden) : tr(R.string.apps_all_shown);
     }
 
     private void openAppsMenu(int focus) {
         lastSection = SEC_APPS;
         startMenu(tr(R.string.customize), tr(R.string.menu_apps));
-        add(MenuView.Row.nav(0, tr(R.string.set_apps_show_or_hide_apps), hiddenCount() + " hidden"), () -> openHideMenu(0));
+        add(MenuView.Row.nav(0, tr(R.string.set_apps_show_or_hide_apps), trn(R.plurals.apps_hidden, hiddenCount())), () -> openHideMenu(0));
         MenuView.Row arrange = add(MenuView.Row.action(0, tr(R.string.set_apps_arrange_apps)), () -> {
             area = GRID;
             enterSection(nextSection(-1, 1, false), 0, true);
             startMove();
         });
-        if (!hasGrid()) arrange.disabled("No apps under the dock to arrange.");
+        if (!hasGrid()) arrange.disabled(tr(R.string.cust_nothing_to_arrange));
         add(MenuView.Row.nav(0, tr(R.string.set_apps_sort_and_categories), ""), () -> openCategoriesMenu(0));
         List<IconPacks.Pack> packs = IconPacks.installed(this);
         String packPkg = prefs.getString("icon_pack", "");
-        String packName = "None";
+        String packName = tr(R.string.icon_pack_none);
         for (IconPacks.Pack p : packs) if (p.pkg.equals(packPkg)) packName = p.label;
         add(MenuView.Row.nav(0, tr(R.string.set_apps_icon_pack), packName), () -> openIconPackMenu(packs));
         int changed = json("app_names").length() + json("app_tiles").length() + json("app_icons").length();
@@ -4628,26 +4646,25 @@ public class MainActivity extends Activity {
             prefs.edit().remove("app_names").remove("app_tiles").remove("app_icons").apply();
             deleteRecursively(new File(getFilesDir(), "icons"));
             reloadApps();
-            toast("Every app has its own name, tile and icon again", true);
+            toast(tr(R.string.toast_apps_reset), true);
             openAppsMenu(4);
         });
-        if (changed == 0) reset.disabled("No app has been renamed or given another tile or icon.");
+        if (changed == 0) reset.disabled(tr(R.string.apps_nothing_to_reset));
         showSheet(focus, backTo(SEC_APPS), null);
     }
 
     /** One pack for every app it has an icon for; apps it doesn't cover keep their own. */
     private void openIconPackMenu(List<IconPacks.Pack> packs) {
         String crumb = crumb(tr(R.string.menu_apps));
-        startMenu(crumb, "Icon pack");
+        startMenu(crumb, tr(R.string.icon_pack));
         String cur = prefs.getString("icon_pack", "");
-        add(MenuView.Row.choice("None (each app's own)", cur.isEmpty()), () -> setIconPack("", "None"));
+        add(MenuView.Row.choice(tr(R.string.icon_pack_none_long), cur.isEmpty()), () -> setIconPack("", ""));
         int focus = 0;
         for (IconPacks.Pack p : packs) {
             if (p.pkg.equals(cur)) focus = pendingRows.size();
             add(MenuView.Row.choice(p.label, p.pkg.equals(cur)), () -> setIconPack(p.pkg, p.label));
         }
-        if (packs.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, "No icon packs installed. Packs made for "
-                + "Nova and similar launchers work; install one from Google Play or a USB drive."), null);
+        if (packs.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.icon_pack_none_installed)), null);
         showSheet(focus, () -> openAppsMenu(3), null);
     }
 
@@ -4655,7 +4672,7 @@ public class MainActivity extends Activity {
         prefs.edit().putString("icon_pack", pkg).apply();
         IconPacks.clear();
         reloadApps();
-        toast(pkg.isEmpty() ? "Every app shows its own icon" : "Icons from " + name, true);
+        toast(pkg.isEmpty() ? tr(R.string.toast_icon_pack_off) : tr(R.string.toast_icon_pack_on, name), true);
         openAppsMenu(3);
     }
 
@@ -4668,23 +4685,23 @@ public class MainActivity extends Activity {
 
     /** Ticked apps show on Home; OK toggles one. */
     private void openHideMenu(int focus) {
-        startMenu(crumb(tr(R.string.menu_apps)), "Show on Home");
+        startMenu(crumb(tr(R.string.menu_apps)), tr(R.string.hide_title));
         Set<String> hidden = hiddenApps();
         for (int i = 0; i < allApps.size(); i++) {
             AppRepo.App a = allApps.get(i);
             boolean isHidden = hidden.contains(a.pkg);
             int n = i;
-            add(MenuView.Row.choice(a.label, !isHidden).value(isHidden ? "Hidden" : ""), () -> {
+            add(MenuView.Row.choice(a.label, !isHidden).value(isHidden ? tr(R.string.hidden) : ""), () -> {
                 setHidden(a.pkg, !isHidden);
                 openHideMenu(n);
             });
         }
-        if (allApps.isEmpty()) add(MenuView.Row.loading("Loading apps…"), null);
+        if (allApps.isEmpty()) add(MenuView.Row.loading(tr(R.string.loading_apps)), null);
         showSheet(focus, () -> {
             if (custMode == CUST_QUICK) openDockArrangeMenu(2);
             else openAppsMenu(0);
         }, null);
-        menu.setHints("OK", "Show / hide", "BACK", "Back");
+        menu.setHints(tr(R.string.key_ok), tr(R.string.hint_show_hide), tr(R.string.key_back), tr(R.string.hint_back));
     }
 
     // Weather
@@ -4695,21 +4712,21 @@ public class MainActivity extends Activity {
     }
 
     private String weatherSummary() {
-        if (!prefs.getBoolean("weather_on", true)) return "Off";
-        return prefs.getString("weather_city", "Set your city");
+        if (!prefs.getBoolean("weather_on", true)) return tr(R.string.off);
+        return prefs.getString("weather_city", tr(R.string.weather_set_city));
     }
 
     private void openWeatherMenu(int focus) {
         lastSection = SEC_HOME;
         startMenu(crumb(tr(R.string.menu_home)), tr(R.string.menu_home_weather));
         boolean on = prefs.getBoolean("weather_on", true);
-        add(MenuView.Row.action(0, tr(R.string.set_home_weather_show_weather)).value(on ? "On" : "Off"), () -> {
+        add(MenuView.Row.action(0, tr(R.string.set_home_weather_show_weather)).value(onOff(on)), () -> {
             prefs.edit().putBoolean("weather_on", !on).apply();
             refreshWeather(true);
             openWeatherMenu(0);
         });
-        add(MenuView.Row.nav(0, tr(R.string.set_home_weather_city), prefs.getString("weather_city", "Not set")), this::askCity);
-        add(MenuView.Row.action(0, tr(R.string.set_home_weather_units)).value(fahrenheit() ? "°F" : "°C"), () -> {
+        add(MenuView.Row.nav(0, tr(R.string.set_home_weather_city), prefs.getString("weather_city", tr(R.string.not_set))), this::askCity);
+        add(MenuView.Row.action(0, tr(R.string.set_home_weather_units)).value(tr(fahrenheit() ? R.string.unit_f : R.string.unit_c)), () -> {
             prefs.edit().putString("weather_units", fahrenheit() ? "c" : "f").apply();
             refreshWeather(true);
             openWeatherMenu(2);
@@ -4718,7 +4735,7 @@ public class MainActivity extends Activity {
             prefs.edit().remove("weather_on").remove("weather_city").remove("weather_lat").remove("weather_lon")
                     .remove("weather_units").remove("w_code").remove("weather_time").remove("weather_try").apply();
             refreshWeather(true);
-            toast("Weather back to the default", true);
+            toast(tr(R.string.toast_weather_reset), true);
             openWeatherMenu(3);
         });
         showSheet(focus, () -> openHomeMenu(4), null);
@@ -5002,7 +5019,8 @@ public class MainActivity extends Activity {
 
     /** City by name with the on-screen keyboard (this projector has no location of its own). */
     private void askCity() {
-        askText(crumb(tr(R.string.menu_home_weather)), "Your city", "City name, e.g. Lisbon", prefs.getString("weather_city", ""),
+        askText(crumb(tr(R.string.menu_home_weather)), tr(R.string.weather_your_city), tr(R.string.weather_city_hint),
+                prefs.getString("weather_city", ""),
                 InputType.TYPE_TEXT_FLAG_CAP_WORDS, IME_SEARCH, this::searchCity, () -> openWeatherMenu(1));
     }
 
@@ -5051,8 +5069,9 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         hlp.topMargin = tk.space4;
-        card.addView(ime == IME_SEARCH ? Ui.hints(this, theme, tk, "Search key", "Look it up", "BACK", "Cancel")
-                : Ui.hints(this, theme, tk, "Done key", "Save", "BACK", "Cancel"), hlp);
+        card.addView(ime == IME_SEARCH
+                ? Ui.hints(this, theme, tk, tr(R.string.key_search), tr(R.string.hint_look_up), tr(R.string.key_back), tr(R.string.hint_cancel))
+                : Ui.hints(this, theme, tk, tr(R.string.key_done), tr(R.string.hint_save), tr(R.string.key_back), tr(R.string.hint_cancel)), hlp);
         dialog.setContentView(card);
         boolean[] finished = {false};
         input.setOnEditorActionListener((v, actionId, ev) -> {
@@ -5087,26 +5106,27 @@ public class MainActivity extends Activity {
             return;
         }
         String crumb = crumb(tr(R.string.menu_home_weather));
-        startMenu(crumb, "Choose your city");
-        add(MenuView.Row.loading("Looking up “" + q + "”…"), null);
+        startMenu(crumb, tr(R.string.weather_choose_city));
+        add(MenuView.Row.loading(tr(R.string.weather_looking_up, q)), null);
         showSheet(0, () -> openWeatherMenu(1), null);
+        String language = Locale.getDefault().getLanguage(), separator = tr(R.string.list_separator);
         loader.execute(() -> {
             List<Weather.Place> found;
             try {
-                found = Weather.search(q);
+                found = Weather.search(q, language, separator);
             } catch (Exception e) {
                 found = null;
             }
             List<Weather.Place> places = found;
             ui.post(() -> {
                 if (isDestroyed() || area != MENU || !crumb.equals(menuCrumb)) return;
-                startMenu(crumb, "Choose your city");
+                startMenu(crumb, tr(R.string.weather_choose_city));
                 if (places == null) {
-                    add(MenuView.Row.note(R.drawable.ic_info, "Can't reach the weather service. Check the Wi-Fi."), null);
-                    add(MenuView.Row.action(R.drawable.ic_reset, "Try again"), () -> searchCity(q));
+                    add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.weather_unreachable)), null);
+                    add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.try_again)), () -> searchCity(q));
                 } else if (places.isEmpty()) {
-                    add(MenuView.Row.note(R.drawable.ic_info, "No city called “" + q + "”."), null);
-                    add(MenuView.Row.action(0, "Type another name"), this::askCity);
+                    add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.weather_no_city, q)), null);
+                    add(MenuView.Row.action(0, tr(R.string.weather_type_another)), this::askCity);
                 } else {
                     for (Weather.Place p : places) add(MenuView.Row.action(0, p.name).value(p.detail), () -> saveCity(p));
                 }
@@ -5124,7 +5144,7 @@ public class MainActivity extends Activity {
                 .remove("w_code")
                 .apply();
         refreshWeather(true);
-        toast("Weather for " + p.name, true);
+        toast(tr(R.string.toast_weather_for, p.name), true);
         openWeatherMenu(1);
     }
 
@@ -5175,7 +5195,7 @@ public class MainActivity extends Activity {
         weather.setVisibility(View.VISIBLE);
         if (!prefs.contains("weather_lat")) {
             weather.setTextColor(theme.textTertiary);
-            weather.setText("Set your city in Customize › Weather");
+            weather.setText(R.string.weather_set_city_hint);
             return;
         }
         weather.setTextColor(theme.textSecondary);
@@ -5185,9 +5205,9 @@ public class MainActivity extends Activity {
             return;
         }
         // No city name: the projector stays at home, so it's always the same place.
-        int code = prefs.getInt("w_code", 0);
-        weather.setText(Weather.emoji(code, prefs.getBoolean("w_day", true)) + "  "
-                + Math.round(prefs.getFloat("w_temp", 0)) + "°  " + Weather.describe(code));
+        int code = prefs.getInt("w_code", 0), sky = Weather.describe(code);
+        weather.setText(tr(R.string.weather_line, Weather.emoji(code, prefs.getBoolean("w_day", true)),
+                number(Math.round(prefs.getFloat("w_temp", 0))), sky == 0 ? "" : tr(sky)));
     }
 
     // Look

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Customize › Home layout (layout, categories, dock, weather) and Customize › Apps.
+     Setting names are in strings_settings.xml. -->
+<resources>
+    <!-- Summaries at the end of a row. -->
+    <plurals name="home_slots">
+        <item quantity="one">%d slot</item>
+        <item quantity="other">%d slots</item>
+    </plurals>
+    <plurals name="home_categories">
+        <item quantity="one">%d category</item>
+        <item quantity="other">%d categories</item>
+    </plurals>
+    <!-- How many apps are in the dock or a category. -->
+    <plurals name="apps_count">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
+    <!-- How many tiles fit across. -->
+    <plurals name="layout_per_row">
+        <item quantity="one">%d per row</item>
+        <item quantity="other">%d per row</item>
+    </plurals>
+
+    <!-- Layout: tiles per row. %1$s: the number. -->
+    <string name="layout_columns_largest">%1$s (largest tiles)</string>
+    <string name="layout_columns_smallest">%1$s (smallest tiles)</string>
+    <!-- Space between tiles and between rows. -->
+    <string name="spacing_tight">Tight</string>
+    <string name="spacing_normal">Normal</string>
+    <string name="spacing_roomy">Roomy</string>
+    <!-- Space at the sides of the screen. Overscan: a TV cutting off the edges of the picture. -->
+    <string name="margin_standard">Standard</string>
+    <string name="margin_wider">Wider</string>
+    <string name="margin_widest">Widest</string>
+    <string name="margin_wider_long">Wider (for overscan)</string>
+    <string name="margin_widest_long">Widest (for overscan)</string>
+    <string name="toast_layout_reset">Layout back to the default</string>
+    <!-- %1$s: the place picked (Dock, or a category). -->
+    <string name="toast_home_goes_to">Home goes to %1$s</string>
+
+    <!-- Categories. -->
+    <!-- %1$s: the new category's name. -->
+    <string name="toast_category_added">%1$s added. Pick its apps.</string>
+    <string name="categories_no_inputs">This TV has no HDMI inputs.</string>
+    <string name="categories_reset_title">Reset categories?</string>
+    <string name="categories_reset_note">Your categories are removed and every app goes back to one Apps row, A–Z. Apps aren\'t hidden or uninstalled.</string>
+    <string name="toast_categories_reset">Categories back to one Apps row</string>
+    <string name="category_apps_in_it">Apps in it</string>
+    <string name="category_apps_note">Every app that isn\'t in another category shows here.</string>
+    <string name="category_sort">Sort</string>
+    <!-- Title of the list of sort orders. %1$s: the category's name. -->
+    <string name="category_sort_title">Sort %1$s</string>
+    <!-- After picking a sort order. %1$s: the category's name. -->
+    <string name="toast_sorted_custom">%1$s sorted your order</string>
+    <string name="toast_sorted_az">%1$s sorted a–z</string>
+    <string name="toast_sorted_recent">%1$s sorted recently used</string>
+    <string name="toast_sorted_used">%1$s sorted most used</string>
+    <string name="category_layout">Layout</string>
+    <!-- %1$s: the category's name. -->
+    <string name="category_layout_title">%1$s layout</string>
+    <string name="category_grid">Grid</string>
+    <string name="category_one_row">One row</string>
+    <string name="category_grid_long">Grid (shows every app)</string>
+    <string name="category_one_row_long">One row (scrolls sideways)</string>
+    <string name="category_rearrange">Rearrange</string>
+    <string name="category_no_apps_yet">No apps in it yet.</string>
+    <!-- %1$s: the category's name. -->
+    <string name="category_rename_title">Rename %1$s</string>
+    <string name="category_position">Position</string>
+    <!-- %1$s: the category's name. -->
+    <string name="category_position_title">Position of %1$s</string>
+    <!-- "2 of 5": where a category is in the list. %1$s: its place; %2$s: how many there are. -->
+    <string name="position_of">%1$s of %2$s</string>
+    <!-- The first place in the list. %1$s: the number 1. -->
+    <string name="position_top">%1$s (top)</string>
+    <string name="category_delete">Delete</string>
+    <!-- %1$s: the category's name. -->
+    <string name="category_delete_title">Delete %1$s?</string>
+    <string name="category_delete_action">Delete %1$s</string>
+    <string name="category_delete_note">Its apps go back to Apps. Nothing is uninstalled.</string>
+    <string name="toast_category_deleted">%1$s deleted</string>
+    <!-- Title of the list of apps to put in a category. %1$s: the category's name. -->
+    <string name="category_apps_in_title">Apps in %1$s</string>
+    <!-- Next to an app in the dock. -->
+    <string name="in_dock">In dock</string>
+
+    <!-- Dock. -->
+    <string name="dock_note">The dock holds as many apps as a row (Layout › Tiles per row).</string>
+
+    <!-- Apps. -->
+    <string name="apps_all_shown">All shown</string>
+    <string name="toast_apps_reset">Every app has its own name, tile and icon again</string>
+    <string name="apps_nothing_to_reset">No app has been renamed or given another tile or icon.</string>
+    <string name="hide_title">Show on Home</string>
+    <!-- Icon packs: no pack picked. -->
+    <string name="icon_pack_none">None</string>
+    <string name="icon_pack_none_long">None (each app\'s own)</string>
+    <!-- Nova is another launcher; packs made for it work in Leios. -->
+    <string name="icon_pack_none_installed">No icon packs installed. Packs made for Nova and similar launchers work; install one from Google Play or a USB drive.</string>
+    <string name="toast_icon_pack_off">Every app shows its own icon</string>
+    <!-- %1$s: the icon pack's name. -->
+    <string name="toast_icon_pack_on">Icons from %1$s</string>
+
+    <!-- Weather. -->
+    <string name="weather_set_city">Set your city</string>
+    <!-- On Home under the clock, before a city is set. "Customize › Weather" is where to set it. -->
+    <string name="weather_set_city_hint">Set your city in Customize › Weather</string>
+    <!-- On Home under the clock: %1$s an emoji for the sky, %2$s the temperature (a number; ° follows),
+         %3$s the sky in words (may be empty). -->
+    <string name="weather_line">"%1$s  %2$s°  %3$s"</string>
+    <string name="weather_your_city">Your city</string>
+    <!-- Lisbon is an example of a city's name. -->
+    <string name="weather_city_hint">City name, e.g. Lisbon</string>
+    <string name="weather_choose_city">Choose your city</string>
+    <!-- %1$s: what was typed. -->
+    <string name="weather_looking_up">Looking up “%1$s”…</string>
+    <string name="weather_unreachable">Can\'t reach the weather service. Check the Wi-Fi.</string>
+    <!-- %1$s: what was typed. -->
+    <string name="weather_no_city">No city called “%1$s”.</string>
+    <string name="weather_type_another">Type another name</string>
+    <!-- %1$s: the city. -->
+    <string name="toast_weather_for">Weather for %1$s</string>
+    <!-- The sky, in words. -->
+    <string name="weather_clear">Clear</string>
+    <string name="weather_partly_cloudy">Partly cloudy</string>
+    <string name="weather_cloudy">Cloudy</string>
+    <string name="weather_fog">Fog</string>
+    <string name="weather_drizzle">Drizzle</string>
+    <string name="weather_rain">Rain</string>
+    <string name="weather_snow">Snow</string>
+    <string name="weather_showers">Showers</string>
+    <string name="weather_snow_showers">Snow showers</string>
+    <string name="weather_thunderstorm">Thunderstorm</string>
+    <string name="toast_weather_reset">Weather back to the default</string>
+    <!-- Temperature units: symbols, the same everywhere. -->
+    <string name="unit_c" translatable="false">°C</string>
+    <string name="unit_f" translatable="false">°F</string>
+</resources>
