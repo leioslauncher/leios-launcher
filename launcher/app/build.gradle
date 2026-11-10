@@ -44,8 +44,8 @@ android {
         // Android 9: ImageDecoder and animated backgrounds need it; Android TV devices still in use have it.
         minSdk 28
         targetSdk 34
-        versionCode 4
-        versionName '1.2.1'
+        versionCode 5
+        versionName '1.3'
         buildConfigField 'String', 'TMDB_KEY', "\"${tmdbKey}\""
     }
 

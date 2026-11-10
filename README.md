@@ -86,7 +86,7 @@ These steps use ADB from a Windows PC, and were tested only on the device above.
 1. **Get the app.** Download `leios-launcher-<version>.apk` from [Releases](https://github.com/leioslauncher/leios-launcher/releases/latest), and check its SHA-256 matches the one on the release page:
 
    ```powershell
-   Get-FileHash .\leios-launcher-1.2.apk
+   Get-FileHash .\leios-launcher-1.3.apk
    ```
 
    Or build it yourself (above).
@@ -103,7 +103,7 @@ These steps use ADB from a Windows PC, and were tested only on the device above.
 
    ```powershell
    $env:TV_HOST = '192.0.2.10'   # your TV's IP address
-   .\setup-kit\install.ps1 -Apk C:\path\to\leios-launcher-1.2.apk
+   .\setup-kit\install.ps1 -Apk C:\path\to\leios-launcher-1.3.apk
    ```
 6. Accept the "Allow USB debugging?" prompt on the TV.
 7. For the ≡ panel, turn on **Leios quick settings** in Settings > System > Accessibility.

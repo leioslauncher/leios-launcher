@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3 (versionCode 5)
 
 ### Added
 - **Search on Home.** Open it with the new **Search** button in the top bar, **Up** at the top of Home, or holding **Home** (with the ≡ helper on; it never delays a normal press). Hold ≡ and hold Settings can open it too. Inside other apps, nothing changes.
