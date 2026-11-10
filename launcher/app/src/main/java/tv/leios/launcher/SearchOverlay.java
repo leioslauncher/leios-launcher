@@ -692,8 +692,10 @@ final class SearchOverlay extends FrameLayout {
         }
 
         if (!any) {
+            int state = onlineState();
             row(rows, MenuView.Row.note(R.drawable.ic_info, "Nothing matches “" + q + "”."
-                    + (onlineState() == SearchPrefs.OFF ? " Online title search is off (Customization › System › Search & privacy)." : "")),
+                    + (state == SearchPrefs.OFF ? " Online title search is off (Customization › System › Search & privacy)."
+                    : state == SearchPrefs.UNAVAILABLE ? " This copy of Leios finds apps and settings, not movies or shows." : "")),
                     "none", null);
         }
     }
