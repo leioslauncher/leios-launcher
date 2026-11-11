@@ -70,11 +70,13 @@ final class Themes {
         return out;
     }
 
+    /** The name it was saved with, or null (the caller shows the translated "Theme"). */
     static String name(File f) {
         try {
-            return load(f).optString("name", "Theme");
+            JSONObject o = load(f);
+            return o.has("name") ? o.optString("name") : null;
         } catch (IOException | JSONException e) {
-            return "Theme";
+            return null;
         }
     }
 

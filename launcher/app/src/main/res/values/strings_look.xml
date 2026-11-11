@@ -6,4 +6,123 @@
          "Look › Themes › Undo" is where to undo it: use those menus' names. -->
     <string name="toast_theme_applied">%1$s applied. Look › Themes › Undo puts it back.</string>
     <string name="toast_theme_undone">Theme undone</string>
+
+    <!-- Appearance. -->
+    <string name="appearance_dark">Dark</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_auto">Automatic</string>
+    <string name="appearance_auto_long">Automatic (light from sunrise to sunset)</string>
+    <!-- Accent colour: azure is Leios's blue. -->
+    <string name="accent_azure">Azure</string>
+    <string name="accent_azure_default">Azure (default)</string>
+    <string name="accent_from_bg">From background</string>
+    <string name="toast_accent_from_bg">Accent follows the background. It stays azure when a colour wouldn\'t be readable.</string>
+    <string name="toast_accent_azure">Accent back to azure</string>
+
+    <!-- Font and text size. Font names are names and stay as they are. -->
+    <string name="text_smaller">Smaller</string>
+    <string name="text_normal">Normal</string>
+    <string name="text_larger">Larger</string>
+
+    <!-- Clock. -->
+    <string name="size_small">Small</string>
+    <string name="size_medium">Medium</string>
+    <string name="size_large">Large</string>
+    <!-- "Medium · centre": the clock's size, and that it's in the middle of the screen. %1$s: the size. -->
+    <string name="clock_summary_centre">%1$s · centre</string>
+    <string name="clock_format_auto">Like the projector</string>
+    <string name="clock_format_12">12-hour</string>
+    <string name="clock_format_24">24-hour</string>
+    <string name="clock_top_left">Top left</string>
+    <string name="clock_centre">Centre</string>
+    <string name="toast_clock_reset">Clock back to the default</string>
+
+    <!-- Top bar. -->
+    <plurals name="bar_buttons">
+        <item quantity="one">%d button</item>
+        <item quantity="other">%d buttons</item>
+    </plurals>
+    <!-- What the Wi-Fi button shows. -->
+    <string name="wifi_name">Name</string>
+    <string name="wifi_icon_only">Icon only</string>
+    <string name="wifi_name_and_signal">Name and signal</string>
+    <string name="wifi_signal_only">Signal only</string>
+    <string name="bar_normal">Normal</string>
+    <string name="bar_compact">Compact</string>
+    <string name="toast_bar_reset">Top bar back to the default</string>
+    <!-- The bell: Android's "notification access" lets Leios count notifications. -->
+    <string name="notif_needs_access">Needs access</string>
+    <string name="notif_note">Shows a bell in the top bar when an app has a notification. OK on it lists them. Needs notification access, which you turn on in Android\'s settings.</string>
+    <!-- “Home” is how Android lists Leios on that screen. -->
+    <string name="toast_notif_turn_on">Turn on “Home” on the next screen, then come back</string>
+    <string name="notif_allowed">Allowed</string>
+    <string name="notif_not_allowed">Not allowed</string>
+    <string name="notif_bell_first">Turn on the bell first.</string>
+
+    <!-- Tiles. -->
+    <string name="tiles_clean">Clean</string>
+    <string name="tiles_soft">Soft</string>
+    <string name="tiles_crisp">Crisp</string>
+    <!-- The style when Advanced settings don't match one of the three. -->
+    <string name="tiles_custom">Custom</string>
+    <string name="tiles_banners">Banners</string>
+    <string name="tiles_icons">Icons</string>
+    <string name="tiles_banners_long">Banners (16:9 artwork)</string>
+    <!-- When an app's name shows under its tile. -->
+    <string name="tiles_names_title">App names under tiles</string>
+    <string name="labels_on_focus">On focus</string>
+    <string name="labels_always">Always</string>
+    <string name="labels_never">Never</string>
+    <string name="focus_accent">Accent</string>
+    <string name="colour_of_app">App\'s colour</string>
+    <string name="colour_plain">Plain</string>
+    <string name="icon_back_glass">Glass</string>
+    <string name="toast_tiles_reset">Tiles back to the default</string>
+
+    <!-- Themes: a whole look, saved and shared. -->
+    <string name="theme_studio">Studio</string>
+    <string name="theme_daylight">Daylight</string>
+    <string name="theme_cinema">Cinema</string>
+    <string name="theme_built_in">Built in</string>
+    <string name="theme_yours">Yours</string>
+    <!-- A theme saved without a name. -->
+    <string name="theme_default_name">Theme</string>
+    <string name="theme_save_title">Save this look</string>
+    <!-- "Movie night" is an example of a theme's name. -->
+    <string name="theme_save_hint">Name, e.g. Movie night</string>
+    <!-- %1$s: the theme's name. -->
+    <string name="toast_theme_saved">Saved as %1$s</string>
+    <string name="toast_theme_not_saved">Couldn\'t save the theme</string>
+    <string name="toast_nothing_to_undo">Nothing to undo</string>
+    <string name="toast_theme_unreadable">That theme can\'t be read. Nothing was changed.</string>
+    <string name="theme_apply">Apply</string>
+    <string name="theme_share_tv">Share as a picture on this TV</string>
+    <string name="theme_share_usb">Share as a picture on USB</string>
+    <string name="toast_picture_not_saved">Couldn\'t save the picture</string>
+    <!-- "Pictures › Leios": the folder on the TV or drive. Pictures is Android's folder name. -->
+    <string name="toast_saved_in_pictures">Saved in Pictures › Leios</string>
+    <string name="theme_import_title">Import a theme</string>
+    <string name="theme_import_looking">Looking for theme pictures…</string>
+    <string name="toast_theme_picture_unreadable">That picture has no theme in it, or it\'s damaged. Nothing was changed.</string>
+    <!-- Clean Home was Leios's earlier name. -->
+    <string name="theme_import_none">No theme pictures found. Themes shared from Leios or Clean Home are in Pictures, on this TV or a USB drive.</string>
+
+    <!-- Sounds. -->
+    <string name="sounds_off_note">Soft, quiet sounds for moving and choosing, while Home is on screen. Press right to turn them on. Everything still shows on screen with sounds off.</string>
+    <!-- How loud the ≡ panel's sounds are when on. -->
+    <string name="sounds_faint">Faint</string>
+    <string name="toast_sounds_reset">Sounds back to the default: off</string>
+    <string name="sounds_system_off">Android\'s own sound effects are off, so Home stays silent too.</string>
+    <string name="sounds_not_audible">You won\'t hear these right now. Output explains why.</string>
+    <string name="sounds_needs_schedule">Choose a time in Lock &amp; remote › When first.</string>
+    <!-- Which of Android's volumes the sounds use. -->
+    <string name="sound_output_auto">Automatic</string>
+    <string name="sound_output_system">System sounds</string>
+    <string name="sound_output_media">Media volume</string>
+    <string name="output_system_heard">Sounds use your TV\'s system sounds.</string>
+    <string name="output_system_muted">Your TV\'s system sounds are muted, so you won\'t hear these. Choose Automatic or Media volume.</string>
+    <string name="output_volume_zero">Your TV\'s volume is muted or at 0, so you won\'t hear these.</string>
+    <string name="output_media">Sounds follow your TV\'s volume. They never pause or lower other apps.</string>
+    <string name="output_auto_media">Your TV\'s system sounds are muted, so sounds use its media volume. They never pause or lower other apps.</string>
+    <string name="output_auto_system">Sounds use your TV\'s system sounds, and switch to its media volume if those are muted.</string>
 </resources>
