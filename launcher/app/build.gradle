@@ -64,6 +64,14 @@ android {
         buildConfig true
     }
 
+    // Every language stays in the app: Leios can have its own language (Android 13+ app languages),
+    // so one the TV itself doesn't use must still be there when it's picked.
+    bundle {
+        language {
+            enableSplit false
+        }
+    }
+
     buildTypes {
         // -Ppseudo: a test build with Android's pseudo-languages (Settings shows "English (XA)",
         // long accented text, and "Arabic (XB)", mirrored), to check text fits and layouts mirror.

@@ -46,7 +46,6 @@ Some things need more than text:
 - **The search keyboard** (`search_keyboard_rows`) has 6 rows of 7 keys. A language with up to about 35 letters can list its own. Scripts with many more characters (Chinese, Japanese, Korean) or with letters that change shape (Arabic, Hindi) need a different keyboard, which isn't built yet. Voice search works in any language the TV's speech recognition knows.
 - **Search words** (`…_words`) are separated by commas. Use the words people say in your language. They don't need to translate the English ones.
 - **Right-to-left languages** (Arabic, Hebrew, Persian) mirror most of Leios. Moving the remote's left and right isn't mirrored yet, and nor are a few screens drawn by hand: the test patterns, the search keyboard and the menu sliders.
-- **Leios's own language** (Android 13+ app-language setting): the ≡ panel keeps the language it started in until the ≡ helper restarts. Changing the TV's language restarts everything, so it only shows when you change Leios's language alone.
 - **Long words**: Customization's section list has a fixed width, so long section names end in "…".
 
 ### Checking a translation

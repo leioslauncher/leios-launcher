@@ -58,6 +58,59 @@ public class PanelService extends AccessibilityService {
         if (instance != null) instance.toggle();
     }
 
+    // ---- language: the panel speaks Leios's language, even when only Leios's own one changed ----
+
+    private android.content.res.Resources localized;
+    private android.os.LocaleList localizedFor;
+    private long localeCheckedAt;
+
+    /**
+     * The service started in one language and Android doesn't restart it when only Leios's own
+     * language changes (Android 13+ app languages). So every text it shows is read through
+     * resources for the language Leios has now: checked at most once a second, rebuilt only when
+     * it changed, so the panel or a PIN screen opened after a change is already in the new one.
+     */
+    // Every language is in the app (build.gradle: bundle › language › enableSplit false), so no download.
+    @android.annotation.SuppressLint("AppBundleLocaleChanges")
+    @Override
+    public android.content.res.Resources getResources() {
+        android.content.res.Resources base = super.getResources();
+        long now = android.os.SystemClock.uptimeMillis();
+        if (now - localeCheckedAt > 1000) {
+            localeCheckedAt = now;
+            android.os.LocaleList want = appLocales();
+            if (want == null || want.equals(base.getConfiguration().getLocales())) {
+                localized = null;
+                localizedFor = null;
+            } else if (!want.equals(localizedFor)) {
+                android.content.res.Configuration c = new android.content.res.Configuration(base.getConfiguration());
+                c.setLocales(want);
+                localized = createConfigurationContext(c).getResources();
+                localizedFor = want;
+            }
+        }
+        return localized != null ? localized : base;
+    }
+
+    /** Leios's own languages if one is set (Android 13+), else the TV's; null if it can't be read. */
+    private android.os.LocaleList appLocales() {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                android.app.LocaleManager lm = getSystemService(android.app.LocaleManager.class);
+                android.os.LocaleList own = lm == null ? null : lm.getApplicationLocales();
+                if (own != null && !own.isEmpty()) return own;
+            }
+            return android.content.res.Resources.getSystem().getConfiguration().getLocales();
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    /** The language the panel is showing, for dates and numbers. */
+    private Locale locale() {
+        return getResources().getConfiguration().getLocales().get(0);
+    }
+
     /** What a row does: OK / Right runs {@code run}; Left / Right on a slider or stepper calls {@code adjust}. */
     private interface Adjust {
         /** Changes the value; false when the row can't change (the owner then explains why). */
@@ -667,9 +720,9 @@ public class PanelService extends AccessibilityService {
         inSubmenu = false;
         Date now = new Date();
         boolean h24 = android.text.format.DateFormat.is24HourFormat(this);
-        String time = new SimpleDateFormat(h24 ? "H:mm" : "h:mm a", Locale.getDefault()).format(now);
+        String time = new SimpleDateFormat(h24 ? "H:mm" : "h:mm a", locale()).format(now);
         String day = new SimpleDateFormat(android.text.format.DateFormat.getBestDateTimePattern(
-                Locale.getDefault(), "EEEMMMd"), Locale.getDefault()).format(now);
+                locale(), "EEEMMMd"), locale()).format(now);
         menu.setHeader(time + getString(R.string.dot_separator) + day, getString(R.string.panel_title));
         List<Item> list = new ArrayList<>();
         list.add(volumeItem());
@@ -763,7 +816,7 @@ public class PanelService extends AccessibilityService {
             int v = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
             int pct = max == 0 ? 0 : Math.round(v * 100f / max);
             row.fraction = pct / 100f;
-            row.value(NumberFormat.getIntegerInstance().format(pct));
+            row.value(NumberFormat.getIntegerInstance(locale()).format(pct));
         };
         return new Item(row, null, dir -> {
             int max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -781,7 +834,7 @@ public class PanelService extends AccessibilityService {
         Runnable refresh = () -> {
             int step = Math.max(0, JmgoDlp.brightnessStep());
             row.fraction = step / 10f;
-            row.value(NumberFormat.getIntegerInstance().format(step));
+            row.value(NumberFormat.getIntegerInstance(locale()).format(step));
         };
         return new Item(row, null, dir -> {
             int step = JmgoDlp.brightnessStep();
