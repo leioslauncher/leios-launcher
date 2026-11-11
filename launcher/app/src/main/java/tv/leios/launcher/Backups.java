@@ -227,6 +227,79 @@ final class Backups {
         }
     }
 
+    // ---- what a file is: internal markers, not words ------------------------------------------
+
+    static final int KIND_BACKUP = 1, KIND_THEME = 2;
+    /** Before ".leios.png" in an exported file's name: what it holds, whatever the language. */
+    static final String BACKUP_MARK = ".backup", THEME_MARK = ".theme";
+    /** How a saved backup is listed (its date shows beside it). */
+    static final int LABEL_NAME = 0, LABEL_SAVED = 1, LABEL_OLDER = 2;
+
+    /** An exported file, read from its name. */
+    static final class FileName {
+        final int kind, label;
+        /** A theme's name, or (only for a backup named before markers) the name as it was saved. */
+        final String title;
+
+        FileName(int kind, int label, String title) {
+            this.kind = kind;
+            this.label = label;
+            this.title = title;
+        }
+    }
+
+    /**
+     * What an exported picture holds, from its file name; null if it isn't one of ours. Names from
+     * 1.4 on carry a marker (".backup" or ".theme"); older ones are told apart by the English words
+     * 1.3 and Clean Home put in them, so they still list and restore as before.
+     */
+    static FileName parseName(String fileName) {
+        if (fileName == null) return null;
+        String base;
+        if (fileName.endsWith(SUFFIX)) base = fileName.substring(0, fileName.length() - SUFFIX.length());
+        else if (fileName.endsWith(OLD_SUFFIX)) base = fileName.substring(0, fileName.length() - OLD_SUFFIX.length());
+        else return null;
+        if (base.endsWith(BACKUP_MARK)) return new FileName(KIND_BACKUP, LABEL_SAVED, "");
+        if (base.endsWith(THEME_MARK)) {
+            return new FileName(KIND_THEME, LABEL_NAME, base.substring(0, base.length() - THEME_MARK.length()));
+        }
+        // Before markers: "Leios backup 2025-…", "Clean Home backup 2024-…", "Movie night theme".
+        if (base.startsWith("Leios backup")) return new FileName(KIND_BACKUP, LABEL_SAVED, "");
+        if (base.startsWith("Clean Home backup")) return new FileName(KIND_BACKUP, LABEL_OLDER, "");
+        if (base.endsWith(" theme")) return new FileName(KIND_THEME, LABEL_NAME, base.substring(0, base.length() - 6));
+        if (base.contains("backup")) return new FileName(KIND_BACKUP, LABEL_NAME, base);
+        if (base.contains("theme")) return new FileName(KIND_THEME, LABEL_NAME, base);
+        return null;
+    }
+
+    /** Why an automatic backup was made; saved as a key, shown in the language Leios has. */
+    static final String REASON_AFTER_UPDATE = "after_update", REASON_BEFORE_CATEGORY_RESET = "before_category_reset",
+            REASON_BEFORE_THEME = "before_theme", REASON_BEFORE_RESTORE = "before_restore", REASON_BEFORE_RESET = "before_reset";
+    private static final String[] REASONS = {REASON_AFTER_UPDATE, REASON_BEFORE_CATEGORY_RESET, REASON_BEFORE_THEME,
+            REASON_BEFORE_RESTORE, REASON_BEFORE_RESET};
+    private static final int[] REASON_LABELS = {R.string.backup_after_update, R.string.backup_before_category_reset,
+            R.string.backup_before_theme, R.string.backup_before_restore, R.string.backup_before_reset};
+    /** The English reasons 1.3 and earlier saved, in the order of REASONS. */
+    private static final String[] LEGACY_REASONS = {"After update", "Before category reset", "Before theme",
+            "Before restore", "Before reset"};
+
+    /** The reason key in an automatic backup (also one saved by 1.3 as English), or null. */
+    static String reasonKey(JSONObject backup) {
+        String key = backup.optString("reason_key", "");
+        if (Arrays.asList(REASONS).contains(key)) return key;
+        int old = Arrays.asList(LEGACY_REASONS).indexOf(backup.optString("reason", ""));
+        return old < 0 ? null : REASONS[old];
+    }
+
+    /** How an automatic backup is listed. */
+    static String reasonLabel(Context c, JSONObject backup) {
+        String key = reasonKey(backup);
+        if (key != null) return c.getString(REASON_LABELS[Arrays.asList(REASONS).indexOf(key)]);
+        // A reason this version doesn't know (a newer one, say) shows as it was saved.
+        String raw = backup.optString("reason", "");
+        return raw.isEmpty() ? c.getString(R.string.backup_automatic) : raw;
+    }
+
     private static File dir(Context c) {
         File d = new File(c.getFilesDir(), "backups");
         //noinspection ResultOfMethodCallIgnored
@@ -234,11 +307,11 @@ final class Backups {
         return d;
     }
 
-    /** Saves one now ({@code reason} is shown in the list: "Before reset", "After update"…). */
-    static void auto(Context c, String reason) {
+    /** Saves one now; {@code reasonKey} (a REASON_ key) is shown in the list: "Before reset"… */
+    static void auto(Context c, String reasonKey) {
         try {
             JSONObject o = snapshot(c, true);
-            o.put("reason", reason);
+            o.put("reason_key", reasonKey);
             File f = new File(dir(c), "auto-" + System.currentTimeMillis() + ".json");
             try (OutputStream out = new FileOutputStream(f)) {
                 out.write(o.toString().getBytes(StandardCharsets.UTF_8));
@@ -260,35 +333,34 @@ final class Backups {
         if (all != null) {
             Arrays.sort(all, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
             for (File f : all) {
-                String reason = "";
+                JSONObject o = new JSONObject();
                 try {
-                    reason = new JSONObject(readText(new FileInputStream(f))).optString("reason", "");
+                    o = new JSONObject(readText(new FileInputStream(f)));
                 } catch (IOException | JSONException ignored) {
                 }
-                out.add(new Entry(reason.isEmpty() ? "Automatic" : reason, f.lastModified(), f, null));
+                out.add(new Entry(reasonLabel(c, o), f.lastModified(), f, null));
             }
         }
-        if (canSeePictures) out.addAll(exported(c, "backup"));
+        if (canSeePictures) out.addAll(exported(c, KIND_BACKUP));
         return out;
     }
 
-    /** Exported backups or themes ({@code kind}), by the name they were saved under. */
-    static List<Entry> exported(Context c, String kind) {
+    /** Exported backups or themes ({@code kind}: KIND_BACKUP or KIND_THEME), by the name they were saved under. */
+    static List<Entry> exported(Context c, int kind) {
         List<Entry> out = new ArrayList<>();
         Uri col = Media.images();
         String[] cols = {MediaStore.Images.Media._ID, MediaStore.Images.Media.DISPLAY_NAME,
                 MediaStore.Images.Media.DATE_MODIFIED};
         String byName = MediaStore.Images.Media.DISPLAY_NAME + " LIKE ?";
         try (Cursor cur = c.getContentResolver().query(col, cols, byName + " OR " + byName,
-                new String[] {"%" + kind + "%" + SUFFIX, "%" + kind + "%" + OLD_SUFFIX},
+                new String[] {"%" + SUFFIX, "%" + OLD_SUFFIX},
                 MediaStore.Images.Media.DATE_MODIFIED + " DESC")) {
             while (cur != null && cur.moveToNext()) {
-                String name = cur.getString(1);
-                boolean old = name.endsWith(OLD_SUFFIX);
-                String label = name.substring(0, name.length() - (old ? OLD_SUFFIX : SUFFIX).length());
+                FileName n = parseName(cur.getString(1));
+                if (n == null || n.kind != kind) continue;
                 // Saved backups are told apart by their date, shown beside them.
-                if (label.startsWith("Leios backup")) label = "Saved backup";
-                else if (label.startsWith("Clean Home backup")) label = "Older backup";
+                String label = n.label == LABEL_SAVED ? c.getString(R.string.backup_saved)
+                        : n.label == LABEL_OLDER ? c.getString(R.string.backup_older) : n.title;
                 out.add(new Entry(label, cur.getLong(2) * 1000, null, ContentUris.withAppendedId(col, cur.getLong(0))));
             }
         } catch (RuntimeException ignored) {
@@ -312,10 +384,10 @@ final class Backups {
     }
 
     /**
-     * Writes {@code o} as a picture named "{@code name}.leios.png" in Pictures/Leios on
-     * {@code volume} (this TV, or a USB drive's volume name). Returns where, or null.
+     * Writes {@code o} as a picture named "{@code name}" + its kind's marker + ".leios.png" in
+     * Pictures/Leios on {@code volume} (this TV, or a USB drive's volume name). Returns where, or null.
      */
-    static Uri export(Context c, JSONObject o, String name, String volume, Bitmap preview) {
+    static Uri export(Context c, JSONObject o, String name, int kind, String volume, Bitmap preview) {
         // Saving into a folder of the shared Pictures needs Android 10; volumes() is empty before.
         if (!Media.volumes()) return null;
         try {
@@ -324,7 +396,9 @@ final class Backups {
             byte[] bytes = withChunk(png.toByteArray(), gzip(o.toString().getBytes(StandardCharsets.UTF_8)));
             ContentResolver cr = c.getContentResolver();
             ContentValues v = new ContentValues();
-            v.put(MediaStore.Images.Media.DISPLAY_NAME, name + SUFFIX);
+            // A name can't hold "/" in a folder; the marker says what it is.
+            String safe = name.replace('/', '-').trim();
+            v.put(MediaStore.Images.Media.DISPLAY_NAME, safe + (kind == KIND_THEME ? THEME_MARK : BACKUP_MARK) + SUFFIX);
             v.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
             v.put(MediaStore.Images.Media.RELATIVE_PATH, FOLDER);
             v.put(MediaStore.Images.Media.IS_PENDING, 1);
@@ -355,8 +429,15 @@ final class Backups {
         return v;
     }
 
-    static String when(long time) {
-        return new SimpleDateFormat("d MMM, HH:mm", Locale.getDefault()).format(new Date(time));
+    /** When a backup was made, with {@code pattern} (a translatable date pattern, "d MMM, HH:mm" in English). */
+    static String when(String pattern, long time) {
+        try {
+            return new SimpleDateFormat(pattern, Locale.getDefault()).format(new Date(time));
+        } catch (IllegalArgumentException e) {
+            // A pattern a translation got wrong: the language's own medium date and short time.
+            return java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT)
+                    .format(new Date(time));
+        }
     }
 
     static String stamp() {

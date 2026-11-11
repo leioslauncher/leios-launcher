@@ -2,6 +2,8 @@ package tv.leios.launcher;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -128,6 +130,74 @@ public class BackupsTest {
         JSONObject theme = Backups.prefsToJson(p, Themes.KEYS);
         assertTrue(theme.has("font"));
         assertFalse("a theme must never carry the PIN", theme.has("pin_hash"));
+    }
+
+    // ---- telling files apart: markers now, English words before 1.4 ----------------------------
+
+    private static void assertName(String file, int kind, int label, String title) {
+        Backups.FileName n = Backups.parseName(file);
+        assertNotNull(file, n);
+        assertEquals(file, kind, n.kind);
+        assertEquals(file, label, n.label);
+        assertEquals(file, title, n.title);
+    }
+
+    @Test
+    public void oldFileNamesAreStillRecognised() {
+        // As Leios 1.3 and Clean Home named them.
+        assertName("Leios backup 2025-06-01 10.00.leios.png", Backups.KIND_BACKUP, Backups.LABEL_SAVED, "");
+        assertName("Clean Home backup 2024-05-01 09.30.cleanhome.png", Backups.KIND_BACKUP, Backups.LABEL_OLDER, "");
+        assertName("Movie night theme.leios.png", Backups.KIND_THEME, Backups.LABEL_NAME, "Movie night");
+        assertName("Cosy theme.cleanhome.png", Backups.KIND_THEME, Backups.LABEL_NAME, "Cosy");
+    }
+
+    @Test
+    public void newFileNamesCarryAMarkerWhateverTheLanguage() {
+        assertName("Copia de seguridad de Leios 2026-11-10 16.00.backup.leios.png",
+                Backups.KIND_BACKUP, Backups.LABEL_SAVED, "");
+        assertName("Noche de cine.theme.leios.png", Backups.KIND_THEME, Backups.LABEL_NAME, "Noche de cine");
+        // A theme whose name has "backup" in it is still a theme.
+        assertName("My backup look.theme.leios.png", Backups.KIND_THEME, Backups.LABEL_NAME, "My backup look");
+        // Older versions find new files too: they look for "backup" or "theme" before .leios.png.
+        assertTrue("x.backup.leios.png".matches(".*backup.*\\.leios\\.png"));
+    }
+
+    @Test
+    public void otherPicturesAreNotBackups() {
+        assertNull(Backups.parseName("IMG_0001.jpg"));
+        assertNull(Backups.parseName("Holiday.png"));
+        assertNull(Backups.parseName("Holiday.leios.png"));
+        assertNull(Backups.parseName(null));
+    }
+
+    @Test
+    public void automaticBackupReasonsAreKeysAndOldEnglishOnesMap() throws Exception {
+        assertEquals(Backups.REASON_BEFORE_RESET, Backups.reasonKey(new JSONObject("{\"reason\":\"Before reset\"}")));
+        assertEquals(Backups.REASON_AFTER_UPDATE, Backups.reasonKey(new JSONObject("{\"reason\":\"After update\"}")));
+        assertEquals(Backups.REASON_BEFORE_THEME, Backups.reasonKey(new JSONObject("{\"reason_key\":\"before_theme\"}")));
+        assertNull(Backups.reasonKey(new JSONObject("{\"reason\":\"Something newer\"}")));
+        assertNull(Backups.reasonKey(new JSONObject("{}")));
+    }
+
+    @Test
+    public void anOldFormatBackupStillRestores() throws Exception {
+        // A backup picture exactly as 1.3 saved it: English reason, settings in the clHm chunk.
+        String old = "{\"kind\":\"backup\",\"version\":1,\"time\":1748772000000,\"reason\":\"Before reset\","
+                + "\"focus\":{\"bg\":{\"s\":\"shape:3\"},\"columns\":{\"i\":6},\"weather_on\":{\"b\":false},"
+                + "\"categories\":{\"s\":\"{\\\"list\\\":[{\\\"id\\\":\\\"apps\\\",\\\"name\\\":\\\"Apps\\\"}]}\"}},"
+                + "\"usage\":{\"com.netflix.ninja\":{\"i\":12}}}";
+        JSONObject back = Backups.fromPng(withSettings(old));
+        assertEquals("backup", back.getString("kind"));
+        assertEquals(Backups.REASON_BEFORE_RESET, Backups.reasonKey(back));
+        FakePrefs focus = new FakePrefs();
+        android.content.SharedPreferences.Editor e = focus.edit();
+        Backups.jsonToPrefs(back.getJSONObject("focus"), e);
+        e.commit();
+        assertEquals("shape:3", focus.values.get("bg"));
+        assertEquals(6, focus.values.get("columns"));
+        assertEquals(false, focus.values.get("weather_on"));
+        // Its "Apps" row, saved as English text, comes back as the default (shown in any language).
+        assertNull(Categories.load(focus).find(Categories.APPS).name);
     }
 
     @Test

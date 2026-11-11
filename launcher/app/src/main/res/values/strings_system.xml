@@ -6,4 +6,71 @@
     <string name="toast_backup_restored">Backup restored</string>
     <!-- "System › Restore a backup" is where to undo it: use those menus' names. -->
     <string name="toast_reset_done">Home is back to how it started. System › Restore a backup undoes this.</string>
+
+    <!-- Search & privacy. TMDB, JustWatch and Wikidata are names of services. -->
+    <string name="search_online_on">Online on</string>
+    <string name="search_online_off">Online off</string>
+    <string name="search_on_this_tv">On this TV</string>
+    <string name="search_no_key">This copy of Leios was built without a TMDB key, so search finds apps and settings only.</string>
+    <string name="search_sends_only">Sends only what you type and your region to TMDB</string>
+    <!-- %1$s: the country Leios picked, e.g. US or United States. -->
+    <string name="region_automatic">Automatic (%1$s)</string>
+    <string name="show">Show</string>
+    <string name="hide">Hide</string>
+    <string name="search_for_online">For online title search.</string>
+    <string name="toast_recent_cleared">Recent searches cleared</string>
+    <string name="nothing_to_clear">Nothing to clear.</string>
+    <string name="search_privacy_note">Apps and settings are always found on this TV. Recent searches stay on this TV too. Movie and show details come from TMDB, where to watch from JustWatch, and apps\' own IDs for titles from Wikidata (only the picked title\'s number is sent there).</string>
+
+    <!-- About. %1$s: the version number. The web address stays as it is. -->
+    <string name="about_leios">Leios %1$s, free and open source. github.com/leioslauncher/leios-launcher</string>
+    <!-- TMDB requires this notice; translate it, keeping its meaning exactly. -->
+    <string name="about_tmdb">This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</string>
+    <string name="about_justwatch">Where-to-watch information is provided by JustWatch. Streaming apps\' own title IDs come from Wikidata (CC0).</string>
+    <!-- THIRD_PARTY_NOTICES.md is a file name: keep it. -->
+    <string name="about_licences">Licences for fonts, icons and other parts: THIRD_PARTY_NOTICES.md in the project.</string>
+
+    <!-- Backups. -->
+    <!-- When a backup was made: a date pattern (d day, MMM short month, HH:mm 24-hour time). Not
+         translated: the month comes out in the TV's language. To reorder it for a language, add it to
+         that language's file with the same letters. -->
+    <string name="backup_time_format" translatable="false">d MMM, HH:mm</string>
+    <!-- How backups are listed; the date shows beside each. -->
+    <string name="backup_saved">Saved backup</string>
+    <!-- Saved by Clean Home, Leios's earlier name. -->
+    <string name="backup_older">Older backup</string>
+    <string name="backup_automatic">Automatic</string>
+    <string name="backup_after_update">After update</string>
+    <string name="backup_before_category_reset">Before category reset</string>
+    <string name="backup_before_theme">Before theme</string>
+    <string name="backup_before_restore">Before restore</string>
+    <string name="backup_before_reset">Before reset</string>
+    <!-- "Pictures › Leios": the folder on the TV or drive. -->
+    <string name="backup_save_note">Everything you\'ve set on Home, with your photo and icons, as a picture in Pictures › Leios. Restore it here, or on another projector.</string>
+    <string name="backup_on_tv">On this TV</string>
+    <string name="backup_on_usb">On the USB drive</string>
+    <string name="toast_backup_saving">Saving the backup…</string>
+    <!-- Written on the picture a backup is saved as. -->
+    <string name="backup_card_title">Leios backup</string>
+    <!-- The backup picture's file name, seen in photo viewers. %1$s: the date and time. -->
+    <string name="backup_file_name">Leios backup %1$s</string>
+    <!-- Written on the picture a theme is shared as, under its name. -->
+    <string name="theme_card_kind">Leios theme</string>
+    <string name="toast_backup_not_saved">Couldn\'t save the backup</string>
+    <string name="toast_backup_saved">Backup saved in Pictures › Leios</string>
+    <string name="backup_needs_android10">Saving a backup file needs Android 10 or newer. Automatic backups still work.</string>
+    <string name="backup_looking">Looking for backups…</string>
+    <string name="backup_none">No backups yet. One is made automatically after each update and before big changes.</string>
+    <!-- %1$s: the backup, e.g. "Saved backup". -->
+    <string name="restore_title">Restore %1$s?</string>
+    <!-- %1$s: when it was made. -->
+    <string name="restore_note">Home goes back to how it was on %1$s. What you have now is backed up first, so you can come back to it.</string>
+    <string name="toast_backup_unreadable">That backup can\'t be read. Nothing was changed.</string>
+    <string name="reset_title">Reset everything?</string>
+    <string name="reset_note">Background, dock, categories, hidden apps, weather and look go back to how they started. Your apps and the projector\'s settings aren\'t touched. A backup is made first.</string>
+
+    <!-- The Wi-Fi button with no Wi-Fi name to show. -->
+    <string name="net_offline">Offline</string>
+    <string name="net_ethernet">Ethernet</string>
+    <string name="net_online">Online</string>
 </resources>

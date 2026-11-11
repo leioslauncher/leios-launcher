@@ -353,7 +353,7 @@ public class MainActivity extends Activity {
             long seen = prefs.getLong("seen_update", 0);
             if (seen != updated) {
                 prefs.edit().putLong("seen_update", updated).apply();
-                if (seen != 0) loader.execute(() -> autoBackup("After update"));
+                if (seen != 0) loader.execute(() -> autoBackup(Backups.REASON_AFTER_UPDATE));
             }
         } catch (PackageManager.NameNotFoundException ignored) {
         }
@@ -4496,7 +4496,7 @@ public class MainActivity extends Activity {
             add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.categories_reset_note)), null);
             add(MenuView.Row.action(R.drawable.ic_close, tr(R.string.action_cancel)), () -> openCategoriesMenu(base + 3));
             add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.set_home_categories_reset_categories)), () -> {
-                autoBackup("Before category reset");
+                autoBackup(Backups.REASON_BEFORE_CATEGORY_RESET);
                 prefs.edit().remove("categories").remove("sort").remove("grid_order").apply();
                 categories = Categories.load(prefs);
                 rebuildLists();
@@ -5494,7 +5494,7 @@ public class MainActivity extends Activity {
         loader.execute(() -> {
             boolean ok;
             try {
-                autoBackup("Before theme");
+                autoBackup(Backups.REASON_BEFORE_THEME);
                 Themes.apply(this, theme);
                 ok = true;
             } catch (IOException | JSONException e) {
@@ -5532,7 +5532,8 @@ public class MainActivity extends Activity {
                 loader.execute(() -> {
                     Uri uri = null;
                     try {
-                        uri = Backups.export(this, Themes.load(f), name + " theme", vol, previewCard(name, "Leios theme"));
+                        uri = Backups.export(this, Themes.load(f), name, Backups.KIND_THEME, vol,
+                                previewCard(name, tr(R.string.theme_card_kind)));
                     } catch (IOException | JSONException ignored) {
                     }
                     Uri saved = uri;
@@ -5560,17 +5561,17 @@ public class MainActivity extends Activity {
         add(MenuView.Row.loading(tr(R.string.theme_import_looking)), null);
         showSheet(0, () -> openThemesMenu(0), null);
         loader.execute(() -> {
-            List<Backups.Entry> found = Backups.exported(this, "theme");
+            List<Backups.Entry> found = Backups.exported(this, Backups.KIND_THEME);
             ui.post(() -> {
                 if (isDestroyed() || area != MENU || !crumb.equals(menuCrumb)) return;
                 startMenu(crumb, tr(R.string.theme_import_title));
                 for (Backups.Entry e : found) {
-                    add(MenuView.Row.action(0, e.label).value(Backups.when(e.time)), () -> loader.execute(() -> {
+                    add(MenuView.Row.action(0, e.label).value(backupWhen(e.time)), () -> loader.execute(() -> {
                         JSONObject theme;
                         try {
                             theme = Backups.read(this, e);
                             // Kept as one of yours too, so it can be applied again later.
-                            if (!theme.has("name")) theme.put("name", e.label.replace(" theme", ""));
+                            if (!theme.has("name")) theme.put("name", e.label);
                             Themes.write(new File(new File(getFilesDir(), "themes"),
                                     "theme-" + System.currentTimeMillis() + ".json"), theme);
                         } catch (IOException | JSONException ex) {
@@ -6051,33 +6052,35 @@ public class MainActivity extends Activity {
         }
         projectorBase = pendingRows.size();
         int left = SleepTimer.minutesLeft(this);
-        add(MenuView.Row.nav(R.drawable.ic_sleep, tr(R.string.set_projector_sleep_timer), left > 0 ? left + " min left" : "Off"), this::openSleepMenu);
-        add(MenuView.Row.nav(R.drawable.ic_grid, tr(R.string.set_projector_test_patterns), "Focus, levels…"), this::openPatternsMenu);
+        add(MenuView.Row.nav(R.drawable.ic_sleep, tr(R.string.set_projector_sleep_timer),
+                left > 0 ? trn(R.plurals.sleep_min_left, left) : tr(R.string.off)), this::openSleepMenu);
+        add(MenuView.Row.nav(R.drawable.ic_grid, tr(R.string.set_projector_test_patterns), tr(R.string.patterns_summary)),
+                this::openPatternsMenu);
         add(MenuView.Row.nav(R.drawable.ic_open, tr(R.string.set_projector_start_up_and_wake), startupSummary()), () -> openStartupMenu(0));
         add(MenuView.Row.nav(R.drawable.ic_look, tr(R.string.set_projector_when_home_is_idle), idleSummary()), this::openIdleMenu);
         showSheet(focus, backTo(SEC_PROJECTOR), null);
     }
 
     private void openPatternsMenu() {
-        startMenu(crumb(tr(R.string.menu_projector)), "Test patterns");
+        startMenu(crumb(tr(R.string.menu_projector)), tr(R.string.set_projector_test_patterns));
         for (int i = 0; i < PatternsActivity.NAMES.length; i++) {
             int n = i;
-            add(MenuView.Row.action(0, PatternsActivity.NAMES[i]), () -> startSafely(
-                    new Intent(this, PatternsActivity.class).putExtra("pattern", n), "the test patterns"));
+            add(MenuView.Row.action(0, tr(PatternsActivity.NAMES[i])), () -> startSafely(
+                    new Intent(this, PatternsActivity.class).putExtra("pattern", n), tr(R.string.patterns_what)));
         }
         showSheet(0, () -> openProjectorMenu(projectorBase + 1), null);
-        menu.setHints("OK", "Show", "BACK", "Back");
+        menu.setHints(tr(R.string.key_ok), tr(R.string.hint_show), tr(R.string.key_back), tr(R.string.hint_back));
     }
 
     // Start-up and wake: open an app (or an input) when the projector starts or wakes, or stay on Home.
 
     /** Targets: "" Home, a package, or "input:<id>". On wake, "stay" leaves whatever was on screen. */
     private String targetName(String t) {
-        if (t.isEmpty()) return "Home";
-        if ("stay".equals(t)) return "Where it was";
+        if (t.isEmpty()) return tr(R.string.target_home);
+        if ("stay".equals(t)) return tr(R.string.target_where_it_was);
         for (AppRepo.App a : allApps) if (a.pkg.equals(t)) return a.label;
         for (AppRepo.App a : inputApps()) if (a.pkg.equals(t)) return a.label;
-        return "Home";
+        return tr(R.string.target_home);
     }
 
     private String startupSummary() {
@@ -6089,21 +6092,20 @@ public class MainActivity extends Activity {
         String crumb = crumb(tr(R.string.menu_projector));
         startMenu(crumb, tr(R.string.menu_projector_startup));
         add(MenuView.Row.nav(0, tr(R.string.set_projector_startup_when_it_starts), targetName(prefs.getString("boot_app", ""))),
-                () -> openTargetChoice("When the projector starts", "boot_app", false, 0));
+                () -> openTargetChoice(tr(R.string.startup_title), "boot_app", false, 0));
         add(MenuView.Row.nav(0, tr(R.string.set_projector_startup_when_it_wakes), targetName(prefs.getString("wake_app", "stay"))),
-                () -> openTargetChoice("When it wakes from standby", "wake_app", true, 1));
-        add(MenuView.Row.note(R.drawable.ic_info, "Start-up opens it once, right after the projector starts. "
-                + "Waking needs the ≡ helper on (Settings › System › Accessibility)."), null);
+                () -> openTargetChoice(tr(R.string.wake_title), "wake_app", true, 1));
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.startup_note)), null);
         showSheet(focus, () -> openProjectorMenu(projectorBase + 2), null);
     }
 
     private void openTargetChoice(String title, String key, boolean wake, int row) {
         List<String> names = new ArrayList<>(), ids = new ArrayList<>();
         if (wake) {
-            names.add("Stay where it was");
+            names.add(tr(R.string.target_stay));
             ids.add("stay");
         }
-        names.add("Home");
+        names.add(tr(R.string.target_home));
         ids.add("");
         for (AppRepo.App a : inputApps()) {
             names.add(a.label);
@@ -6117,7 +6119,7 @@ public class MainActivity extends Activity {
         openChoice(crumb(tr(R.string.menu_projector), tr(R.string.menu_projector_startup)), title, names.toArray(new String[0]),
                 Math.max(0, ids.indexOf(cur)), i -> {
                     prefs.edit().putString(key, ids.get(i)).apply();
-                    toast(title + ": " + names.get(i), true);
+                    toast(tr(R.string.toast_setting_value, title, names.get(i)), true);
                     openStartupMenu(row);
                 }, null, () -> openStartupMenu(row));
     }
@@ -6144,39 +6146,39 @@ public class MainActivity extends Activity {
     // Idle: after a while with no button pressed on Home, dim it or show a calm clock.
 
     private static final int[] IDLE_MINUTES = {2, 5, 10, 30};
-    private static final String[] IDLE_MODES = {"Off", "Dim Home", "Show a clock"};
+    private static final int[] IDLE_MODES = {R.string.off, R.string.idle_dim, R.string.idle_clock};
     private final Runnable idleTick = this::enterIdle;
     private FrameLayout idleOverlay;
     private TextView idleClock, idleDate;
 
     private String idleSummary() {
         int mode = pref("idle_mode", 0, 2);
-        return mode == 0 ? "Off" : IDLE_MODES[mode] + " after " + prefs.getInt("idle_min", 5) + " min";
+        return mode == 0 ? tr(R.string.off) : trn(R.plurals.idle_summary, prefs.getInt("idle_min", 5), tr(IDLE_MODES[mode]),
+                number(prefs.getInt("idle_min", 5)));
     }
 
     private void openIdleMenu() {
         String crumb = crumb(tr(R.string.menu_projector));
         startMenu(crumb, tr(R.string.menu_projector_idle));
         int mode = pref("idle_mode", 0, 2);
-        add(MenuView.Row.nav(0, tr(R.string.set_projector_idle_do_this), IDLE_MODES[mode]), () -> openChoice(crumbOf(crumb, tr(R.string.crumb_idle)), "When Home is idle",
-                IDLE_MODES, mode, i -> {
+        add(MenuView.Row.nav(0, tr(R.string.set_projector_idle_do_this), tr(IDLE_MODES[mode])), () -> openChoice(
+                crumbOf(crumb, tr(R.string.crumb_idle)), tr(R.string.menu_projector_idle), trAll(IDLE_MODES), mode, i -> {
                     prefs.edit().putInt("idle_mode", i).apply();
                     resetIdle();
                     openIdleMenu();
                 }, null, this::openIdleMenu));
         int min = prefs.getInt("idle_min", 5);
         String[] mins = new String[IDLE_MINUTES.length];
-        for (int i = 0; i < mins.length; i++) mins[i] = "After " + IDLE_MINUTES[i] + " minutes";
+        for (int i = 0; i < mins.length; i++) mins[i] = trn(R.plurals.idle_after_minutes, IDLE_MINUTES[i]);
         int cur = Math.max(0, Arrays.stream(IDLE_MINUTES).boxed().collect(java.util.stream.Collectors.toList()).indexOf(min));
-        MenuView.Row after = add(MenuView.Row.nav(0, tr(R.string.set_projector_idle_after), min + " minutes"), () -> openChoice(crumbOf(crumb, tr(R.string.crumb_idle)),
-                "After", mins, cur, i -> {
+        MenuView.Row after = add(MenuView.Row.nav(0, tr(R.string.set_projector_idle_after), trn(R.plurals.minutes, min)),
+                () -> openChoice(crumbOf(crumb, tr(R.string.crumb_idle)), tr(R.string.set_projector_idle_after), mins, cur, i -> {
                     prefs.edit().putInt("idle_min", IDLE_MINUTES[i]).apply();
                     resetIdle();
                     openIdleMenu();
                 }, null, this::openIdleMenu));
-        if (mode == 0) after.disabled("Choose what to do first.");
-        add(MenuView.Row.note(R.drawable.ic_info, "Only while Home is on screen. Android's screensaver keeps its own "
-                + "timer; Leios's clock can be that screensaver too (see the readme)."), null);
+        if (mode == 0) after.disabled(tr(R.string.idle_choose_first));
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.idle_note)), null);
         showSheet(0, () -> openProjectorMenu(projectorBase + 3), null);
     }
 
@@ -6253,15 +6255,17 @@ public class MainActivity extends Activity {
 
     private void openSleepMenu() {
         int left = SleepTimer.minutesLeft(this);
-        startMenu(crumb(tr(R.string.menu_projector)), "Sleep timer");
-        if (left > 0) add(MenuView.Row.note(R.drawable.ic_sleep, "Going to sleep in " + left + " min"), null);
-        String[] options = {"Off", "15 minutes", "30 minutes", "1 hour", "1½ hours", "2 hours"};
+        startMenu(crumb(tr(R.string.menu_projector)), tr(R.string.set_projector_sleep_timer));
+        if (left > 0) add(MenuView.Row.note(R.drawable.ic_sleep, tr(R.string.sleep_in, trn(R.plurals.duration_min_short, left))), null);
+        String[] options = new String[SLEEP_MINUTES.length];
+        options[0] = tr(R.string.off);
+        for (int i = 1; i < options.length; i++) options[i] = sleepLabel(SLEEP_MINUTES[i]);
         for (int i = 0; i < options.length; i++) {
             int n = i;
             add(MenuView.Row.choice(options[i], i == 0 && left == 0), () -> {
                 if (n == 0) {
                     SleepTimer.cancel(this);
-                    toast("Sleep timer off", true);
+                    toast(tr(R.string.toast_sleep_off), true);
                 } else setSleep(SLEEP_MINUTES[n]);
                 openProjectorMenu(projectorBase);
             });
@@ -6272,7 +6276,7 @@ public class MainActivity extends Activity {
     private void setSleep(int minutes) {
         if (SleepTimer.isReady(this)) {
             SleepTimer.set(this, minutes);
-            toast("Going to sleep in " + sleepLabel(minutes), true);
+            toast(tr(R.string.sleep_in, sleepLabel(minutes)), true);
             return;
         }
         // First use: Android asks you to allow the screen-off permission.
@@ -6282,12 +6286,15 @@ public class MainActivity extends Activity {
                     .putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, SleepTimer.admin(this))
                     .putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, getString(R.string.sleep_admin)), REQ_ADMIN);
         } catch (Exception e) {
-            toast("This projector doesn't allow a sleep timer", false);
+            toast(tr(R.string.toast_sleep_not_allowed), false);
         }
     }
 
-    private static String sleepLabel(int minutes) {
-        return minutes < 60 ? minutes + " minutes" : minutes == 60 ? "1 hour" : minutes == 90 ? "1½ hours" : minutes / 60 + " hours";
+    /** "30 minutes", "1 hour", "1½ hours". */
+    private String sleepLabel(int minutes) {
+        if (minutes < 60) return trn(R.plurals.minutes, minutes);
+        if (minutes == 90) return tr(R.string.sleep_hour_and_half);
+        return trn(R.plurals.hours, minutes / 60);
     }
 
     @Override
@@ -6296,9 +6303,9 @@ public class MainActivity extends Activity {
         if (requestCode == REQ_ADMIN) {
             if (SleepTimer.isReady(this) && pendingSleepMinutes > 0) {
                 SleepTimer.set(this, pendingSleepMinutes);
-                toast("Going to sleep in " + sleepLabel(pendingSleepMinutes), true);
+                toast(tr(R.string.sleep_in, sleepLabel(pendingSleepMinutes)), true);
             } else if (pendingSleepMinutes > 0) {
-                toast("Sleep timer not set: it needs that permission to turn the projector off", false);
+                toast(tr(R.string.toast_sleep_needs_permission), false);
             }
         }
         pendingSleepMinutes = 0;
@@ -6313,21 +6320,37 @@ public class MainActivity extends Activity {
         add(MenuView.Row.nav(R.drawable.ic_open, tr(R.string.set_system_save_a_backup), ""), this::openBackupSave);
         add(MenuView.Row.nav(R.drawable.ic_reset, tr(R.string.set_system_restore_a_backup), ""), this::openRestoreList);
         boolean auto = prefs.getBoolean("auto_backup", true);
-        add(MenuView.Row.action(0, tr(R.string.set_system_automatic_backups)).value(auto ? "On" : "Off"), () -> {
+        add(MenuView.Row.action(0, tr(R.string.set_system_automatic_backups)).value(onOff(auto)), () -> {
             prefs.edit().putBoolean("auto_backup", !auto).apply();
             openBackupMenu(3);
         });
         add(MenuView.Row.nav(R.drawable.ic_trash, tr(R.string.set_system_reset_everything), ""), this::openResetMenu);
-        add(MenuView.Row.nav(R.drawable.ic_info, tr(R.string.set_system_about), BuildConfig.VERSION_NAME), () -> openAboutMenu(0));
+        add(MenuView.Row.nav(R.drawable.ic_info, tr(R.string.set_system_about), versionName()), () -> openAboutMenu(0));
         showSheet(focus, backTo(SEC_RESET), null);
     }
 
     private String searchSummary() {
         switch (SearchPrefs.online(prefs, Titles.hasKey())) {
-            case SearchPrefs.ON: return "Online on";
-            case SearchPrefs.UNAVAILABLE: return "On this TV";
-            default: return "Online off";
+            case SearchPrefs.ON: return tr(R.string.search_online_on);
+            case SearchPrefs.UNAVAILABLE: return tr(R.string.search_on_this_tv);
+            default: return tr(R.string.search_online_off);
         }
+    }
+
+    /** "1.3", with the language's digits. */
+    private static String versionName() {
+        String v = BuildConfig.VERSION_NAME;
+        StringBuilder out = new StringBuilder();
+        for (String part : v.split("\\.", -1)) {
+            if (out.length() > 0) out.append('.');
+            out.append(part.matches("\\d+") ? number(Long.parseLong(part)) : part);
+        }
+        return out.toString();
+    }
+
+    /** When a backup was made, as the language writes dates. */
+    private String backupWhen(long time) {
+        return Backups.when(tr(R.string.backup_time_format), time);
     }
 
     /** Customization › System › Search & privacy. */
@@ -6336,31 +6359,31 @@ public class MainActivity extends Activity {
         startMenu(crumb, tr(R.string.menu_system_search));
         int state = SearchPrefs.online(prefs, Titles.hasKey());
         MenuView.Row online = add(MenuView.Row.action(0, tr(R.string.set_system_search_online_title_search))
-                .value(state == SearchPrefs.ON ? "On" : "Off"), () -> {
+                .value(onOff(state == SearchPrefs.ON)), () -> {
             boolean on = state != SearchPrefs.ON;
             SearchPrefs.setOnline(prefs, on);
             menuSound = on ? Sounds.ON : Sounds.OFF;
             if (!on) loader.execute(() -> Titles.clearCache(this));
             openSearchSettings(0);
         });
-        if (state == SearchPrefs.UNAVAILABLE) online.disabled("This copy of Leios was built without a TMDB key, "
-                + "so search finds apps and settings only.");
-        else online.detail("Sends only what you type and your region to TMDB");
+        if (state == SearchPrefs.UNAVAILABLE) online.disabled(tr(R.string.search_no_key));
+        else online.detail(tr(R.string.search_sends_only));
         String region = SearchPrefs.region(prefs, Locale.getDefault());
         boolean autoRegion = prefs.getString("search_region", "").isEmpty();
-        MenuView.Row regionRow = add(MenuView.Row.nav(0, tr(R.string.set_system_search_region), autoRegion ? "Automatic (" + region + ")" : region),
+        MenuView.Row regionRow = add(MenuView.Row.nav(0, tr(R.string.set_system_search_region),
+                        autoRegion ? tr(R.string.region_automatic, region) : region),
                 () -> openRegionChoice());
         MenuView.Row elsewhere = add(MenuView.Row.action(0, tr(R.string.set_system_search_titles_not_on_your_apps))
-                .value(SearchPrefs.showElsewhere(prefs) ? "Show" : "Hide"), () -> {
+                .value(tr(SearchPrefs.showElsewhere(prefs) ? R.string.show : R.string.hide)), () -> {
             prefs.edit().putBoolean("search_elsewhere", !SearchPrefs.showElsewhere(prefs)).apply();
             openSearchSettings(2);
         });
         if (state != SearchPrefs.ON) {
-            regionRow.disabled("For online title search.");
-            elsewhere.disabled("For online title search.");
+            regionRow.disabled(tr(R.string.search_for_online));
+            elsewhere.disabled(tr(R.string.search_for_online));
         }
         boolean recent = SearchPrefs.remembersRecent(prefs);
-        add(MenuView.Row.action(0, tr(R.string.set_system_search_recent_searches)).value(recent ? "On" : "Off"), () -> {
+        add(MenuView.Row.action(0, tr(R.string.set_system_search_recent_searches)).value(onOff(recent)), () -> {
             prefs.edit().putBoolean("search_recent_on", !recent).apply();
             if (recent) SearchPrefs.clearRecent(prefs);
             menuSound = recent ? Sounds.OFF : Sounds.ON;
@@ -6368,13 +6391,11 @@ public class MainActivity extends Activity {
         });
         MenuView.Row clear = add(MenuView.Row.action(R.drawable.ic_trash, tr(R.string.set_system_search_clear_recent_searches)), () -> {
             SearchPrefs.clearRecent(prefs);
-            toast("Recent searches cleared", true);
+            toast(tr(R.string.toast_recent_cleared), true);
             openSearchSettings(4);
         });
-        if (SearchPrefs.recent(prefs).isEmpty()) clear.disabled("Nothing to clear.");
-        add(MenuView.Row.note(R.drawable.ic_info, "Apps and settings are always found on this TV. Recent searches stay "
-                + "on this TV too. Movie and show details come from TMDB, where to watch from JustWatch, and apps' own "
-                + "IDs for titles from Wikidata (only the picked title's number is sent there)."), null);
+        if (SearchPrefs.recent(prefs).isEmpty()) clear.disabled(tr(R.string.nothing_to_clear));
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.search_privacy_note)), null);
         showSheet(focus, () -> openBackupMenu(0), null);
     }
 
@@ -6384,12 +6405,13 @@ public class MainActivity extends Activity {
     private void openRegionChoice() {
         String[] names = new String[REGIONS.length + 1];
         String device = Locale.getDefault().getCountry();
-        names[0] = "Automatic (" + new Locale("", device.isEmpty() ? "US" : device).getDisplayCountry() + ")";
+        names[0] = tr(R.string.region_automatic, new Locale("", device.isEmpty() ? "US" : device).getDisplayCountry());
         for (int i = 0; i < REGIONS.length; i++) names[i + 1] = new Locale("", REGIONS[i]).getDisplayCountry();
         String cur = prefs.getString("search_region", "");
         // A region picked before that isn't listed any more counts as Automatic.
         int current = cur.isEmpty() ? 0 : Math.max(0, Arrays.asList(REGIONS).indexOf(cur) + 1);
-        openChoice(crumb(tr(R.string.menu_system), tr(R.string.menu_system_search)), "Region", names, current, i -> {
+        openChoice(crumb(tr(R.string.menu_system), tr(R.string.menu_system_search)), tr(R.string.set_system_search_region),
+                names, current, i -> {
             prefs.edit().putString("search_region", i == 0 ? "" : REGIONS[i - 1]).apply();
             openSearchSettings(1);
         }, null, () -> openSearchSettings(1));
@@ -6398,70 +6420,65 @@ public class MainActivity extends Activity {
     /** Customization › System › About: version, credits, and the attribution TMDB and JustWatch ask for. */
     private void openAboutMenu(int focus) {
         startMenu(crumb(tr(R.string.menu_system)), tr(R.string.menu_system_about));
-        add(MenuView.Row.note(R.drawable.ic_info, "Leios " + BuildConfig.VERSION_NAME + ", free and open source. "
-                + "github.com/leioslauncher/leios-launcher"), null);
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.about_leios, versionName())), null);
         // TMDB's logo with its required notice (smaller than Leios's own name above), then the other
         // sources, each in a note of its own so none is cut short.
-        MenuView.Row tmdb = MenuView.Row.note(0, "This application uses TMDB and the TMDB APIs but is not endorsed, "
-                + "certified, or otherwise approved by TMDB.").image(tk.dp(62), tk.dp(8));
+        MenuView.Row tmdb = MenuView.Row.note(0, tr(R.string.about_tmdb)).image(tk.dp(62), tk.dp(8));
         tmdb.image = getDrawable(R.drawable.tmdb_logo);
         add(tmdb, null);
-        add(MenuView.Row.note(R.drawable.ic_search, "Where-to-watch information is provided by JustWatch. Streaming "
-                + "apps' own title IDs come from Wikidata (CC0)."), null);
-        add(MenuView.Row.note(R.drawable.ic_info, "Licences for fonts, icons and other parts: THIRD_PARTY_NOTICES.md "
-                + "in the project."), null);
+        add(MenuView.Row.note(R.drawable.ic_search, tr(R.string.about_justwatch)), null);
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.about_licences)), null);
         showSheet(focus, () -> openBackupMenu(5), null);
-        menu.setHints("BACK", "Back");
+        menu.setHints(tr(R.string.key_back), tr(R.string.hint_back));
     }
 
     /** Before anything big: your current settings, in the restore list (unless you turned this off). */
-    private void autoBackup(String reason) {
-        if (prefs.getBoolean("auto_backup", true)) Backups.auto(this, reason);
+    private void autoBackup(String reasonKey) {
+        if (prefs.getBoolean("auto_backup", true)) Backups.auto(this, reasonKey);
     }
 
     private void openBackupSave() {
         String crumb = crumb(tr(R.string.menu_system));
-        startMenu(crumb, "Save a backup");
-        add(MenuView.Row.note(R.drawable.ic_info, "Everything you've set on Home, with your photo and icons, as a "
-                + "picture in Pictures › Leios. Restore it here, or on another projector."), null);
+        startMenu(crumb, tr(R.string.set_system_save_a_backup));
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.backup_save_note)), null);
         for (String vol : Backups.volumes(this)) {
             boolean tv = Media.primary().equals(vol);
-            add(MenuView.Row.action(R.drawable.ic_open, tv ? "On this TV" : "On the USB drive"), () -> {
-                toast("Saving the backup…", false);
-                Bitmap card = previewCard("Leios backup", Backups.when(System.currentTimeMillis()));
+            add(MenuView.Row.action(R.drawable.ic_open, tr(tv ? R.string.backup_on_tv : R.string.backup_on_usb)), () -> {
+                toast(tr(R.string.toast_backup_saving), false);
+                Bitmap card = previewCard(tr(R.string.backup_card_title), backupWhen(System.currentTimeMillis()));
+                String fileName = tr(R.string.backup_file_name, Backups.stamp());
                 loader.execute(() -> {
                     Uri uri = null;
                     try {
-                        uri = Backups.export(this, Backups.snapshot(this, true), "Leios backup " + Backups.stamp(), vol, card);
+                        uri = Backups.export(this, Backups.snapshot(this, true), fileName, Backups.KIND_BACKUP, vol, card);
                     } catch (JSONException ignored) {
                     }
                     Uri saved = uri;
-                    ui.post(() -> toast(saved == null ? "Couldn't save the backup" : "Backup saved in Pictures › Leios", saved != null));
+                    ui.post(() -> toast(tr(saved == null ? R.string.toast_backup_not_saved : R.string.toast_backup_saved),
+                            saved != null));
                 });
                 openBackupMenu(1);
             });
         }
-        if (Backups.volumes(this).isEmpty()) add(MenuView.Row.note(R.drawable.ic_info,
-                "Saving a backup file needs Android 10 or newer. Automatic backups still work."), null);
+        if (Backups.volumes(this).isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.backup_needs_android10)), null);
         showSheet(1, () -> openBackupMenu(1), null);
     }
 
     private void openRestoreList() {
         String crumb = crumb(tr(R.string.menu_system));
-        startMenu(crumb, "Restore a backup");
-        add(MenuView.Row.loading("Looking for backups…"), null);
+        startMenu(crumb, tr(R.string.set_system_restore_a_backup));
+        add(MenuView.Row.loading(tr(R.string.backup_looking)), null);
         showSheet(0, () -> openBackupMenu(2), null);
         boolean pictures = checkSelfPermission(imagePermission()) == PackageManager.PERMISSION_GRANTED;
         loader.execute(() -> {
             List<Backups.Entry> list = Backups.list(this, pictures);
             ui.post(() -> {
                 if (isDestroyed() || area != MENU || !crumb.equals(menuCrumb)) return;
-                startMenu(crumb, "Restore a backup");
+                startMenu(crumb, tr(R.string.set_system_restore_a_backup));
                 for (Backups.Entry e : list) {
-                    add(MenuView.Row.nav(0, e.label, Backups.when(e.time)), () -> confirmRestore(e));
+                    add(MenuView.Row.nav(0, e.label, backupWhen(e.time)), () -> confirmRestore(e));
                 }
-                if (list.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, "No backups yet. One is made "
-                        + "automatically after each update and before big changes."), null);
+                if (list.isEmpty()) add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.backup_none)), null);
                 showSheet(0, () -> openBackupMenu(2), null);
             });
         });
@@ -6469,20 +6486,19 @@ public class MainActivity extends Activity {
 
     private void confirmRestore(Backups.Entry e) {
         String crumb = crumb(tr(R.string.menu_system), tr(R.string.crumb_restore));
-        startMenu(crumb, "Restore " + e.label + "?");
-        add(MenuView.Row.note(R.drawable.ic_info, "Home goes back to how it was on " + Backups.when(e.time)
-                + ". What you have now is backed up first, so you can come back to it."), null);
-        add(MenuView.Row.action(R.drawable.ic_close, "Cancel"), this::openRestoreList);
-        add(MenuView.Row.action(R.drawable.ic_reset, "Restore"), () -> loader.execute(() -> {
+        startMenu(crumb, tr(R.string.restore_title, e.label));
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.restore_note, backupWhen(e.time))), null);
+        add(MenuView.Row.action(R.drawable.ic_close, tr(R.string.action_cancel)), this::openRestoreList);
+        add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.crumb_restore)), () -> loader.execute(() -> {
             JSONObject backup;
             try {
                 backup = Backups.read(this, e);
                 if (!"backup".equals(backup.optString("kind"))) throw new IOException("not a backup");
             } catch (IOException ex) {
-                ui.post(() -> toast("That backup can't be read. Nothing was changed.", false));
+                ui.post(() -> toast(tr(R.string.toast_backup_unreadable), false));
                 return;
             }
-            Backups.auto(this, "Before restore");
+            Backups.auto(this, Backups.REASON_BEFORE_RESTORE);
             boolean ok;
             try {
                 Backups.apply(this, backup, null);
@@ -6493,7 +6509,7 @@ public class MainActivity extends Activity {
             boolean done = ok;
             ui.post(() -> {
                 if (!done) {
-                    toast("That backup can't be read. Nothing was changed.", false);
+                    toast(tr(R.string.toast_backup_unreadable), false);
                     return;
                 }
                 SharedPreferences.Editor ed = prefs.edit().putInt("area", TOP);
@@ -6511,13 +6527,11 @@ public class MainActivity extends Activity {
     @android.annotation.SuppressLint("ApplySharedPref")
     private void openResetMenu() {
         lastSection = SEC_RESET;
-        startMenu(crumb(tr(R.string.menu_system)), "Reset everything?");
-        add(MenuView.Row.note(R.drawable.ic_info, "Background, dock, categories, hidden apps, weather and look go "
-                + "back to how they started. Your apps and the projector's settings aren't touched. A backup is "
-                + "made first."), null);
-        add(MenuView.Row.action(R.drawable.ic_close, "Cancel"), () -> openBackupMenu(4));
-        add(MenuView.Row.action(R.drawable.ic_reset, "Reset everything"), () -> {
-            Backups.auto(this, "Before reset");
+        startMenu(crumb(tr(R.string.menu_system)), tr(R.string.reset_title));
+        add(MenuView.Row.note(R.drawable.ic_info, tr(R.string.reset_note)), null);
+        add(MenuView.Row.action(R.drawable.ic_close, tr(R.string.action_cancel)), () -> openBackupMenu(4));
+        add(MenuView.Row.action(R.drawable.ic_reset, tr(R.string.set_system_reset_everything)), () -> {
+            Backups.auto(this, Backups.REASON_BEFORE_RESET);
             stopSlideshow();
             stopVideo();
             stopAnim();
@@ -6591,10 +6605,10 @@ public class MainActivity extends Activity {
 
     private void showNetwork(NetworkCapabilities caps) {
         String label;
-        if (caps == null) label = "Offline";
-        else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) label = "Ethernet";
+        if (caps == null) label = tr(R.string.net_offline);
+        else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) label = tr(R.string.net_ethernet);
         else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) label = ssid(caps);
-        else label = "Online";
+        else label = tr(R.string.net_online);
         // Signal strength as one, two or three arcs.
         int icon = R.drawable.ic_wifi;
         if (caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) && Build.VERSION.SDK_INT >= 30) {
@@ -6626,7 +6640,7 @@ public class MainActivity extends Activity {
             WifiInfo info = wm == null ? null : wm.getConnectionInfo();
             if (info != null) s = info.getSSID();
         }
-        if (s == null || s.contains("unknown ssid") || s.isEmpty()) return "Wi-Fi";
+        if (s == null || s.contains("unknown ssid") || s.isEmpty()) return tr(R.string.wifi);
         if (s.length() > 1 && s.startsWith("\"") && s.endsWith("\"")) s = s.substring(1, s.length() - 1);
         return s;
     }

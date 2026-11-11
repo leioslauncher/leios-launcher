@@ -8,4 +8,90 @@
     <string name="projector_keystone_summary">Straighten the image</string>
     <!-- Shown by Android over any app, a minute before the sleep timer ends. -->
     <string name="toast_sleep_one_minute">Going to sleep in 1 minute</string>
+
+    <!-- Sleep timer. -->
+    <plurals name="sleep_min_left">
+        <item quantity="one">%d min left</item>
+        <item quantity="other">%d min left</item>
+    </plurals>
+    <!-- %1$s: how long, e.g. "30 minutes" or "25 min". -->
+    <string name="sleep_in">Going to sleep in %1$s</string>
+    <string name="sleep_hour_and_half">1½ hours</string>
+    <string name="toast_sleep_off">Sleep timer off</string>
+    <string name="toast_sleep_not_allowed">This projector doesn\'t allow a sleep timer</string>
+    <string name="toast_sleep_needs_permission">Sleep timer not set: it needs that permission to turn the projector off</string>
+
+    <!-- Lengths of time in words. -->
+    <plurals name="minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <plurals name="hours">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+
+    <!-- Test patterns: full-screen pictures for setting up the projector. -->
+    <string name="patterns_summary">Focus, levels…</string>
+    <!-- Used in "Couldn't open the test patterns". -->
+    <string name="patterns_what">the test patterns</string>
+    <string name="hint_show">Show</string>
+    <string name="pattern_focus">Focus</string>
+    <string name="pattern_overscan">Overscan and safe area</string>
+    <string name="pattern_grey">Grey steps</string>
+    <string name="pattern_bars">Colour bars</string>
+    <string name="pattern_black">Black level</string>
+    <string name="pattern_white">White level</string>
+    <string name="pattern_detail">Fine detail</string>
+    <string name="pattern_focus_tip">Lines and text should be equally sharp in the centre and the corners.</string>
+    <string name="pattern_overscan_tip">The outer frame is the picture edge. If any of the red edge is cut off, the projector crops (overscan).</string>
+    <string name="pattern_grey_tip">Every step should be a different shade, from black to white, with no colour tint.</string>
+    <string name="pattern_bars_tip">Colours should look clean, with no step bleeding into the next.</string>
+    <!-- Brightness and Contrast: the projector's own picture settings. -->
+    <string name="pattern_black_tip">Turn Brightness until bar 2 is just visible and bar 1 isn\'t (the background is pure black).</string>
+    <string name="pattern_white_tip">Turn Contrast until bar 98 is just visible against pure white at 100.</string>
+    <string name="pattern_detail_tip">One-pixel lines should stay separate. Blur or shimmer means focus or sharpness is off.</string>
+    <!-- "3 / 7   Grey steps". %1$s: this pattern's number; %2$s: how many; %3$s: its name. -->
+    <string name="pattern_title">"%1$s / %2$s   %3$s"</string>
+    <!-- The remote's buttons on a pattern. %1$s: the OK button's label; %2$s: the Back button's. -->
+    <string name="pattern_hints">"◀ ▶  Next pattern     %1$s  Hide this     %2$s  Close"</string>
+    <!-- Sample text drawn in the focus pattern. -->
+    <string name="pattern_sharp_text">Sharp text 123</string>
+    <!-- The outer line of the overscan pattern. -->
+    <string name="pattern_edge">Edge</string>
+    <!-- %1$s: a percentage, e.g. 5%. Title safe: where text is always fully on screen. -->
+    <string name="pattern_title_safe">%1$s (title safe)</string>
+    <!-- Line patterns: "1 px vertical". px: pixels. -->
+    <plurals name="pattern_px_vertical">
+        <item quantity="one">%d px vertical</item>
+        <item quantity="other">%d px vertical</item>
+    </plurals>
+    <plurals name="pattern_px_horizontal">
+        <item quantity="one">%d px horizontal</item>
+        <item quantity="other">%d px horizontal</item>
+    </plurals>
+
+    <!-- Start-up and wake: what opens. -->
+    <string name="target_home">Home</string>
+    <string name="target_where_it_was">Where it was</string>
+    <string name="target_stay">Stay where it was</string>
+    <string name="startup_title">When the projector starts</string>
+    <string name="wake_title">When it wakes from standby</string>
+    <!-- "Settings › System › Accessibility": where Android has it; use the names Android uses. -->
+    <string name="startup_note">Start-up opens it once, right after the projector starts. Waking needs the ≡ helper on (Settings › System › Accessibility).</string>
+
+    <!-- When Home is idle. -->
+    <string name="idle_dim">Dim Home</string>
+    <string name="idle_clock">Show a clock</string>
+    <!-- "Dim Home after 5 min". %1$s: what it does; %2$s: the minutes. -->
+    <plurals name="idle_summary">
+        <item quantity="one">%1$s after %2$s min</item>
+        <item quantity="other">%1$s after %2$s min</item>
+    </plurals>
+    <plurals name="idle_after_minutes">
+        <item quantity="one">After %d minute</item>
+        <item quantity="other">After %d minutes</item>
+    </plurals>
+    <string name="idle_choose_first">Choose what to do first.</string>
+    <string name="idle_note">Only while Home is on screen. Android\'s screensaver keeps its own timer; Leios\'s clock can be that screensaver too (see the readme).</string>
 </resources>

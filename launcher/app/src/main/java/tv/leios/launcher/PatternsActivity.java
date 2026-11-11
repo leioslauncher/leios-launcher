@@ -22,16 +22,16 @@ import android.view.WindowManager;
  */
 public class PatternsActivity extends Activity {
 
-    static final String[] NAMES = {"Focus", "Overscan and safe area", "Grey steps", "Colour bars",
-            "Black level", "White level", "Fine detail"};
-    static final String[] TIPS = {
-            "Lines and text should be equally sharp in the centre and the corners.",
-            "The outer frame is the picture edge. If any of the red edge is cut off, the projector crops (overscan).",
-            "Every step should be a different shade, from black to white, with no colour tint.",
-            "Colours should look clean, with no step bleeding into the next.",
-            "Turn Brightness until bar 2 is just visible and bar 1 isn't (the background is pure black).",
-            "Turn Contrast until bar 98 is just visible against pure white at 100.",
-            "One-pixel lines should stay separate. Blur or shimmer means focus or sharpness is off."};
+    static final int[] NAMES = {R.string.pattern_focus, R.string.pattern_overscan, R.string.pattern_grey,
+            R.string.pattern_bars, R.string.pattern_black, R.string.pattern_white, R.string.pattern_detail};
+    static final int[] TIPS = {R.string.pattern_focus_tip, R.string.pattern_overscan_tip, R.string.pattern_grey_tip,
+            R.string.pattern_bars_tip, R.string.pattern_black_tip, R.string.pattern_white_tip, R.string.pattern_detail_tip};
+
+    /** "3 / 7   Grey steps": which pattern this is, in the language's digits. */
+    private String title() {
+        java.text.NumberFormat f = java.text.NumberFormat.getIntegerInstance();
+        return getString(R.string.pattern_title, f.format(pattern + 1), f.format(NAMES.length), getString(NAMES[pattern]));
+    }
 
     private int pattern;
     private boolean showInfo = true;
@@ -105,20 +105,22 @@ public class PatternsActivity extends Activity {
             float cardH = tk.textHeadline + tk.textLabel * 3.2f + pad * 2;
             float y = h - tk.safeV - cardH + pad;
             text.setTextSize(tk.textHeadline);
-            float titleW = text.measureText((pattern + 1) + " / " + NAMES.length + "   " + NAMES[pattern]);
+            float titleW = text.measureText(title());
             text.setTextSize(tk.textLabel);
-            float tipW = Math.min(w - x * 2, text.measureText(TIPS[pattern]));
+            String tip = getString(TIPS[pattern]);
+            float tipW = Math.min(w - x * 2, text.measureText(tip));
             RectF card = new RectF(x - pad, y - pad, x + Math.max(titleW, tipW) + pad, y - pad + cardH);
             p.setAntiAlias(true);
             p.setColor(getResources().getColor(R.color.dark_surface, null));
             c.drawRoundRect(card, tk.radiusLg, tk.radiusLg, p);
             text.setColor(getResources().getColor(R.color.dark_text, null));
             text.setTextSize(tk.textHeadline);
-            c.drawText((pattern + 1) + " / " + NAMES.length + "   " + NAMES[pattern], x, y + tk.textHeadline, text);
+            c.drawText(title(), x, y + tk.textHeadline, text);
             text.setColor(getResources().getColor(R.color.dark_text_secondary, null));
             text.setTextSize(tk.textLabel);
-            c.drawText(TIPS[pattern], x, y + tk.textHeadline + tk.textLabel * 1.6f, text);
-            c.drawText("◀ ▶  Next pattern     OK  Hide this     BACK  Close", x, y + tk.textHeadline + tk.textLabel * 3f, text);
+            c.drawText(tip, x, y + tk.textHeadline + tk.textLabel * 1.6f, text);
+            c.drawText(getString(R.string.pattern_hints, getString(R.string.key_ok), getString(R.string.key_back)),
+                    x, y + tk.textHeadline + tk.textLabel * 3f, text);
             p.setAntiAlias(false);
         }
 
@@ -140,9 +142,10 @@ public class PatternsActivity extends Activity {
             text.setColor(Color.WHITE);
             text.setTextSize(h / 40f);
             int[][] spots = {{w / 2, h / 2}, {w / 8, h / 8}, {w * 7 / 8, h / 8}, {w / 8, h * 7 / 8}, {w * 7 / 8, h * 7 / 8}};
+            String sharp = getString(R.string.pattern_sharp_text);
             for (int[] s : spots) {
                 for (int i = 0; i < 6; i++) c.drawRect(s[0] - 60 + i * 20, s[1] - 70, s[0] - 59 + i * 20, s[1] - 30, p);
-                c.drawText("Sharp text 123", s[0] - text.measureText("Sharp text 123") / 2, s[1] + 10, text);
+                c.drawText(sharp, s[0] - text.measureText(sharp) / 2, s[1] + 10, text);
             }
             p.setAntiAlias(false);
         }
@@ -151,7 +154,10 @@ public class PatternsActivity extends Activity {
             c.drawColor(0xFF202020);
             int[] pct = {0, 25, 50};
             int[] colors = {Color.RED, 0xFFFFC000, 0xFF00C000};
-            String[] labels = {"Edge", "2.5%", "5% (title safe)"};
+            java.text.NumberFormat pctFmt = java.text.NumberFormat.getPercentInstance();
+            pctFmt.setMaximumFractionDigits(1);
+            String[] labels = {getString(R.string.pattern_edge), pctFmt.format(0.025),
+                    getString(R.string.pattern_title_safe, pctFmt.format(0.05))};
             p.setStyle(Paint.Style.STROKE);
             text.setTextSize(h / 45f);
             for (int i = 0; i < pct.length; i++) {
@@ -200,7 +206,7 @@ public class PatternsActivity extends Activity {
                 p.setColor(Color.rgb(v, v, v));
                 float x0 = w * (0.1f + 0.8f * i / levels.length), x1 = w * (0.1f + 0.8f * (i + 1) / levels.length) - 8;
                 c.drawRect(x0, h * 0.3f, x1, h * 0.6f, p);
-                label(c, String.valueOf(levels[i]), (x0 + x1) / 2, h * 0.68f, true);
+                label(c, java.text.NumberFormat.getIntegerInstance().format(levels[i]), (x0 + x1) / 2, h * 0.68f, true);
             }
         }
 
@@ -212,7 +218,7 @@ public class PatternsActivity extends Activity {
                 p.setColor(Color.rgb(v, v, v));
                 float x0 = w * (0.1f + 0.8f * i / levels.length), x1 = w * (0.1f + 0.8f * (i + 1) / levels.length) - 8;
                 c.drawRect(x0, h * 0.3f, x1, h * 0.6f, p);
-                label(c, String.valueOf(levels[i]), (x0 + x1) / 2, h * 0.68f, false);
+                label(c, java.text.NumberFormat.getIntegerInstance().format(levels[i]), (x0 + x1) / 2, h * 0.68f, false);
             }
         }
 
@@ -230,7 +236,8 @@ public class PatternsActivity extends Activity {
                     if (vertical) c.drawRect(x0 + i, y0, x0 + i + size, y0 + bh / 2, p);
                     else if (i < bh / 2) c.drawRect(x0, y0 + i, x0 + bw, y0 + i + size, p);
                 }
-                label(c, size + " px " + (vertical ? "vertical" : "horizontal"), x0 + bw / 2f, y0 + bh / 2f + h / 30f, true);
+                label(c, getResources().getQuantityString(vertical ? R.plurals.pattern_px_vertical : R.plurals.pattern_px_horizontal,
+                        size, size), x0 + bw / 2f, y0 + bh / 2f + h / 30f, true);
             }
             // A one-pixel checkerboard: a 2×2 tile repeated, not drawn pixel by pixel.
             int x0 = w / 2 - bw / 2, y0 = bh * 2 + bh / 6, size = bh / 2;
