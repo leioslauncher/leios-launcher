@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The ≡ panel (quick settings over any app, opened with the remote's ≡ button) and its PIN screen. -->
+<resources>
+    <string name="panel_title">Quick settings</string>
+    <string name="panel_volume">Volume</string>
+    <!-- Next to Brightness when it opens the projector's own screen instead of a slider. -->
+    <string name="panel_projector_screen">Projector screen</string>
+    <string name="panel_projector">Projector</string>
+    <string name="panel_projector_summary">Picture, keystone</string>
+    <!-- "Home › Customize › Projector & sleep": where to set it up; use those names. -->
+    <string name="panel_sleep_turn_on_once">Turn it on once in Home › Customize › Projector &amp; sleep</string>
+    <string name="hint_switch">Switch</string>
+    <!-- PIN screen title when an app's name can't be read: "Open this app". -->
+    <string name="panel_this_app">this app</string>
+    <!-- After holding a remote button set to "Sleep in 30 minutes". -->
+    <string name="toast_sleep_30">Going to sleep in 30 minutes</string>
+    <string name="toast_sleep_set_once">Set the sleep timer once in Customize first</string>
+</resources>

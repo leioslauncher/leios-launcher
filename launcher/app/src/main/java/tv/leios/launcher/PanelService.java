@@ -27,6 +27,7 @@ import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.FrameLayout;
 
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -223,10 +224,10 @@ public class PanelService extends AccessibilityService {
         try {
             label = getPackageManager().getApplicationLabel(getPackageManager().getApplicationInfo(pkg, 0));
         } catch (Exception e) {
-            label = "this app";
+            label = getString(R.string.panel_this_app);
         }
         // Covers the app until the right PIN; Back goes Home instead.
-        askPin("Open " + label, null, () -> performGlobalAction(GLOBAL_ACTION_HOME));
+        askPin(getString(R.string.pin_title_open_app, label), null, () -> performGlobalAction(GLOBAL_ACTION_HOME));
         pinFor = pkg;
     }
 
@@ -247,11 +248,11 @@ public class PanelService extends AccessibilityService {
         tk = Tokens.of(this);
         pinView = new FrameLayout(this);
         pinView.setBackgroundColor(getColor(R.color.idle_bg));
-        pinPad = new PinPad(this, th, null, title, "Enter your PIN", new PinPad.Listener() {
+        pinPad = new PinPad(this, th, null, title, getString(R.string.pin_enter), new PinPad.Listener() {
             @Override
             public void done(String pin) {
                 if (System.currentTimeMillis() < pinWaitUntil) {
-                    pinPad.error("Too many tries. Wait half a minute.");
+                    pinPad.error(getString(R.string.pin_too_many));
                     return;
                 }
                 if (Lock.check(PanelService.this, pin)) {
@@ -263,7 +264,7 @@ public class PanelService extends AccessibilityService {
                         wrongPins = 0;
                         pinWaitUntil = System.currentTimeMillis() + 30_000;
                     }
-                    pinPad.error("That's not the PIN. Try again.");
+                    pinPad.error(getString(R.string.pin_wrong));
                 }
             }
 
@@ -302,7 +303,7 @@ public class PanelService extends AccessibilityService {
     /** Android's Settings, behind the PIN when Customize and Settings are locked. */
     private void openSettings() {
         Runnable go = () -> launch(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
-        if (Lock.settingsLocked(this)) askPin("Settings", go, null);
+        if (Lock.settingsLocked(this)) askPin(getString(R.string.settings), go, null);
         else go.run();
     }
 
@@ -359,9 +360,9 @@ public class PanelService extends AccessibilityService {
             case "sleep30":
                 if (SleepTimer.isReady(this)) {
                     SleepTimer.set(this, 30);
-                    android.widget.Toast.makeText(this, "Going to sleep in 30 minutes", android.widget.Toast.LENGTH_SHORT).show();
+                    android.widget.Toast.makeText(this, R.string.toast_sleep_30, android.widget.Toast.LENGTH_SHORT).show();
                 } else {
-                    android.widget.Toast.makeText(this, "Set the sleep timer once in Customize first",
+                    android.widget.Toast.makeText(this, R.string.toast_sleep_set_once,
                             android.widget.Toast.LENGTH_LONG).show();
                 }
                 break;
@@ -584,7 +585,7 @@ public class PanelService extends AccessibilityService {
         theme = Theme.of(this);
         overlay = new FrameLayout(this);
         menu = new MenuView(this, theme);
-        menu.setHints("◀ ▶", "Adjust", "OK", "Select", "≡", "Close");
+        menu.setHints(mainHints());
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(tk.sheetWidth,
                 FrameLayout.LayoutParams.WRAP_CONTENT, Gravity.TOP | Gravity.END);
         lp.setMargins(0, tk.safeV, tk.safeH, tk.safeV);
@@ -640,7 +641,7 @@ public class PanelService extends AccessibilityService {
         try {
             startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         } catch (RuntimeException ex) {
-            android.widget.Toast.makeText(this, "That screen isn't available on this projector",
+            android.widget.Toast.makeText(this, R.string.toast_screen_unavailable,
                     android.widget.Toast.LENGTH_SHORT).show();
         }
     }
@@ -656,6 +657,12 @@ public class PanelService extends AccessibilityService {
         menu.setRows(rows, focus);
     }
 
+    /** "◀ ▶ Adjust  OK Select  ≡ Close" under the panel. ≡ is the remote's menu button. */
+    private String[] mainHints() {
+        return new String[] {"◀ ▶", getString(R.string.hint_adjust), getString(R.string.key_ok), getString(R.string.hint_select),
+                "≡", getString(R.string.hint_close)};
+    }
+
     private void showMain(int focus) {
         inSubmenu = false;
         Date now = new Date();
@@ -663,43 +670,45 @@ public class PanelService extends AccessibilityService {
         String time = new SimpleDateFormat(h24 ? "H:mm" : "h:mm a", Locale.getDefault()).format(now);
         String day = new SimpleDateFormat(android.text.format.DateFormat.getBestDateTimePattern(
                 Locale.getDefault(), "EEEMMMd"), Locale.getDefault()).format(now);
-        menu.setHeader(time + "  ·  " + day, "Quick settings");
+        menu.setHeader(time + getString(R.string.dot_separator) + day, getString(R.string.panel_title));
         List<Item> list = new ArrayList<>();
         list.add(volumeItem());
         // Brightness: JMGO's own control as a slider, else its screen, else (other TVs) nothing.
         if (JmgoDlp.available() && JmgoDlp.brightnessStep() > 0) list.add(brightnessItem());
         else if (Device.has(this, Device.SETTINGS, Device.JMGO_LIGHT)) {
-            list.add(new Item(MenuView.Row.nav(R.drawable.ic_brightness, "Brightness", "Projector screen"),
+            list.add(new Item(MenuView.Row.nav(R.drawable.ic_brightness, getString(R.string.set_projector_brightness),
+                    getString(R.string.panel_projector_screen)),
                     () -> launch(Device.open(Device.SETTINGS, Device.JMGO_LIGHT)), null, null));
         }
         if (Device.hasInputs(this)) {
             int at = list.size();
-            list.add(new Item(MenuView.Row.nav(R.drawable.ic_input, "Inputs", ""), () -> {
+            list.add(new Item(MenuView.Row.nav(R.drawable.ic_input, getString(R.string.inputs), ""), () -> {
                 mainFocus = at;
                 showInputs();
             }, null, null));
         }
-        list.add(new Item(MenuView.Row.nav(R.drawable.ic_wifi, "Wi-Fi", networkName()), () -> {
+        list.add(new Item(MenuView.Row.nav(R.drawable.ic_wifi, getString(R.string.wifi), networkName()), () -> {
             Runnable go = () -> launch(new Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK));
-            if (Lock.settingsLocked(this)) askPin("Wi-Fi settings", go, null);
+            if (Lock.settingsLocked(this)) askPin(getString(R.string.pin_title_wifi_settings), go, null);
             else go.run();
         }, null, null));
         list.add(sleepItem());
         if (Device.has(this, Device.SETTINGS, Device.JMGO_PICTURE) || Device.has(this, Device.SETTINGS, Device.JMGO_KEYSTONE)) {
             int at = list.size();
-            list.add(new Item(MenuView.Row.nav(R.drawable.ic_projector, "Projector", "Picture, keystone"), () -> {
+            list.add(new Item(MenuView.Row.nav(R.drawable.ic_projector, getString(R.string.panel_projector),
+                getString(R.string.panel_projector_summary)), () -> {
                 mainFocus = at;
                 showProjector();
             }, null, null));
         }
-        list.add(new Item(MenuView.Row.nav(R.drawable.ic_settings, "Settings", ""), this::openSettings, null, null));
-        menu.setHints("◀ ▶", "Adjust", "OK", "Select", "≡", "Close");
+        list.add(new Item(MenuView.Row.nav(R.drawable.ic_settings, getString(R.string.settings), ""), this::openSettings, null, null));
+        menu.setHints(mainHints());
         setItems(list, focus);
     }
 
     private void showInputs() {
         inSubmenu = true;
-        menu.setHeader("Quick settings", "Inputs");
+        menu.setHeader(getString(R.string.panel_title), getString(R.string.inputs));
         List<Item> list = new ArrayList<>();
         TvInputManager tim = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
         boolean tuner = false;
@@ -718,39 +727,43 @@ public class PanelService extends AccessibilityService {
             }
         }
         list.sort((a, b) -> a.row.label.compareTo(b.row.label));
-        if (tuner) list.add(new Item(MenuView.Row.action(R.drawable.ic_live, "Live TV"),
+        if (tuner) list.add(new Item(MenuView.Row.action(R.drawable.ic_live, getString(R.string.inputs_live_tv)),
                 () -> launch(new Intent(Intent.ACTION_VIEW, TvContract.Channels.CONTENT_URI)), null, null));
-        if (list.isEmpty()) list.add(new Item(MenuView.Row.note(R.drawable.ic_info, "No inputs found"), null, null, null));
-        menu.setHints("OK", "Switch", "BACK", "Back");
+        if (list.isEmpty()) list.add(new Item(MenuView.Row.note(R.drawable.ic_info, getString(R.string.inputs_none)), null, null, null));
+        menu.setHints(getString(R.string.key_ok), getString(R.string.hint_switch), getString(R.string.key_back),
+                getString(R.string.hint_back));
         setItems(list, 0);
     }
 
     private void showProjector() {
         inSubmenu = true;
-        menu.setHeader("Quick settings", "Projector");
+        menu.setHeader(getString(R.string.panel_title), getString(R.string.panel_projector));
         List<Item> list = new ArrayList<>();
         if (Device.has(this, Device.SETTINGS, Device.JMGO_PICTURE)) {
-            list.add(new Item(MenuView.Row.nav(R.drawable.ic_picture, "Picture", "Mode, colour, HDR"),
+            list.add(new Item(MenuView.Row.nav(R.drawable.ic_picture, getString(R.string.set_projector_picture),
+                getString(R.string.projector_picture_summary)),
                     () -> launch(Device.open(Device.SETTINGS, Device.JMGO_PICTURE)), null, null));
         }
         if (Device.has(this, Device.SETTINGS, Device.JMGO_KEYSTONE)) {
-            list.add(new Item(MenuView.Row.nav(R.drawable.ic_keystone, "Keystone", "Straighten the image"),
+            list.add(new Item(MenuView.Row.nav(R.drawable.ic_keystone, getString(R.string.set_projector_keystone),
+                getString(R.string.projector_keystone_summary)),
                     () -> launch(Device.open(Device.SETTINGS, Device.JMGO_KEYSTONE)), null, null));
         }
-        menu.setHints("OK", "Open", "BACK", "Back");
+        menu.setHints(getString(R.string.key_ok), getString(R.string.hint_open), getString(R.string.key_back),
+                getString(R.string.hint_back));
         setItems(list, 0);
     }
 
     // ---- rows -------------------------------------------------------------------------------
 
     private Item volumeItem() {
-        MenuView.Row row = MenuView.Row.slider(R.drawable.ic_volume, "Volume", 0, "");
+        MenuView.Row row = MenuView.Row.slider(R.drawable.ic_volume, getString(R.string.panel_volume), 0, "");
         Runnable refresh = () -> {
             int max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
             int v = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
             int pct = max == 0 ? 0 : Math.round(v * 100f / max);
             row.fraction = pct / 100f;
-            row.value(String.valueOf(pct));
+            row.value(NumberFormat.getIntegerInstance().format(pct));
         };
         return new Item(row, null, dir -> {
             int max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -764,11 +777,11 @@ public class PanelService extends AccessibilityService {
 
     /** Same 1..10 steps and values as the projector's Brightness screen. */
     private Item brightnessItem() {
-        MenuView.Row row = MenuView.Row.slider(R.drawable.ic_brightness, "Brightness", 0, "");
+        MenuView.Row row = MenuView.Row.slider(R.drawable.ic_brightness, getString(R.string.set_projector_brightness), 0, "");
         Runnable refresh = () -> {
             int step = Math.max(0, JmgoDlp.brightnessStep());
             row.fraction = step / 10f;
-            row.value(String.valueOf(step));
+            row.value(NumberFormat.getIntegerInstance().format(step));
         };
         return new Item(row, null, dir -> {
             int step = JmgoDlp.brightnessStep();
@@ -780,12 +793,14 @@ public class PanelService extends AccessibilityService {
     }
 
     private Item sleepItem() {
-        MenuView.Row row = MenuView.Row.stepper(R.drawable.ic_sleep, "Sleep timer", "Off");
+        MenuView.Row row = MenuView.Row.stepper(R.drawable.ic_sleep, getString(R.string.set_projector_sleep_timer),
+                getString(R.string.off));
         boolean ready = SleepTimer.isReady(this);
-        if (!ready) row.disabled("Turn it on once in Home › Customize › Projector & sleep");
+        if (!ready) row.disabled(getString(R.string.panel_sleep_turn_on_once));
         Runnable refresh = () -> {
             int left = SleepTimer.minutesLeft(this);
-            row.value(left > 0 ? left + " min" : "Off");
+            row.value(left > 0 ? getResources().getQuantityString(R.plurals.duration_min_short, left, left)
+                    : getString(R.string.off));
         };
         return new Item(row, null, dir -> {
             if (!SleepTimer.isReady(this)) {
@@ -813,12 +828,12 @@ public class PanelService extends AccessibilityService {
     private String networkName() {
         ConnectivityManager cm = getSystemService(ConnectivityManager.class);
         NetworkCapabilities caps = cm == null ? null : cm.getNetworkCapabilities(cm.getActiveNetwork());
-        if (caps == null) return "Offline";
-        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) return "Ethernet";
+        if (caps == null) return getString(R.string.net_offline);
+        if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) return getString(R.string.net_ethernet);
         WifiManager w = getApplicationContext().getSystemService(WifiManager.class);
         WifiInfo info = w == null ? null : w.getConnectionInfo();
         String s = info == null ? null : info.getSSID();
-        if (s == null || s.contains("unknown ssid") || s.isEmpty()) return "Wi-Fi";
+        if (s == null || s.contains("unknown ssid") || s.isEmpty()) return getString(R.string.wifi);
         return s.replaceAll("^\"|\"$", "");
     }
 }
