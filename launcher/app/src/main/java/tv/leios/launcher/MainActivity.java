@@ -5200,7 +5200,11 @@ public class MainActivity extends Activity {
         long now = System.currentTimeMillis();
         boolean stale = now - prefs.getLong("weather_time", 0) > 30 * 60_000L
                 && now - prefs.getLong("weather_try", 0) > 5 * 60_000L;
-        if (!force && !stale) return;
+        // A reading in the other unit (°C vs °F) shows converted meanwhile; a fresh one is fetched now
+        // (at most once a minute, so a failing network isn't asked over and over).
+        boolean wrongUnit = prefs.contains("w_code") && prefs.getBoolean("w_f", false) != fahrenheit()
+                && now - prefs.getLong("weather_try", 0) > 60_000L;
+        if (!force && !stale && !wrongUnit) return;
         weatherLoading = true;
         prefs.edit().putLong("weather_try", now).apply();
         double lat = Double.parseDouble(prefs.getString("weather_lat", "0"));
@@ -5244,15 +5248,17 @@ public class MainActivity extends Activity {
             return;
         }
         weather.setTextColor(theme.textSecondary);
-        if (!prefs.contains("w_code") || prefs.getBoolean("w_f", false) != fahrenheit()) {
+        if (!prefs.contains("w_code")) {
             // Nothing to show until the first reading arrives.
             weather.setVisibility(View.GONE);
             return;
         }
         // No city name: the projector stays at home, so it's always the same place.
         int code = prefs.getInt("w_code", 0), sky = Weather.describe(code);
+        // Read in the other unit (the setting changed since): shown converted until the next reading.
+        double temp = Weather.convert(prefs.getFloat("w_temp", 0), prefs.getBoolean("w_f", false), fahrenheit());
         weather.setText(tr(R.string.weather_line, Weather.emoji(code, prefs.getBoolean("w_day", true)),
-                number(Math.round(prefs.getFloat("w_temp", 0))), sky == 0 ? "" : tr(sky)));
+                number(Math.round(temp)), sky == 0 ? "" : tr(sky)));
     }
 
     // Look

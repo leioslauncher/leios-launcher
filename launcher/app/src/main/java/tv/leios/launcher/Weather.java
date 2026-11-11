@@ -76,6 +76,12 @@ final class Weather {
         return places;
     }
 
+    /** {@code temp} read in °F ({@code fromF}) or °C, in the unit wanted ({@code toF}). */
+    static double convert(double temp, boolean fromF, boolean toF) {
+        if (fromF == toF) return temp;
+        return toF ? temp * 9 / 5 + 32 : (temp - 32) * 5 / 9;
+    }
+
     /** WMO weather codes: a string resource for the sky, or 0 for a code with no words. */
     static int describe(int code) {
         if (code == 0) return R.string.weather_clear;
