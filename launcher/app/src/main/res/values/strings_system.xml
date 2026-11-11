@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Customize › System: search and privacy, backups, reset and About.
+     Setting names are in strings_settings.xml. -->
+<resources>
+    <!-- Shown once Home has restarted after a restore or a reset. -->
+    <string name="toast_backup_restored">Backup restored</string>
+    <!-- "System › Restore a backup" is where to undo it: use those menus' names. -->
+    <string name="toast_reset_done">Home is back to how it started. System › Restore a backup undoes this.</string>
+</resources>

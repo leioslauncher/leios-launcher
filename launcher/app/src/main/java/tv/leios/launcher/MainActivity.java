@@ -345,11 +345,8 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT));
         toaster = new Ui.Toaster(root, theme, tk);
         // A message saved before Home restarted itself (a theme, restore or reset).
-        String pending = prefs.getString("toast", null);
-        if (pending != null) {
-            prefs.edit().remove("toast").apply();
-            ui.postDelayed(() -> toast(pending, true), tk.slow);
-        }
+        String pending = savedMessageText();
+        if (pending != null) ui.postDelayed(() -> toast(pending, true), tk.slow);
         // After each update of Home: a backup, in case the new version changes something you liked.
         try {
             long updated = getPackageManager().getPackageInfo(getPackageName(), 0).lastUpdateTime;
@@ -1219,6 +1216,34 @@ public class MainActivity extends Activity {
     }
 
     // ---- text: every word on screen comes from res/values/strings*.xml -------------------------
+
+    /** Saves a message to show once Home has restarted: the string's name and values, not the sentence. */
+    private void saveMessage(SharedPreferences.Editor ed, int id, String... args) {
+        ed.remove(SavedMessage.LEGACY_PREF).putString(SavedMessage.PREF,
+                new SavedMessage(getResources().getResourceEntryName(id), args).encode());
+    }
+
+    /**
+     * The saved message in the language shown now, removed so it shows once; null if none. A sentence
+     * saved by 1.3 shows as it was; one that can't be read, or names a string that's gone, is dropped.
+     */
+    private String savedMessageText() {
+        String legacy = prefs.getString(SavedMessage.LEGACY_PREF, null);
+        SavedMessage m = SavedMessage.decode(prefs.getString(SavedMessage.PREF, null));
+        if (legacy == null && !prefs.contains(SavedMessage.PREF)) return null;
+        prefs.edit().remove(SavedMessage.LEGACY_PREF).remove(SavedMessage.PREF).apply();
+        if (m != null) {
+            int id = getResources().getIdentifier(m.key, "string", getPackageName());
+            if (id == 0) return null;
+            try {
+                return tr(id, (Object[]) m.args);
+            } catch (RuntimeException e) {
+                // Placeholders that don't match the values (a string changed between versions).
+                return null;
+            }
+        }
+        return legacy;
+    }
 
     /** A string resource; with {@code args}, its %1$s… placeholders filled in. */
     private String tr(int id, Object... args) {
@@ -5482,9 +5507,10 @@ public class MainActivity extends Activity {
                     toast("That theme can't be read. Nothing was changed.", false);
                     return;
                 }
-                prefs.edit().putInt("area", TOP).putInt("top", PILL_CUSTOMIZE)
-                        .putString("toast", name == null ? "Theme undone" : name + " applied. Look › Themes › Undo puts it back.")
-                        .apply();
+                SharedPreferences.Editor ed = prefs.edit().putInt("area", TOP).putInt("top", PILL_CUSTOMIZE);
+                if (name == null) saveMessage(ed, R.string.toast_theme_undone);
+                else saveMessage(ed, R.string.toast_theme_applied, name);
+                ed.apply();
                 Tokens.invalidate();
                 recreate();
             });
@@ -6461,7 +6487,9 @@ public class MainActivity extends Activity {
                     toast("That backup can't be read. Nothing was changed.", false);
                     return;
                 }
-                prefs.edit().putString("toast", "Backup restored").putInt("area", TOP).apply();
+                SharedPreferences.Editor ed = prefs.edit().putInt("area", TOP);
+                saveMessage(ed, R.string.toast_backup_restored);
+                ed.apply();
                 Tokens.invalidate();
                 recreate();
             });
@@ -6485,8 +6513,9 @@ public class MainActivity extends Activity {
             stopVideo();
             stopAnim();
             SleepTimer.cancel(this);
-            prefs.edit().clear().putString("toast", "Home is back to how it started. System › Restore a backup undoes this.")
-                    .commit();
+            SharedPreferences.Editor ed = prefs.edit().clear();
+            saveMessage(ed, R.string.toast_reset_done);
+            ed.commit();
             usage.edit().clear().commit();
             //noinspection ResultOfMethodCallIgnored
             photoFile().delete();

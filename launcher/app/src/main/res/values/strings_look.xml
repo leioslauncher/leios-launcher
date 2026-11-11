@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Customize › Look & sound: appearance, font, clock, top bar, tiles, themes and sounds.
+     Setting names are in strings_settings.xml. -->
+<resources>
+    <!-- Shown once Home has restarted in the new look. %1$s: the theme's name.
+         "Look › Themes › Undo" is where to undo it: use those menus' names. -->
+    <string name="toast_theme_applied">%1$s applied. Look › Themes › Undo puts it back.</string>
+    <string name="toast_theme_undone">Theme undone</string>
+</resources>
