@@ -192,11 +192,11 @@ final class SearchOverlay extends FrameLayout {
         credit.setGravity(Gravity.CENTER_VERTICAL);
         ImageView logo = new ImageView(c);
         logo.setImageResource(R.drawable.tmdb_logo);
-        logo.setContentDescription("TMDB");
+        logo.setContentDescription(c.getString(R.string.tmdb_name));
         LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(tk.dp(77), tk.dp(10));
         llp.setMarginEnd(tk.space3);
         credit.addView(logo, llp);
-        TextView creditText = Ui.text(c, "Details from TMDB  ·  Where to watch from JustWatch",
+        TextView creditText = Ui.text(c, c.getString(R.string.search_credit),
                 tk.textCaption, th.textTertiary, tk.regular);
         creditText.setSingleLine(false);
         creditText.setMaxLines(2);
@@ -572,7 +572,12 @@ final class SearchOverlay extends FrameLayout {
     private final Runnable renderSoon = this::render;
 
     private String placeholder() {
-        return onlineState() == SearchPrefs.ON ? "Apps, settings, movies and shows" : "Apps and settings";
+        return tr(onlineState() == SearchPrefs.ON ? R.string.search_placeholder_online : R.string.search_placeholder);
+    }
+
+    /** A string resource; with {@code args}, its %1$s… placeholders filled in. */
+    private String tr(int id, Object... args) {
+        return args.length == 0 ? getContext().getString(id) : getContext().getString(id, args);
     }
 
     private int onlineState() {
@@ -608,12 +613,11 @@ final class SearchOverlay extends FrameLayout {
     private void renderEmpty(List<MenuView.Row> rows) {
         List<String> recent = SearchPrefs.remembersRecent(prefs) ? SearchPrefs.recent(prefs) : new ArrayList<>();
         if (recent.isEmpty()) {
-            row(rows, MenuView.Row.note(R.drawable.ic_info, onlineState() == SearchPrefs.ON
-                    ? "Type to find apps, Leios settings, movies and shows."
-                    : "Type to find apps and Leios settings."), "hint", null);
+            row(rows, MenuView.Row.note(R.drawable.ic_info, tr(onlineState() == SearchPrefs.ON
+                    ? R.string.search_hint_online : R.string.search_hint)), "hint", null);
             return;
         }
-        row(rows, MenuView.Row.header("Recent searches"), "h:recent", null);
+        row(rows, MenuView.Row.header(tr(R.string.set_system_search_recent_searches)), "h:recent", null);
         for (String s : recent) {
             row(rows, MenuView.Row.action(R.drawable.ic_search, s), "r:" + s, () -> {
                 query.setLength(0);
@@ -622,11 +626,11 @@ final class SearchOverlay extends FrameLayout {
                 refresh(true);
             });
         }
-        row(rows, MenuView.Row.action(R.drawable.ic_trash, "Clear recent searches"), "r:clear", () -> {
+        row(rows, MenuView.Row.action(R.drawable.ic_trash, tr(R.string.set_system_search_clear_recent_searches)), "r:clear", () -> {
             SearchPrefs.clearRecent(prefs);
             setZone(KEYS);
             render();
-            host.toast("Recent searches cleared");
+            host.toast(tr(R.string.toast_recent_cleared));
         });
     }
 
@@ -657,7 +661,7 @@ final class SearchOverlay extends FrameLayout {
         }
         if (!found.isEmpty()) {
             any = true;
-            row(rows, MenuView.Row.header("Apps"), "h:apps", null);
+            row(rows, MenuView.Row.header(tr(R.string.search_apps)), "h:apps", null);
             int iconSize = tk.dp(34);
             Set<String> locked = host.lockedPackages();
             for (int i = 0; i < Math.min(MAX_APPS, found.size()); i++) {
@@ -665,7 +669,7 @@ final class SearchOverlay extends FrameLayout {
                 boolean banner = a.icon == null;
                 MenuView.Row r = MenuView.Row.action(0, a.label)
                         .image(banner ? tk.dp(60) : iconSize, banner ? tk.dp(34) : iconSize)
-                        .value(locked.contains(a.pkg) ? "Locked" : "");
+                        .value(locked.contains(a.pkg) ? tr(R.string.search_locked) : "");
                 r.image = banner ? a.banner : a.icon;
                 row(rows, r, "a:" + a.pkg, () -> remember(() -> host.openApp(a)));
             }
@@ -684,7 +688,7 @@ final class SearchOverlay extends FrameLayout {
             }
             if (!settings.isEmpty()) {
                 any = true;
-                row(rows, MenuView.Row.header("Settings"), "h:settings", null);
+                row(rows, MenuView.Row.header(tr(R.string.settings)), "h:settings", null);
                 for (SettingsIndex.Entry e : settings) {
                     row(rows, MenuView.Row.nav(R.drawable.ic_settings, e.labelText, "").detail(e.crumb()),
                             "s:" + e.menu + "/" + e.label, () -> remember(() -> host.openSetting(e)));
@@ -694,9 +698,8 @@ final class SearchOverlay extends FrameLayout {
 
         if (!any) {
             int state = onlineState();
-            row(rows, MenuView.Row.note(R.drawable.ic_info, "Nothing matches “" + q + "”."
-                    + (state == SearchPrefs.OFF ? " Online title search is off (Customization › System › Search & privacy)."
-                    : state == SearchPrefs.UNAVAILABLE ? " This copy of Leios finds apps and settings, not movies or shows." : "")),
+            row(rows, MenuView.Row.note(R.drawable.ic_info, tr(state == SearchPrefs.OFF ? R.string.search_nothing_online_off
+                    : state == SearchPrefs.UNAVAILABLE ? R.string.search_nothing_no_key : R.string.search_nothing, q)),
                     "none", null);
         }
     }
@@ -708,67 +711,64 @@ final class SearchOverlay extends FrameLayout {
         if (state == SearchPrefs.UNAVAILABLE || state == SearchPrefs.OFF) return false;
         if (state == SearchPrefs.UNDECIDED) {
             if (q.length() < 2) return false;
-            row(rows, MenuView.Row.header("Movies & TV"), "h:titles", null);
-            row(rows, MenuView.Row.note(R.drawable.ic_info, "Find movies and shows too? Leios would send only what you type and your region ("
-                    + region() + ") to TMDB, a film database, and when you pick a title, its ID number to Wikidata to open it "
-                    + "in your app. Nothing about you or this TV. You can change this later in "
-                    + "Customization › System › Search & privacy."), "ask", null);
-            row(rows, MenuView.Row.action(R.drawable.ic_check, "Turn on online search"), "ask:on", () -> {
+            row(rows, MenuView.Row.header(tr(R.string.search_movies_tv)), "h:titles", null);
+            row(rows, MenuView.Row.note(R.drawable.ic_info, tr(R.string.search_ask, region())), "ask", null);
+            row(rows, MenuView.Row.action(R.drawable.ic_check, tr(R.string.search_turn_on)), "ask:on", () -> {
                 SearchPrefs.setOnline(prefs, true);
                 onlineQuery = "";
                 refresh(true);
                 setZone(KEYS);
                 loadPopular();
             });
-            row(rows, MenuView.Row.action(R.drawable.ic_close, "Not now"), "ask:off", () -> {
+            row(rows, MenuView.Row.action(R.drawable.ic_close, tr(R.string.search_not_now)), "ask:off", () -> {
                 SearchPrefs.setOnline(prefs, false);
                 setZone(KEYS);
                 refresh(false);
-                host.toast("Online search is off. Customization › System › Search & privacy turns it on.");
+                host.toast(tr(R.string.toast_search_online_off));
             });
             return true;
         }
         if (q.length() < 2) return false;
         if (onlineProblem != null) {
-            row(rows, MenuView.Row.header("Movies & TV"), "h:titles", null);
+            row(rows, MenuView.Row.header(tr(R.string.search_movies_tv)), "h:titles", null);
             row(rows, MenuView.Row.note(R.drawable.ic_info, onlineProblem), "problem", null);
             return true;
         }
         if (online == null) {
-            row(rows, MenuView.Row.header("Movies & TV"), "h:titles", null);
-            row(rows, MenuView.Row.loading("Looking up movies and shows…"), "loading", null);
+            row(rows, MenuView.Row.header(tr(R.string.search_movies_tv)), "h:titles", null);
+            row(rows, MenuView.Row.loading(tr(R.string.search_looking_up)), "loading", null);
             return true;
         }
         List<Found> yours = new ArrayList<>(), elsewhere = new ArrayList<>();
         for (Found f : online) (f.offers.isEmpty() ? elsewhere : yours).add(f);
         boolean showElsewhere = SearchPrefs.showElsewhere(prefs);
         if (yours.isEmpty() && (elsewhere.isEmpty() || !showElsewhere)) {
-            row(rows, MenuView.Row.header("Movies & TV"), "h:titles", null);
-            row(rows, MenuView.Row.note(R.drawable.ic_info, online.isEmpty() ? "No movies or shows match."
-                    : "None of your apps has a matching movie or show."), "notitles", null);
+            row(rows, MenuView.Row.header(tr(R.string.search_movies_tv)), "h:titles", null);
+            row(rows, MenuView.Row.note(R.drawable.ic_info, tr(online.isEmpty() ? R.string.search_no_titles
+                    : R.string.search_no_titles_on_apps)), "notitles", null);
             return true;
         }
         int posterW = tk.dp(34), posterH = tk.dp(50);
         if (!yours.isEmpty()) {
-            row(rows, MenuView.Row.header("Movies & TV on your apps"), "h:titles", null);
+            row(rows, MenuView.Row.header(tr(R.string.search_on_your_apps)), "h:titles", null);
             for (int i = 0; i < Math.min(MAX_TITLES, yours.size()); i++) {
                 Found f = yours.get(i);
                 MenuView.Row r = MenuView.Row.action(0, f.title.name).image(posterW, posterH)
                         // Your apps on the second line, so the title gets the row's full width.
-                        .detail(describe(f.title) + "  ·  " + appNames(f.offers));
+                        .detail(describe(f.title) + tr(R.string.dot_separator) + appNames(f.offers));
                 r.image = f.poster;
                 row(rows, r, "t:" + f.title.tv + f.title.id, () -> remember(() -> openTitle(f)));
             }
         }
         if (showElsewhere && !elsewhere.isEmpty()) {
-            row(rows, MenuView.Row.header("Not on your apps"), "h:elsewhere", null);
+            row(rows, MenuView.Row.header(tr(R.string.search_not_on_apps)), "h:elsewhere", null);
             for (int i = 0; i < Math.min(MAX_ELSEWHERE, elsewhere.size()); i++) {
                 Found f = elsewhere.get(i);
                 MenuView.Row r = MenuView.Row.action(0, f.title.name).image(posterW, posterH)
                         .detail(describe(f.title)).quiet().disabled(null);
                 r.image = f.poster;
                 row(rows, r, "e:" + f.title.tv + f.title.id, () -> {
-                    results.flash("None of your apps has " + f.title.name + " in " + region() + ".");
+                    results.flash(tr(R.string.search_not_in_region, f.title.name, region()));
                     host.sound(Sounds.ERROR, false);
                 });
             }
@@ -776,27 +776,32 @@ final class SearchOverlay extends FrameLayout {
         return true;
     }
 
-    private static String describe(Titles.Title t) {
-        String kind = t.tv ? "TV show" : "Movie";
-        return t.year.isEmpty() ? kind : t.year + "  ·  " + kind;
+    /** "2019  ·  TV show": the year (as written in the language) and the kind. */
+    private String describe(Titles.Title t) {
+        String kind = tr(t.tv ? R.string.search_tv_show : R.string.search_movie);
+        if (t.year.isEmpty()) return kind;
+        String year = t.year.matches("\\d{4}") ? java.text.NumberFormat.getIntegerInstance().format(Integer.parseInt(t.year))
+                .replaceAll("[^\\p{Nd}]", "") : t.year;
+        return year + tr(R.string.dot_separator) + kind;
     }
 
     /** "Netflix  ·  Hulu", "YouTube (rent)": where you can watch it, at most two names. */
-    private static String appNames(List<AppLinks.Offer> offers) {
+    private String appNames(List<AppLinks.Offer> offers) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < offers.size() && i < 2; i++) {
             AppLinks.Offer o = offers.get(i);
-            sb.append(i == 0 ? "" : "  ·  ").append(o.app.name).append(o.rent ? " (rent)" : "");
+            if (i > 0) sb.append(tr(R.string.dot_separator));
+            sb.append(o.rent ? tr(R.string.search_app_rent, o.app.name) : o.app.name);
         }
-        if (offers.size() > 2) sb.append("  +").append(offers.size() - 2);
+        if (offers.size() > 2) sb.append(tr(R.string.search_more_apps, java.text.NumberFormat.getIntegerInstance().format(offers.size() - 2)));
         return sb.toString();
     }
 
     private void renderChooser(List<MenuView.Row> rows) {
-        row(rows, MenuView.Row.header("Open " + choosing.title.name + " in"), "h:choose", null);
+        row(rows, MenuView.Row.header(tr(R.string.search_open_in, choosing.title.name)), "h:choose", null);
         for (AppLinks.Offer o : choosing.offers) {
             Titles.Title t = choosing.title;
-            row(rows, MenuView.Row.action(0, o.app.name).value(o.rent ? "Rent or buy" : ""),
+            row(rows, MenuView.Row.action(0, o.app.name).value(o.rent ? tr(R.string.search_rent_or_buy) : ""),
                     "c:" + o.app.pkg, () -> host.openTitle(o.app, t));
         }
     }
@@ -843,11 +848,11 @@ final class SearchOverlay extends FrameLayout {
                     .putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 1)
                     .putExtra(android.speech.RecognizerIntent.EXTRA_CALLING_PACKAGE, getContext().getPackageName());
             listening = true;
-            showListening("Listening…");
+            showListening(tr(R.string.voice_listening));
             host.sound(Sounds.OPEN, false);
             recognizer.startListening(i);
         } catch (RuntimeException e) {
-            stopListening("Voice search isn't working on this TV.");
+            stopListening(tr(R.string.voice_not_on_tv));
         }
     }
 
@@ -867,7 +872,7 @@ final class SearchOverlay extends FrameLayout {
         field.setText(text);
         field.setTextColor(th.accent);
         ghost.setText("");
-        results.setHints("BACK", "Stop listening");
+        results.setHints(tr(R.string.key_back), tr(R.string.hint_stop_listening));
     }
 
     /** Back to typing; {@code problem} is said in a toast, if any. */
@@ -889,7 +894,7 @@ final class SearchOverlay extends FrameLayout {
     private final android.speech.RecognitionListener heard = new android.speech.RecognitionListener() {
         @Override
         public void onReadyForSpeech(android.os.Bundle b) {
-            if (listening) showListening("Listening… say a name");
+            if (listening) showListening(tr(R.string.voice_say_a_name));
         }
 
         @Override
@@ -916,18 +921,18 @@ final class SearchOverlay extends FrameLayout {
             switch (error) {
                 case android.speech.SpeechRecognizer.ERROR_NO_MATCH:
                 case android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
-                    why = "Didn't catch that. Press the mic key and try again.";
+                    why = tr(R.string.voice_didnt_catch);
                     break;
                 case android.speech.SpeechRecognizer.ERROR_AUDIO:
                 case android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
-                    why = "The microphone isn't available. The keyboard still works.";
+                    why = tr(R.string.voice_no_mic);
                     break;
                 case android.speech.SpeechRecognizer.ERROR_NETWORK:
                 case android.speech.SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
-                    why = "Voice search needs the internet right now.";
+                    why = tr(R.string.voice_needs_internet);
                     break;
                 default:
-                    why = "Voice search isn't working right now. The keyboard still works.";
+                    why = tr(R.string.voice_not_working);
                     break;
             }
             stopListening(why);
@@ -941,7 +946,7 @@ final class SearchOverlay extends FrameLayout {
                     : b.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);
             String text = said == null || said.isEmpty() ? "" : said.get(0).trim();
             if (text.isEmpty()) {
-                stopListening("Didn't catch that. Press the mic key and try again.");
+                stopListening(tr(R.string.voice_didnt_catch));
                 return;
             }
             query.setLength(0);
@@ -1053,10 +1058,14 @@ final class SearchOverlay extends FrameLayout {
 
     private void hints() {
         if (zone == KEYS && suggestion != null && choosing == null) {
-            results.setHints("OK", "Type", "▲", "Complete", "▶", "Results", "BACK", "Delete");
-        } else if (zone == KEYS) results.setHints("OK", "Type", "▶", "Results", "BACK", query.length() > 0 ? "Delete" : "Close");
-        else if (choosing != null) results.setHints("OK", "Open", "BACK", "Back");
-        else results.setHints("OK", "Open", "◀", "Keyboard", "BACK", "Keyboard");
+            results.setHints(tr(R.string.key_ok), tr(R.string.hint_type), "▲", tr(R.string.hint_complete), "▶",
+                    tr(R.string.hint_results), tr(R.string.key_back), tr(R.string.hint_delete));
+        } else if (zone == KEYS) results.setHints(tr(R.string.key_ok), tr(R.string.hint_type), "▶", tr(R.string.hint_results),
+                tr(R.string.key_back), tr(query.length() > 0 ? R.string.hint_delete : R.string.hint_close));
+        else if (choosing != null) results.setHints(tr(R.string.key_ok), tr(R.string.hint_open), tr(R.string.key_back),
+                tr(R.string.hint_back));
+        else results.setHints(tr(R.string.key_ok), tr(R.string.hint_open), "◀", tr(R.string.hint_keyboard),
+                tr(R.string.key_back), tr(R.string.hint_keyboard));
     }
 
     private String region() {
@@ -1079,7 +1088,7 @@ final class SearchOverlay extends FrameLayout {
         String q = onlineQuery;
         int mine = ++seq;
         if (offline()) {
-            onlineProblem = "You're offline, so only apps and settings show.";
+            onlineProblem = tr(R.string.search_offline);
             render();
             return;
         }
@@ -1090,7 +1099,7 @@ final class SearchOverlay extends FrameLayout {
         // Slow network: a calm message instead of a spinner forever (the request itself times out too).
         ui.postDelayed(() -> {
             if (seq == mine && online == null && onlineProblem == null) {
-                onlineProblem = "Movies and shows are taking a while. Try again in a moment.";
+                onlineProblem = tr(R.string.search_slow);
                 render();
             }
         }, ONLINE_TIMEOUT_MS);
@@ -1124,10 +1133,9 @@ final class SearchOverlay extends FrameLayout {
                     if (seq == mine) learnNames(titles);
                 });
             } catch (Titles.Unavailable u) {
-                problem = u.busy ? "TMDB is busy right now. Try again in a moment."
-                        : "Movies and shows couldn't load. Apps and settings still work.";
+                problem = c.getString(u.busy ? R.string.search_tmdb_busy : R.string.search_titles_failed);
             } catch (java.io.IOException e) {
-                problem = "Movies and shows couldn't load. Apps and settings still work.";
+                problem = c.getString(R.string.search_titles_failed);
             }
             String p = problem;
             ui.post(() -> {

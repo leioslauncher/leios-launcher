@@ -54,16 +54,17 @@ final class SearchKeyboard extends View {
         this.tk = tk;
         keyH = tk.dp(40);
         gap = tk.space1 + tk.space1 / 2;
-        String[] letters = {"abcdefg", "hijklmn", "opqrstu", "vwxyz12", "3456789", "0'&-.:!"};
+        // The language's letters and digits, a row per line (search_keyboard_rows; see its note).
+        String[] letters = c.getString(R.string.search_keyboard_rows).split("\\|");
         for (String r : letters) {
             List<Key> row = new ArrayList<>();
             for (char ch : r.toCharArray()) row.add(new Key(String.valueOf(ch), String.valueOf(ch), 1));
             rows.add(row);
         }
         List<Key> last = new ArrayList<>();
-        last.add(new Key("Space", SPACE, mic ? 2 : 3));
-        last.add(new Key("Delete", DELETE, 2));
-        last.add(new Key("Clear", CLEAR, 2));
+        last.add(new Key(c.getString(R.string.search_key_space), SPACE, mic ? 2 : 3));
+        last.add(new Key(c.getString(R.string.hint_delete), DELETE, 2));
+        last.add(new Key(c.getString(R.string.search_key_clear), CLEAR, 2));
         if (mic) last.add(new Key("", MIC, 1));
         rows.add(last);
         for (int i = 0; i < rows.size(); i++) for (Key k : rows.get(i)) {

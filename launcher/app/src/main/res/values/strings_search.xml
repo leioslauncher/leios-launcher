@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Search on Home: the keyboard, results, voice, and movies and shows from TMDB.
+     TMDB (a film database), JustWatch and Wikidata are names of services. -->
+<resources>
+    <!-- In the search field before anything is typed. -->
+    <string name="search_placeholder">Apps and settings</string>
+    <string name="search_placeholder_online">Apps, settings, movies and shows</string>
+    <string name="search_hint">Type to find apps and Leios settings.</string>
+    <string name="search_hint_online">Type to find apps, Leios settings, movies and shows.</string>
+
+    <!--
+        The on-screen keyboard's letters and digits: 6 rows of 7 keys, rows separated by |. Use your
+        language's letters (lower case; they show in capitals where the script has them) and keep
+        digits 0–9. Every row must have exactly 7 characters. Languages with more letters than fit
+        (or scripts typed with an input method) need a different keyboard; see CONTRIBUTING.md.
+    -->
+    <string name="search_keyboard_rows">abcdefg|hijklmn|opqrstu|vwxyz12|3456789|0\'&amp;-.:!</string>
+    <string name="search_key_space">Space</string>
+    <string name="search_key_clear">Clear</string>
+    <string name="hint_keyboard">Keyboard</string>
+
+    <!-- Group headers in the results. -->
+    <string name="search_apps">Apps</string>
+    <string name="search_movies_tv">Movies &amp; TV</string>
+    <string name="search_on_your_apps">Movies &amp; TV on your apps</string>
+    <string name="search_not_on_apps">Not on your apps</string>
+    <!-- Next to an app that needs the PIN. -->
+    <string name="search_locked">Locked</string>
+
+    <!-- %1$s: what was typed. "Customization › System › Search & privacy": use those menus' names. -->
+    <string name="search_nothing">Nothing matches “%1$s”.</string>
+    <string name="search_nothing_online_off">Nothing matches “%1$s”. Online title search is off (Customization › System › Search &amp; privacy).</string>
+    <string name="search_nothing_no_key">Nothing matches “%1$s”. This copy of Leios finds apps and settings, not movies or shows.</string>
+
+    <!-- The one-time question before anything is sent online. %1$s: the region, e.g. US. -->
+    <string name="search_ask">Find movies and shows too? Leios would send only what you type and your region (%1$s) to TMDB, a film database, and when you pick a title, its ID number to Wikidata to open it in your app. Nothing about you or this TV. You can change this later in Customization › System › Search &amp; privacy.</string>
+    <string name="search_turn_on">Turn on online search</string>
+    <string name="search_not_now">Not now</string>
+    <string name="toast_search_online_off">Online search is off. Customization › System › Search &amp; privacy turns it on.</string>
+    <string name="search_looking_up">Looking up movies and shows…</string>
+    <string name="search_no_titles">No movies or shows match.</string>
+    <string name="search_no_titles_on_apps">None of your apps has a matching movie or show.</string>
+    <!-- %1$s: the title; %2$s: the region, e.g. US. -->
+    <string name="search_not_in_region">None of your apps has %1$s in %2$s.</string>
+    <string name="search_tv_show">TV show</string>
+    <string name="search_movie">Movie</string>
+    <!-- %1$s: a streaming app's name; it's only to rent or buy there. -->
+    <string name="search_app_rent">%1$s (rent)</string>
+    <!-- After two app names: how many more. %1$s: the number. -->
+    <string name="search_more_apps">"  +%1$s"</string>
+    <!-- %1$s: the title. Followed by a list of apps. -->
+    <string name="search_open_in">Open %1$s in</string>
+    <string name="search_rent_or_buy">Rent or buy</string>
+    <string name="search_offline">You\'re offline, so only apps and settings show.</string>
+    <string name="search_slow">Movies and shows are taking a while. Try again in a moment.</string>
+    <string name="search_tmdb_busy">TMDB is busy right now. Try again in a moment.</string>
+    <string name="search_titles_failed">Movies and shows couldn\'t load. Apps and settings still work.</string>
+    <!-- Under the results; TMDB's logo sits before it. -->
+    <string name="search_credit">"Details from TMDB  ·  Where to watch from JustWatch"</string>
+    <string name="tmdb_name" translatable="false">TMDB</string>
+
+    <!-- Voice search with the mic key. -->
+    <string name="voice_listening">Listening…</string>
+    <string name="voice_say_a_name">Listening… say a name</string>
+    <string name="hint_stop_listening">Stop listening</string>
+    <string name="voice_not_on_tv">Voice search isn\'t working on this TV.</string>
+    <string name="voice_didnt_catch">Didn\'t catch that. Press the mic key and try again.</string>
+    <string name="voice_no_mic">The microphone isn\'t available. The keyboard still works.</string>
+    <string name="voice_needs_internet">Voice search needs the internet right now.</string>
+    <string name="voice_not_working">Voice search isn\'t working right now. The keyboard still works.</string>
+</resources>

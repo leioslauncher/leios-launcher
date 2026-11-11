@@ -72,6 +72,7 @@
     <string name="video_looking">Looking for videos…</string>
     <string name="video_none">No videos found. Plug in a USB drive with a video on it (MP4 works best).</string>
     <string name="toast_video_set">Video background set. It plays muted and pauses while an app is open.</string>
+    <string name="toast_video_unplayable">Can\'t play this video. The file may be damaged or in an unsupported format (MP4 works best), or its USB drive is unplugged.</string>
     <!-- A video's length next to its name. -->
     <plurals name="video_length_min">
         <item quantity="one">%d min</item>

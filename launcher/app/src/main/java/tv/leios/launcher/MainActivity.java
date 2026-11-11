@@ -4259,7 +4259,7 @@ public class MainActivity extends Activity {
     private void videoFailed() {
         if (videoView != null) videoView.setVisibility(View.GONE);
         root.setBackground(new ColorDrawable(theme.bg));
-        if (!videoWarned) toast("Can't play this video. The file may be damaged or in an unsupported format (MP4 works best), or its USB drive is unplugged.", false);
+        if (!videoWarned) toast(tr(R.string.toast_video_unplayable), false);
         videoWarned = true;
     }
 
