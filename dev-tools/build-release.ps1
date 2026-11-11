@@ -1,10 +1,12 @@
 # Builds the signed release APK and App Bundle with your own key.
 #   .\dev-tools\build-release.ps1 -Keystore D:\keys\leios-release.jks
+# -Pseudo adds Android's pseudo-languages (en-XA, ar-XB) for testing translations; never publish that build.
 # Asks for the keystore password. It's kept only in this PowerShell process and never written to a file.
 # JAVA_HOME and ANDROID_HOME must be set, as for any build (see the README).
 param(
     [Parameter(Mandatory)][string]$Keystore,
-    [string]$Alias = 'leios'
+    [string]$Alias = 'leios',
+    [switch]$Pseudo
 )
 $ErrorActionPreference = 'Stop'
 if (-not (Test-Path $Keystore)) { throw "No keystore at $Keystore" }
@@ -21,7 +23,8 @@ try {
     $env:LEIOS_KEY_PASSWORD = $password
     Push-Location $launcher
     try {
-        & .\gradlew.bat --no-daemon clean assembleRelease bundleRelease
+        $extra = @(); if ($Pseudo) { $extra += '-Ppseudo' }
+        & .\gradlew.bat --no-daemon clean assembleRelease bundleRelease @extra
         if ($LASTEXITCODE -ne 0) { throw 'The release build failed.' }
     } finally {
         Pop-Location

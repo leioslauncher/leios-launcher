@@ -65,7 +65,14 @@ android {
     }
 
     buildTypes {
+        // -Ppseudo: a test build with Android's pseudo-languages (Settings shows "English (XA)",
+        // long accented text, and "Arabic (XB)", mirrored), to check text fits and layouts mirror.
+        // Never for a published build.
+        debug {
+            pseudoLocalesEnabled project.hasProperty('pseudo')
+        }
         release {
+            pseudoLocalesEnabled project.hasProperty('pseudo')
             // Smaller and faster.
             minifyEnabled true
             shrinkResources true

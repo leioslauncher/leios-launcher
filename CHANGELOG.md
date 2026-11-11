@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- **Ready for translations.** All text is in string resources, with placeholders, plurals and notes for translators, so a language can be added without touching code. CONTRIBUTING.md › Translating Leios explains how. There are no translations yet.
+- Numbers, durations, dates and the weather follow the TV's language, as written there. Your 12/24-hour and °C/°F choices stay as they are.
+- Search finds settings by the words of the language Leios shows. City search asks for city names in that language.
+- Menus, hints and messages mirror for right-to-left languages.
+- Android 13 and later can give Leios its own language (only English for now).
+- Behind the scenes: the "Apps" row, messages shown after a restart, the photo-of-the-day credit and backup reasons are saved as keys, not English sentences. Backup files carry a marker in their name. Settings, backups and themes from 1.3 and earlier still work and restore.
+
+### Fixed
+- The dock's app count says "1 app", not "1 apps".
+
 ## 1.3 (versionCode 5)
 
 ### Added
