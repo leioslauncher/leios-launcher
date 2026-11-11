@@ -1016,7 +1016,7 @@ public class MainActivity extends Activity {
             });
             // The row is a few pixels wider than whole columns; padding the end by that much lets
             // the last scroll step land on a column instead of stopping at the end of the tiles.
-            s.list.setPadding(0, 0, innerW - columns * colW, 0);
+            s.list.setPaddingRelative(0, 0, innerW - columns * colW, 0);
             s.list.setAdapter(s.adapter);
             s.list.setItemAnimator(null);
             s.list.setFocusable(false);
@@ -1979,7 +1979,7 @@ public class MainActivity extends Activity {
             // Under the top bar, clear of the pills and the clock.
             lp.gravity = Gravity.TOP | Gravity.END;
             lp.topMargin = tk.safeV + tk.pillHeight + tk.space5;
-            lp.rightMargin = tk.safeH;
+            lp.setMarginEnd(tk.safeH);
             lp.bottomMargin = 0;
         } else {
             // Arrows move; at a row's edge, Up and Down say where the app goes next.
@@ -2002,7 +2002,7 @@ public class MainActivity extends Activity {
             h.add(tr(R.string.hint_done));
             moveHint.addView(Ui.hints(this, theme, tk, h.toArray(new String[0])));
             lp.topMargin = 0;
-            lp.rightMargin = 0;
+            lp.setMarginEnd(0);
             lp.bottomMargin = tk.safeV;
             lp.gravity = Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL;
         }
@@ -2059,8 +2059,8 @@ public class MainActivity extends Activity {
             lp.width = tk.sheetWidth;
             lp.gravity = Gravity.TOP | Gravity.START;
             lp.topMargin = tk.safeV;
-            lp.leftMargin = tk.safeH + railWidth() + tk.space5;
-            lp.rightMargin = 0;
+            lp.setMarginStart(tk.safeH + railWidth() + tk.space5);
+            lp.setMarginEnd(0);
             lp.bottomMargin = 0;
             menu.setMaxHeight(root.getHeight() - 2 * tk.safeV);
             // No shadow over the backdrop: it barely shows there, and this GPU redraws it every frame.
@@ -2072,8 +2072,8 @@ public class MainActivity extends Activity {
         lp.width = tk.sheetWidth;
         lp.gravity = Gravity.TOP | Gravity.END;
         lp.topMargin = tk.safeV + tk.pillHeight + tk.space3;
-        lp.rightMargin = tk.safeH;
-        lp.leftMargin = 0;
+        lp.setMarginEnd(tk.safeH);
+        lp.setMarginStart(0);
         lp.bottomMargin = 0;
         menu.setMaxHeight(root.getHeight() - lp.topMargin - tk.safeV);
         present(lp, focus, back, cancel, menuHints(back == null));
@@ -2092,8 +2092,12 @@ public class MainActivity extends Activity {
         lp.width = tk.popoverWidth;
         int w = root.getWidth(), h = root.getHeight();
         boolean right = tile.right + tk.space4 + lp.width <= w - tk.safeH;
-        lp.leftMargin = right ? tile.right + tk.space4 : Math.max(tk.safeH, tile.left - tk.space4 - lp.width);
-        lp.rightMargin = 0;
+        // Where the card's left edge goes on screen; as a start margin, measured from the right in
+        // right-to-left languages (the menu's other placements use start and end too).
+        int x = right ? tile.right + tk.space4 : Math.max(tk.safeH, tile.left - tk.space4 - lp.width);
+        boolean rtl = root.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+        lp.setMarginStart(rtl ? w - x - lp.width : x);
+        lp.setMarginEnd(0);
         boolean low = tile.centerY() > h / 2;
         lp.gravity = Gravity.START | (low ? Gravity.BOTTOM : Gravity.TOP);
         lp.topMargin = low ? 0 : Math.max(tk.safeV, tile.top);
@@ -2927,7 +2931,7 @@ public class MainActivity extends Activity {
             rail.setElevation(0);
             FrameLayout.LayoutParams rlp = new FrameLayout.LayoutParams(railWidth(), ViewGroup.LayoutParams.WRAP_CONTENT,
                     Gravity.TOP | Gravity.START);
-            rlp.leftMargin = tk.safeH;
+            rlp.setMarginStart(tk.safeH);
             rlp.topMargin = tk.safeV;
             root.addView(rail, root.indexOfChild(menu), rlp);
         }
@@ -3263,7 +3267,7 @@ public class MainActivity extends Activity {
             creditView.setShadowLayer(tk.space2, 0, 0, theme.light ? theme.bg : theme.shadow);
             FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | Gravity.END);
-            lp.rightMargin = tk.safeH;
+            lp.setMarginEnd(tk.safeH);
             lp.bottomMargin = tk.space4;
             hero.addView(creditView, lp);
         }

@@ -172,7 +172,7 @@ final class Ui {
                     ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM | (besideSheet ? Gravity.START : Gravity.CENTER_HORIZONTAL));
             lp.bottomMargin = tk.safeV + tk.space3;
             if (besideSheet) {
-                lp.leftMargin = tk.safeH;
+                lp.setMarginStart(tk.safeH);
                 t.setMaxWidth(host.getWidth() - tk.sheetWidth - tk.safeH * 3 - tk.space5 * 2 - tk.iconMd - tk.space3);
             }
             host.addView(box, lp);

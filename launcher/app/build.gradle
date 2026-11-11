@@ -85,8 +85,14 @@ android {
     }
 
     lint {
-        abortOnError false
+        // Errors stop the build; warnings are reported only.
+        abortOnError true
         checkReleaseBuilds false
+        // Translation-ready: no text outside res/values/strings*.xml, placeholders that match,
+        // plurals for counts, and layouts that mirror for right-to-left languages.
+        error 'HardcodedText', 'SetTextI18n', 'StringFormatInvalid', 'StringFormatMatches', 'StringFormatCount',
+                'PluralsCandidate', 'RtlHardcoded', 'RtlSymmetry', 'RtlCompat', 'RtlEnabled',
+                'MissingQuantity', 'UnusedQuantity', 'ImpliedQuantity', 'Typos'
     }
 }
 
