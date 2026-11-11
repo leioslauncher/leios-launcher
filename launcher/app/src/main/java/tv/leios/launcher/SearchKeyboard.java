@@ -34,6 +34,16 @@ final class SearchKeyboard extends View {
     }
 
     private static final int COLS = 7;
+    /** The English rows, for a translation whose rows don't fit the keyboard. */
+    static final String[] DEFAULT_ROWS = {"abcdefg", "hijklmn", "opqrstu", "vwxyz12", "3456789", "0'&-.:!"};
+
+    /** The letter rows a language lists ("abcdefg|hijklmn|…"): six rows of seven keys, or the English ones. */
+    static String[] rows(String spec) {
+        String[] rows = spec == null ? new String[0] : spec.split("\\|");
+        if (rows.length != DEFAULT_ROWS.length) return DEFAULT_ROWS;
+        for (String r : rows) if (r.codePointCount(0, r.length()) != COLS) return DEFAULT_ROWS;
+        return rows;
+    }
     private final List<List<Key>> rows = new ArrayList<>();
     private final List<Key> keys = new ArrayList<>();
     private final Theme th;
@@ -55,10 +65,10 @@ final class SearchKeyboard extends View {
         keyH = tk.dp(40);
         gap = tk.space1 + tk.space1 / 2;
         // The language's letters and digits, a row per line (search_keyboard_rows; see its note).
-        String[] letters = c.getString(R.string.search_keyboard_rows).split("\\|");
+        String[] letters = rows(c.getString(R.string.search_keyboard_rows));
         for (String r : letters) {
             List<Key> row = new ArrayList<>();
-            for (char ch : r.toCharArray()) row.add(new Key(String.valueOf(ch), String.valueOf(ch), 1));
+            r.codePoints().forEach(cp -> row.add(new Key(new String(Character.toChars(cp)), new String(Character.toChars(cp)), 1)));
             rows.add(row);
         }
         List<Key> last = new ArrayList<>();
@@ -197,7 +207,6 @@ final class SearchKeyboard extends View {
         for (Key k : keys) canvas.drawRoundRect(k.rect, rad, rad, keyPaint);
         focusPaint.setColor(active ? th.accentFill : th.surfaceRaised);
         canvas.drawRoundRect(focusRect, rad, rad, focusPaint);
-        Paint.FontMetrics fm = textPaint.getFontMetrics();
         for (Key k : keys) {
             boolean on = active && keys.indexOf(k) == focus;
             int ink = on ? th.onAccent : th.text;
@@ -211,9 +220,14 @@ final class SearchKeyboard extends View {
             }
             Paint p = k.span > 1 ? smallPaint : textPaint;
             p.setColor(ink);
-            Paint.FontMetrics m = k.span > 1 ? smallPaint.getFontMetrics() : fm;
+            String text = k.span > 1 ? k.label : k.label.toUpperCase(java.util.Locale.getDefault());
+            // A word longer than its key (another language's "Space") shrinks to fit, never overlaps.
+            float size = p.getTextSize(), room = k.rect.width() - tk.space2 * 2, w = p.measureText(text);
+            if (w > room && w > 0) p.setTextSize(size * room / w);
+            Paint.FontMetrics m = p.getFontMetrics();
             float y = k.rect.centerY() - (m.ascent + m.descent) / 2f;
-            canvas.drawText(k.span > 1 ? k.label : k.label.toUpperCase(java.util.Locale.ROOT), k.rect.centerX(), y, p);
+            canvas.drawText(text, k.rect.centerX(), y, p);
+            p.setTextSize(size);
         }
     }
 }

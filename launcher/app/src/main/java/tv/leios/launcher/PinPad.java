@@ -51,6 +51,8 @@ final class PinPad extends LinearLayout {
         addView(t, tlp);
         LinearLayout row = new LinearLayout(c);
         row.setOrientation(HORIZONTAL);
+        // A PIN is a number: its digits go left to right in every language, Arabic and Hebrew too.
+        row.setLayoutDirection(LAYOUT_DIRECTION_LTR);
         for (int i = 0; i < boxes.length; i++) {
             TextView b = Ui.text(c, "", tk.textTitle, th.text, tk.medium500);
             b.setGravity(Gravity.CENTER);

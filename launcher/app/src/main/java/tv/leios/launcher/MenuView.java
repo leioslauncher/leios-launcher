@@ -541,6 +541,11 @@ final class MenuView extends LinearLayout {
         // Room for the longest value up front, so the slider beside it never moves ("9 of 10" to "10 of 10").
         if (r.widestValue != null) minWidth = Math.max(minWidth, (int) Math.ceil(value.getPaint().measureText(r.widestValue)));
         if (minWidth > 0) value.setMinWidth(minWidth);
+        // A long value (a longer language, a long Wi-Fi name) never squeezes the row's name away:
+        // it stops at two-fifths of the menu's width and ends in "…".
+        ViewGroup.LayoutParams own = getLayoutParams();
+        int menuW = own != null && own.width > 0 ? own.width : tk.sheetWidth;
+        value.setMaxWidth(Math.max(minWidth, menuW * 2 / 5));
         v.addView(value, vlp);
 
         if (r.kind == NAV || r.kind == STEPPER) {
