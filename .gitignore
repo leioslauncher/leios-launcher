@@ -39,3 +39,7 @@ HANDOFF.md
 
 # Reports
 gitleaks-report*.json
+
+# Claude Code: this PC's own settings and notes (paths, IP, private lists)
+.claude/settings.local.json
+CLAUDE.local.md
